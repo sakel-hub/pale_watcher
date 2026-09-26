@@ -8,7 +8,6 @@
 ---@field fx table HUD static interference, responsive vignette, and audio feedback
 ---@field nodes table Cursed Page, Ritual Pyre, Flash Camera, and Dimensional artifacts
 ---@field ritual table 8-page soul-burn ritual session manager
----@field distance_sq fun(p1: Vector, p2: Vector): number Calculates squared Euclidean distance
 pale_watcher = {
 	physics = {},
 	fx = {},
@@ -58,19 +57,6 @@ end
 ---@return ObjectRef|nil mob_obj Spawned ObjectRef or nil
 function pale_watcher.spawn(pos)
 	return core.add_entity(pos, "pale_watcher:pale_watcher")
-end
-
----Calculates the squared Euclidean distance between two 3D positions.
----Optimized for performance to bypass expensive square root operations in hot loops and spatial checks.
----@param p1 Vector First position
----@param p2 Vector Second position
----@return number Squared distance, or math.huge if either vector is nil
-function pale_watcher.distance_sq(p1, p2)
-	if not p1 or not p2 then return math.huge end
-	local dx = p1.x - p2.x
-	local dy = p1.y - p2.y
-	local dz = p1.z - p2.z
-	return dx * dx + dy * dy + dz * dz
 end
 
 return pale_watcher

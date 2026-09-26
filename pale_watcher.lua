@@ -380,7 +380,6 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 			local mob_eye = vector.add(pos, {x = 0, y = 2.6, z = 0})
 			local mob_chest = vector.add(pos, {x = 0, y = 1.5, z = 0})
 			local reach = 5.5
-			local reach_sq = reach * reach
 
 			-- Extinguish world light nodes strictly within reach and unobstructed line of sight (not through walls).
 			-- Exception: Sanctuary light (light level >= 14 or light_source >= 14) is immune to being dropped.
@@ -390,7 +389,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 				{"group:torch", "group:light", "default:torch", "default:torch_wall", "default:torch_ceiling"}
 			)
 			for _, lpos in ipairs(light_nodes) do
-				if pale_watcher.distance_sq(mob_eye, lpos) <= reach_sq and not core.is_protected(lpos, "") then
+				if vector.distance(mob_eye, lpos) <= reach and not core.is_protected(lpos, "") then
 					local lnode = core.get_node(lpos)
 					local def = core.registered_nodes[lnode.name]
 					local node_light = core.get_node_light(lpos) or 0

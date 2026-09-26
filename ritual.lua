@@ -22,9 +22,7 @@ local active_sessions = {}
 local SESSION_RADIUS = 50.0
 local SPAWN_RADIUS_MIN = 15.0
 local SPAWN_RADIUS_MAX = 45.0
-local MIN_PAGE_DISTANCE_SQ = 64.0 -- At least 8 blocks between pages
-
-local distance_sq = pale_watcher.distance_sq
+local MIN_PAGE_DISTANCE = 8.0 -- At least 8 blocks between pages
 
 ---Computes stalker aggression tier based on pages found and elapsed night duration.
 ---@param session table
@@ -78,14 +76,13 @@ local function spawn_pages_dynamically(center, count, session_id)
 	}
 
 	for _, node_pos in ipairs(surface_nodes) do
-		local dist_sq = distance_sq(center, node_pos)
-		if dist_sq >= (SPAWN_RADIUS_MIN * SPAWN_RADIUS_MIN) and
-		   dist_sq <= (SPAWN_RADIUS_MAX * SPAWN_RADIUS_MAX) then
+		local dist = vector.distance(center, node_pos)
+		if dist >= SPAWN_RADIUS_MIN and dist <= SPAWN_RADIUS_MAX then
 
 			-- Check spacing between existing placed pages
 			local too_close = false
 			for _, prev in ipairs(placed_list) do
-				if distance_sq(node_pos, prev) < MIN_PAGE_DISTANCE_SQ then
+				if vector.distance(node_pos, prev) < MIN_PAGE_DISTANCE then
 					too_close = true
 					break
 				end
@@ -241,17 +238,16 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 	end
 
 	local center = center_pos or session.center
-	local radius_sq = SESSION_RADIUS * SESSION_RADIUS
-	local exit_radius_sq = (SESSION_RADIUS * 1.35) * (SESSION_RADIUS * 1.35)
+	local exit_radius = SESSION_RADIUS * 1.35
 
 	local players = core.get_connected_players()
 	for _, player in ipairs(players) do
 		local p_pos = player:get_pos()
 		if p_pos then
-			local dist_sq = distance_sq(p_pos, center)
+			local dist = vector.distance(p_pos, center)
 			local name = player:get_player_name()
 
-			if dist_sq <= radius_sq then
+			if dist <= SESSION_RADIUS then
 				-- Dynamic Join
 				local is_new = not session.players[name]
 				update_player_hud(player, session)
@@ -262,10 +258,10 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 				end
 
 				-- Apply domain fog if deep in the encounter zone (>15m)
-				if dist_sq >= 225.0 then
+				if dist >= 15.0 then
 					pale_watcher.fx.apply_claustrophobic_fog(player)
 				end
-			elseif dist_sq > exit_radius_sq and session.players[name] then
+			elseif dist > exit_radius and session.players[name] then
 				-- Dynamic Leave / Out of range
 				remove_player_hud(player, session)
 				pale_watcher.fx.clear_claustrophobic_fog(player)
@@ -327,7 +323,7 @@ function pale_watcher.ritual.get_player_session(player_name, pos)
 		if session.players and session.players[player_name] then
 			return session, id
 		end
-		if pos and distance_sq(pos, session.center) <= (SESSION_RADIUS * 1.5) * (SESSION_RADIUS * 1.5) then
+		if pos and vector.distance(pos, session.center) <= (SESSION_RADIUS * 1.5) then
 			return session, id
 		end
 	end
@@ -366,12 +362,12 @@ end
 ---@param clicker ObjectRef Player who collected the page
 function pale_watcher.ritual.on_page_collected(pos, clicker)
 	local closest_session_id = nil
-	local min_dist_sq = math.huge
+	local min_dist = math.huge
 
 	for id, session in pairs(active_sessions) do
-		local dist_sq = distance_sq(pos, session.center)
-		if dist_sq < min_dist_sq then
-			min_dist_sq = dist_sq
+		local dist = vector.distance(pos, session.center)
+		if dist < min_dist then
+			min_dist = dist
 			closest_session_id = id
 		end
 	end
@@ -444,12 +440,12 @@ end
 function pale_watcher.ritual.trigger_pyre_banishment(pyre_pos, summoner)
 	-- Find closest active Pale Watcher
 	local target_session_id = nil
-	local min_dist_sq = math.huge
+	local min_dist = math.huge
 
 	for id, session in pairs(active_sessions) do
-		local d = distance_sq(pyre_pos, session.center)
-		if d < min_dist_sq then
-			min_dist_sq = d
+		local d = vector.distance(pyre_pos, session.center)
+		if d < min_dist then
+			min_dist = d
 			target_session_id = id
 		end
 	end
