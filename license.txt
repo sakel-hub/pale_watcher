@@ -1,0 +1,82 @@
+License of Source Code
+----------------------
+
+MIT License
+
+Copyright (C) 2026 SaKeL
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+Licenses of Media (Textures, Models, and Audio)
+-----------------------------------------------
+
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+https://creativecommons.org/licenses/by-sa/4.0/
+
+### 3D Models
+`models/pale_watcher_mob.glb`
+`assets/blend/pale_watcher_mob.blend`
+Copyright (C) 2026 SaKeL (CC BY-SA 4.0)
+
+### Textures
+`textures/pale_watcher_body.png`
+`textures/pale_watcher_suit.png`
+`textures/pale_watcher_tie.png`
+`textures/pale_watcher_cursed_page.png`
+`textures/pale_watcher_cursed_page_item.png`
+`textures/pale_watcher_dimensional_cloth.png`
+`textures/pale_watcher_flash_camera.png`
+`textures/pale_watcher_hud_flash.png`
+`textures/pale_watcher_hud_pages_bg.png`
+`textures/pale_watcher_hud_static_1.png`
+`textures/pale_watcher_hud_static_2.png`
+`textures/pale_watcher_hud_static_3.png`
+`textures/pale_watcher_hud_vignette.png`
+`textures/pale_watcher_particles.png`
+`textures/pale_watcher_ritual_pyre_flame.png`
+`textures/pale_watcher_ritual_pyre_side.png`
+`textures/pale_watcher_ritual_pyre_top.png`
+`textures/pale_watcher_shroud_of_stalking.png`
+Copyright (C) 2026 SaKeL (CC BY-SA 4.0)
+
+### Audio & Sound Effects
+Synthesized and mastered specifically for The Pale Watcher:
+`sounds/pale_watcher_bell.ogg`
+`sounds/pale_watcher_camera_flash.ogg`
+`sounds/pale_watcher_death.ogg`
+`sounds/pale_watcher_drone.ogg`
+`sounds/pale_watcher_page_whisper.ogg`
+`sounds/pale_watcher_paper_burn.ogg`
+`sounds/pale_watcher_scare.ogg`
+`sounds/pale_watcher_static.ogg`
+`sounds/pale_watcher_stun.ogg`
+Copyright (C) 2026 SaKeL (CC BY-SA 4.0)
+
+---
+
+You are free to:
+- Share — copy and redistribute the material in any medium or format.
+- Adapt — remix, transform, and build upon the material for any purpose, even commercially.
+
+Under the following terms:
+- Attribution — You must give appropriate credit, provide a link to the license, and
+  indicate if changes were made.
+- ShareAlike — If you remix, transform, or build upon the material, you must distribute
+  your contributions under the same license as the original.

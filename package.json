@@ -1,0 +1,32 @@
+{
+    "name": "pale_watcher",
+    "version": "1.0.0",
+    "description": "Psychological horror mob featuring quantum stalking, 8 cursed pages, flash camera, and cleansing pyre banishment.",
+    "main": "init.lua",
+    "type": "module",
+    "engines": {
+        "node": ">=16.0.0",
+        "npm": ">=8.0.0"
+    },
+    "scripts": {
+        "lint": "luacheck .",
+        "push:ci": "node ./scripts/deploy.mjs"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sakel-hub/pale_watcher.git"
+    },
+    "author": "SaKeL",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/sakel-hub/pale_watcher/issues"
+    },
+    "homepage": "https://github.com/sakel-hub/pale_watcher#readme",
+    "devDependencies": {
+        "node-fetch": "^3.3.2",
+        "yargs": "^17.7.2"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.5"
+    }
+}
