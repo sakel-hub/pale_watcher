@@ -392,41 +392,59 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 
 	local mob_eye = vector.add(pos, {x = 0, y = 2.6, z = 0})
 	local mob_chest = vector.add(pos, {x = 0, y = 1.5, z = 0})
-	local reach = 5.5
+	local reach = 6.0
+	local reach_sq = reach * reach
 
 	-- Extinguish world light nodes strictly within reach and unobstructed line of sight (not through walls).
 	local light_nodes = core.find_nodes_in_area(
-		vector.subtract(pos, reach),
-		vector.add(pos, reach),
-		{"group:torch", "group:light", "default:torch", "default:torch_wall", "default:torch_ceiling"}
+		vector.subtract(pos, {x = reach, y = 2, z = reach}),
+		vector.add(pos, {x = reach, y = 4, z = reach}),
+		{
+			"group:torch",
+			"group:candle",
+			"group:lantern",
+			"default:torch",
+			"default:torch_wall",
+			"default:torch_ceiling",
+			"default:meselamp",
+		}
 	)
-	local reach_sq = reach * reach
 	for i = 1, #light_nodes do
 		local lpos = light_nodes[i]
-		local ldx = mob_eye.x - lpos.x
-		local ldy = mob_eye.y - lpos.y
-		local ldz = mob_eye.z - lpos.z
-		if (ldx * ldx + ldy * ldy + ldz * ldz) <= reach_sq and not core.is_protected(lpos, "") then
+		local ldx = pos.x - lpos.x
+		local ldz = pos.z - lpos.z
+		local horiz_sq = ldx * ldx + ldz * ldz
+		local dy = math.abs((pos.y + 1.5) - lpos.y)
+
+		if horiz_sq <= reach_sq and dy <= 3.5 and not core.is_protected(lpos, "") then
 			local lnode = core.get_node(lpos)
 			local def = core.registered_nodes[lnode.name]
-			local node_light = core.get_node_light(lpos) or 0
-			local is_sanctuary = (node_light >= 14) or (def and def.light_source and def.light_source >= 14)
 
-			if def and def.light_source and def.light_source > 0 and not is_sanctuary then
-				local has_los = x_mob_core.line_of_sight(mob_eye, lpos) or x_mob_core.line_of_sight(mob_chest, lpos)
-				if has_los then
-					local drops = core.get_node_drops(lnode, "")
-					core.remove_node(lpos)
-					if drops then
+			if def and def.light_source and def.light_source > 0 then
+				-- Only true sanctuary structures (e.g. burning ritual pyre, or nodes with light_source >= 14) are immune
+				local is_sanctuary = (core.get_item_group(lnode.name, "sanctuary") > 0) or
+					(lnode.name == "pale_watcher:ritual_pyre_burning") or
+					(lnode.name == "pale_watcher:ritual_pyre") or
+					(def.light_source >= 14)
+
+				if not is_sanctuary then
+					local has_los = has_visual_los(mob_eye, lpos) or has_visual_los(mob_chest, lpos)
+					if has_los then
+						local drops = core.get_node_drops(lnode, "")
+						if not drops or #drops == 0 then
+							drops = (def.drop and type(def.drop) == "string") and {def.drop} or {lnode.name}
+						end
+						core.remove_node(lpos)
 						for j = 1, #drops do
 							local stack = ItemStack(drops[j])
 							if not stack:is_empty() then
 								core.item_drop(stack, nil, lpos)
 							end
 						end
+						pale_watcher.particles.void_mist(lpos, 0.8, 12)
+						core.sound_play("pale_watcher_paper_burn", {pos = lpos, gain = 0.5, max_hear_distance = 18}, true)
+						break -- 1 per pulse to create flickering dread
 					end
-					core.sound_play("pale_watcher_paper_burn", {pos = lpos, gain = 0.4, max_hear_distance = 15}, true)
-					break -- 1 per pulse to create flickering dread
 				end
 			end
 		end
@@ -435,27 +453,22 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 	-- Frightened player drops wielded light source only within reach & line of sight (not through walls).
 	if dist <= reach then
 		local p_eye = vector.add(t_pos, {x = 0, y = 1.5, z = 0})
-		local p_light = core.get_node_light(t_pos) or 0
-		local player_in_sanctuary = p_light >= 14
+		local has_los = has_visual_los(mob_eye, p_eye) or has_visual_los(mob_chest, p_eye)
+		if has_los then
+			local wield = self.target_player:get_wielded_item()
+			local wname = wield:get_name()
+			local wdef = core.registered_items[wname]
+			local is_light_item = (wdef and wdef.light_source and wdef.light_source > 0) or
+				string.find(wname, "torch") or string.find(wname, "lantern") or
+				string.find(wname, "lamp") or string.find(wname, "candle")
+			local item_is_sanctuary = wdef and wdef.light_source and wdef.light_source >= 14
 
-		if not player_in_sanctuary then
-			local has_los = x_mob_core.line_of_sight(mob_eye, p_eye) or x_mob_core.line_of_sight(mob_chest, p_eye)
-			if has_los then
-				local wield = self.target_player:get_wielded_item()
-				local wname = wield:get_name()
-				local wdef = core.registered_items[wname]
-				local is_light_item = (wdef and wdef.light_source and wdef.light_source > 0) or
-					string.find(wname, "torch") or string.find(wname, "lantern") or
-					string.find(wname, "lamp") or string.find(wname, "candle")
-				local item_is_sanctuary = wdef and wdef.light_source and wdef.light_source >= 14
-
-				if is_light_item and not item_is_sanctuary and not wield:is_empty() then
-					core.item_drop(wield, self.target_player, t_pos)
-					self.target_player:set_wielded_item(ItemStack(""))
-					core.sound_play("pale_watcher_static", {to_player = self.target_player:get_player_name(), gain = 0.8}, true)
-					core.chat_send_player(self.target_player:get_player_name(),
-						core.colorize(colors.danger, "Your trembling hands drop your light source into the darkness!"))
-				end
+			if is_light_item and not item_is_sanctuary and not wield:is_empty() then
+				core.item_drop(wield, self.target_player, t_pos)
+				self.target_player:set_wielded_item(ItemStack(""))
+				core.sound_play("pale_watcher_static", {to_player = self.target_player:get_player_name(), gain = 0.8}, true)
+				core.chat_send_player(self.target_player:get_player_name(),
+					core.colorize(colors.danger, "Your trembling hands drop your light source into the darkness!"))
 			end
 		end
 	end
