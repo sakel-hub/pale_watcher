@@ -170,6 +170,46 @@ local function count_surrounding_air(player_pos)
 	return air_count
 end
 
+---Calculates the effective fleshy punch damage taking target armor into account.
+---Ensures high-tier armor (such as Mithril) cannot reduce damage to 0,
+---while keeping low-tier or unarmored players from being unfairly one-shot.
+---Uses the same inverse mitigation scaling pattern as x_bows.
+---@param target ObjectRef Target player
+---@param base_damage number Base fleshy damage
+---@param min_mitigation_ratio? number Minimum damage ratio (default 0.25 = 25% minimum damage)
+---@param min_damage? number Minimum absolute damage to deal (default 2 HP)
+---@return number punch_fleshy Value to pass in damage_groups.fleshy for player:punch
+---@return number desired_damage Actual HP damage the player will receive
+local function calculate_armor_scaled_punch(target, base_damage, min_mitigation_ratio, min_damage)
+	if not target or not target:is_player() then
+		return base_damage, base_damage
+	end
+
+	local armor_groups = target:get_armor_groups() or {}
+	if (armor_groups.immortal or 0) > 0 then
+		return 0, 0
+	end
+
+	local fleshy_group = armor_groups.fleshy or 100
+	if fleshy_group <= 0 then
+		return 0, 0
+	end
+
+	local min_ratio = min_mitigation_ratio or 0.25
+	local min_dmg = min_damage or 2
+
+	local mitigation = math.max(min_ratio, math.min(1.0, fleshy_group / 100.0))
+	local desired_damage = math.max(min_dmg, math.floor(base_damage * mitigation + 0.5))
+	desired_damage = math.min(base_damage, desired_damage)
+
+	local punch_fleshy = desired_damage
+	if fleshy_group < 100 then
+		punch_fleshy = math.ceil(desired_damage * (100.0 / fleshy_group))
+	end
+
+	return punch_fleshy, desired_damage
+end
+
 x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	initial_properties = {
 		hp_max = 500,
@@ -495,9 +535,10 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 				local choke_pos = vector.add(t_pos, {x = 0.5, y = 0, z = 0.5})
 				self.object:set_pos(choke_pos)
 				core.sound_play("pale_watcher_scare", {to_player = self.target_player:get_player_name()}, true)
+				local punch_fleshy = calculate_armor_scaled_punch(self.target_player, 6, 0.33, 2)
 				self.target_player:punch(self.object, 1.0, {
 					full_punch_interval = 1.0,
-					damage_groups = {fleshy = 6}
+					damage_groups = {fleshy = punch_fleshy}
 				})
 				core.chat_send_player(self.target_player:get_player_name(),
 					core.colorize("#ff2222", "You cannot hide from the void..."))
@@ -634,9 +675,10 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 				if self.attack_cooldown >= self.attack_interval then
 					self.attack_cooldown = 0
 					x_mob_core.play_animation(self.object, "attack", {speed = 1.0, loop = false, force = true})
+					local punch_fleshy = calculate_armor_scaled_punch(self.target_player, self.damage, 0.25, 2)
 					self.target_player:punch(self.object, 1.0, {
 						full_punch_interval = 1.0,
-						damage_groups = {fleshy = self.damage}
+						damage_groups = {fleshy = punch_fleshy}
 					})
 					core.sound_play("pale_watcher_scare", {to_player = self.target_player:get_player_name()}, true)
 				else
