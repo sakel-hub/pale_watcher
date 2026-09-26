@@ -24,12 +24,7 @@ local SPAWN_RADIUS_MIN = 15.0
 local SPAWN_RADIUS_MAX = 45.0
 local MIN_PAGE_DISTANCE_SQ = 64.0 -- At least 8 blocks between pages
 
-local function distance_sq(p1, p2)
-	local dx = p1.x - p2.x
-	local dy = p1.y - p2.y
-	local dz = p1.z - p2.z
-	return dx * dx + dy * dy + dz * dz
-end
+local distance_sq = pale_watcher.distance_sq
 
 ---Computes stalker aggression tier based on pages found and elapsed night duration.
 ---@param session table
