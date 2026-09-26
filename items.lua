@@ -72,7 +72,7 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 				end
 
 				if hit and luaent.on_stunned then
-					luaent:on_stunned(user, 4.0)
+					luaent:on_stunned(user, 1.8)
 					core.chat_send_player(name, core.colorize(colors.warning,
 						"★ The blinding xenon flash stuns the Pale Watcher!"))
 					break

@@ -76,10 +76,12 @@ local function find_blind_spot_node(target_player, _current_mob_pos, step_min_di
 	local p_yaw = core.dir_to_yaw(look_dir)
 	local test_angles = {
 		p_yaw + math.pi,                -- Directly behind
-		p_yaw + math.pi * 0.75,         -- Rear left
-		p_yaw - math.pi * 0.75,         -- Rear right
-		p_yaw + math.pi * 0.5,          -- Flank left
-		p_yaw - math.pi * 0.5,          -- Flank right
+		p_yaw + math.pi * 0.85,         -- Deep rear left
+		p_yaw - math.pi * 0.85,         -- Deep rear right
+		p_yaw + math.pi * 0.70,         -- Rear left
+		p_yaw - math.pi * 0.70,         -- Rear right
+		p_yaw + math.pi * 0.50,         -- Flank left
+		p_yaw - math.pi * 0.50,         -- Flank right
 		p_yaw + math.random() * math.pi -- Random variation
 	}
 
@@ -89,7 +91,8 @@ local function find_blind_spot_node(target_player, _current_mob_pos, step_min_di
 		local cand_x = p_pos.x - math.sin(angle) * dist
 		local cand_z = p_pos.z + math.cos(angle) * dist
 
-		local ground = pale_watcher.find_ground_node(cand_x, p_pos.y, cand_z, 3, 3, 3)
+		-- Generous 8 up / 12 down scan to find ground across uneven hills and forested terrain
+		local ground = pale_watcher.find_ground_node(cand_x, p_pos.y, cand_z, 8, 12, 3)
 		if ground then
 			local dest = {x = ground.x, y = ground.y + 1, z = ground.z}
 			local dest_eye = {x = dest.x, y = dest.y + 2.8, z = dest.z}
@@ -97,7 +100,7 @@ local function find_blind_spot_node(target_player, _current_mob_pos, step_min_di
 
 			-- Verify blind spot: either outside player's forward view cone OR occluded by terrain
 			local is_in_blind_spot = (vector.dot(look_dir, to_dest) < WATCHER_FOV_DOT) or
-				not x_mob_core.line_of_sight(p_eye, dest_eye)
+				not has_visual_los(p_eye, dest_eye)
 
 			if is_in_blind_spot then
 				return dest
@@ -235,12 +238,36 @@ local function step_stun_window(self, dtime, players, pos)
 
 	if self.stun_timer <= 0 then
 		-- Stun expired: Immediate evasive phase retreat into distance
-		local escape_pos = find_blind_spot_node(self.target_player or players[1], pos, 30, 45)
+		local target = self.target_player or players[1]
+		local escape_pos = target and find_blind_spot_node(target, pos, 28, 42)
+		if not escape_pos and target then
+			escape_pos = find_blind_spot_node(target, pos, 16, 26)
+		end
+		if not escape_pos and target then
+			-- Guaranteed fallback: safe ground behind player
+			local p_pos = target:get_pos()
+			if p_pos then
+				local p_yaw = core.dir_to_yaw(target:get_look_dir())
+				local rear_x = p_pos.x + math.sin(p_yaw) * 25
+				local rear_z = p_pos.z - math.cos(p_yaw) * 25
+				local ground = pale_watcher.find_ground_node(rear_x, p_pos.y, rear_z, 10, 15, 3)
+				if ground then
+					escape_pos = {x = ground.x, y = ground.y + 1, z = ground.z}
+				end
+			end
+		end
+
+		-- Dramatic departure visual & audio at current position BEFORE teleporting
+		pale_watcher.particles.teleport_rift(pos)
+		core.sound_play("pale_watcher_scare", {pos = pos, gain = 0.8, max_hear_distance = 35}, true)
+
 		if escape_pos then
 			self.object:set_pos(escape_pos)
+			-- Arrival puff & distant audio
+			pale_watcher.particles.void_mist(escape_pos, 2.5, 25)
+			core.sound_play("pale_watcher_static", {pos = escape_pos, gain = 0.6, max_hear_distance = 25}, true)
 		end
 		self.state = "stalking"
-		core.sound_play("pale_watcher_static", {pos = self.object:get_pos(), max_hear_distance = 25}, true)
 	end
 
 	return true
@@ -781,12 +808,16 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 			x_mob_core.indicate_damage(self.object)
 			local cur_pos = self.object:get_pos()
 
-			-- Departure dimensional slip particles (preset)
-			pale_watcher.particles.void_mist(cur_pos, 3.0, 40)
+			-- Departure dimensional rift particles
+			pale_watcher.particles.teleport_rift(cur_pos)
 
 			local escape_pos = find_blind_spot_node(puncher, cur_pos, 18, 28)
+			if not escape_pos then
+				escape_pos = find_blind_spot_node(puncher, cur_pos, 10, 18)
+			end
 			if escape_pos then
 				self.object:set_pos(escape_pos)
+				pale_watcher.particles.void_mist(escape_pos, 2.5, 20)
 			end
 			core.sound_play("pale_watcher_static", {pos = self.object:get_pos(), gain = 0.8, max_hear_distance = 25}, true)
 		end

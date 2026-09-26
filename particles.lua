@@ -264,4 +264,40 @@ function pale_watcher.particles.pyre_implosion(pos)
 	})
 end
 
+---Dramatic dimensional phase rift when the mob teleports away (after flash or dimensional slip).
+---Produces a full 3.5m tall vortex of swirling void mist, pale embers, and crackling static sparks.
+---@param pos Vector Mob feet position
+---@return integer|nil
+function pale_watcher.particles.teleport_rift(pos)
+	return pale_watcher.particles.spawn({
+		amount = 70,
+		time = 0.5,
+		pos = {
+			min = vector.subtract(pos, {x = 0.6, y = 0.1, z = 0.6}),
+			max = vector.add(pos, {x = 0.6, y = 3.2, z = 0.6}),
+		},
+		vel = {
+			min = {x = -1.5, y = 0.5, z = -1.5},
+			max = {x = 1.5, y = 3.5, z = 1.5},
+		},
+		acc = {
+			min = {x = -0.5, y = -1.0, z = -0.5},
+			max = {x = 0.5, y = 0.5, z = 0.5},
+		},
+		exptime = {min = 0.8, max = 1.6},
+		size = {min = 1.8, max = 4.0},
+		jitter = {min = {x = -0.4, y = -0.4, z = -0.4}, max = {x = 0.4, y = 0.4, z = 0.4}},
+		drag = {min = {x = 0.1, y = 0.1, z = 0.1}, max = {x = 0.2, y = 0.2, z = 0.2}},
+		texpool = {
+			{name = "pale_watcher_particles.png^[verticalframe:8:0", blend = "alpha"},
+			{name = "pale_watcher_particles.png^[verticalframe:8:1", blend = "add"},
+			{name = "pale_watcher_particles.png^[verticalframe:8:7", blend = "add"},
+			{name = "pale_watcher_hud_flash.png", blend = "add"},
+		},
+		scale_tween = {start = 1.8, finish = 0.2},
+		alpha_tween = {start = 1.0, finish = 0.0},
+		glow = 8,
+	})
+end
+
 return pale_watcher.particles
