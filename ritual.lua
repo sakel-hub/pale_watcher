@@ -272,7 +272,7 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 
 				if is_new then
 					core.chat_send_player(name,
-						core.colorize("#ff2222", "A chilling presence surrounds you... Find the 8 Cursed Pages!"))
+						core.colorize(pale_watcher.colors.void, "A chilling presence surrounds you... Find the 8 Cursed Pages!"))
 				end
 
 				-- Apply domain fog if deep in the encounter zone (>15m)
@@ -367,7 +367,8 @@ function pale_watcher.ritual.end_session(session_id, victory)
 
 			if victory then
 				core.chat_send_player(name,
-					core.colorize("#55ff88", "★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."))
+					core.colorize(pale_watcher.colors.victory,
+						"★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."))
 			end
 		end
 	end
@@ -413,7 +414,7 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 			update_player_hud(p, session)
 			local msg = string.format("Cursed Page Collected: %d / %d (%s found one!)",
 				session.pages_collected, session.pages_total, clicker_name)
-			core.chat_send_player(name, core.colorize("#ff3333", msg))
+			core.chat_send_player(name, core.colorize(pale_watcher.colors.danger, msg))
 			pale_watcher.fx.update_player(p, 12, true, 0.8, session.stalker_tier)
 		end
 	end
@@ -429,7 +430,7 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 	}
 	local tip = survival_tips[((session.pages_collected - 1) % #survival_tips) + 1]
 	core.chat_send_player(clicker_name,
-		core.colorize("#ffddaa", "★ As the cursed page burns, a whisper echoes: \"" .. tip .. "\""))
+		core.colorize(pale_watcher.colors.whisper, "★ As the cursed page burns, a whisper echoes: \"" .. tip .. "\""))
 
 	-- Aggression Re-Targeting: Pale Watcher immediately prioritizes the collector!
 	if session.mob_ref and session.mob_ref:is_valid() then
@@ -445,7 +446,8 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 			local p = core.get_player_by_name(name)
 			if p then
 				core.chat_send_player(name,
-					core.colorize("#ffff44", "All 8 Pages collected! Craft a Ritual Pyre and burn them to banish the nightmare!"))
+					core.colorize(pale_watcher.colors.warning,
+						"All 8 Pages collected! Craft a Ritual Pyre and burn them to banish the nightmare!"))
 			end
 		end
 	end

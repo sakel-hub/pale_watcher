@@ -6,13 +6,31 @@
 ---@class PaleWatcher
 ---@field physics table Universal multi-mod physics abstraction
 ---@field fx table HUD static interference, responsive vignette, and audio feedback
----@field nodes table Cursed Page, Ritual Pyre, Flash Camera, and Dimensional artifacts
+---@field particles table Universal particle factory & visual presets
+---@field nodes table Cursed Page and Ritual Pyre world structures
+---@field items table Wieldable tools and artifact materials
 ---@field ritual table 8-page soul-burn ritual session manager
+---@field colors table Semantic chat & HUD color palette
 pale_watcher = {
 	physics = {},
 	fx = {},
+	particles = {},
 	nodes = {},
+	items = {},
 	ritual = {},
+}
+
+---Semantic UI & chat feedback color palette for high legibility
+pale_watcher.colors = {
+	whisper  = "#ffddaa", -- Cursed page survival whispers
+	warning  = "#ffff55", -- Flash stun / page count warnings
+	danger   = "#ff3333", -- High dread / cursed collection
+	pyre     = "#ffaa33", -- Ritual pyre messages
+	victory  = "#55ff88", -- Dawn banishment / sanctuary holding / gauntlet escape
+	void     = "#ff2222", -- Anti-bunker psychic choke
+	system   = "#aaccff", -- Tool descriptions & camera status
+	recharge = "#ff8888", -- Camera capacitor cooldown
+	dimmed   = "#aaaaaa", -- Neutral / dormant status
 }
 
 ---Curated, legally distinct horror color palettes (Body, Suit, Tie)
@@ -86,6 +104,67 @@ function pale_watcher.has_visual_los(p1, p2)
 		end
 	end
 	return true
+end
+
+---Tests if a node is solid walkable ground and not a liquid.
+---@param node_name string
+---@return boolean
+function pale_watcher.is_walkable_ground(node_name)
+	local def = core.registered_nodes[node_name]
+	return (def and def.walkable and def.liquidtype == "none") and true or false
+end
+
+---Tests if a node is passable (air or non-walkable non-liquid like flora, torches).
+---@param node_name string
+---@return boolean
+function pale_watcher.is_passable_node(node_name)
+	if node_name == "air" then
+		return true
+	end
+	local def = core.registered_nodes[node_name]
+	if not def then
+		return true
+	end
+	return (not def.walkable) and (def.liquidtype == "none")
+end
+
+---Checks if an area above ground has clear vertical headroom.
+---@param pos Vector Base ground position
+---@param height integer Headroom height in blocks to verify (e.g. 3 or 4)
+---@return boolean
+function pale_watcher.has_clear_headroom(pos, height)
+	for y_off = 1, height do
+		local check_pos = {x = pos.x, y = pos.y + y_off, z = pos.z}
+		if not pale_watcher.is_passable_node(core.get_node(check_pos).name) then
+			return false
+		end
+	end
+	return true
+end
+
+---Scans vertically at (x, z) around y_center to find a solid walkable ground node with clear headroom.
+---@param x number X coordinate
+---@param y_center number Center Y elevation
+---@param z number Z coordinate
+---@param search_up integer How many blocks above y_center to search (e.g. 4)
+---@param search_down integer How many blocks below y_center to search (e.g. 6)
+---@param required_headroom? integer Blocks of headroom needed (default 3)
+---@return Vector|nil ground_pos Vector of solid ground node, or nil if none found
+function pale_watcher.find_ground_node(x, y_center, z, search_up, search_down, required_headroom)
+	local cx = math.floor(x + 0.5)
+	local cz = math.floor(z + 0.5)
+	local headroom = required_headroom or 3
+
+	for dy = search_up, -search_down, -1 do
+		local gy = math.floor(y_center + dy + 0.5)
+		local g_pos = {x = cx, y = gy, z = cz}
+		if pale_watcher.is_walkable_ground(core.get_node(g_pos).name) then
+			if pale_watcher.has_clear_headroom(g_pos, headroom) then
+				return g_pos
+			end
+		end
+	end
+	return nil
 end
 
 return pale_watcher
