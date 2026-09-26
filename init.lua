@@ -9,4 +9,4 @@ dofile(modpath .. "/fx.lua")
 dofile(modpath .. "/nodes.lua")
 dofile(modpath .. "/ritual.lua")
 dofile(modpath .. "/pale_watcher.lua")
-
+dofile(modpath .. "/chatcommands.lua")

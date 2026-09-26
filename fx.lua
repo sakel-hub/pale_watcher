@@ -437,29 +437,4 @@ core.register_on_shutdown(function()
 	pale_watcher.fx.clear_all()
 end)
 
-core.register_chatcommand("pw_clear", {
-	description = "Clears all active Pale Watcher horror HUD and visual effects",
-	privs = {},
-	func = function(name)
-		local player = core.get_player_by_name(name)
-		if not player then
-			return false, "Player not found."
-		end
-		pale_watcher.fx.clear_player(player)
-		player:set_fov(0)
-		pale_watcher.fx.clear_claustrophobic_fog(player)
-
-		-- Emergency manual recovery: clean up any legacy stuck elements from previous sessions
-		for id = 0, 50 do
-			local elem = player:hud_get(id)
-			if elem and (elem.name == "pale_watcher_flash"
-					or (type(elem.text) == "string" and elem.text:find("pale_watcher_hud_", 1, true))) then
-				player:hud_remove(id)
-			end
-		end
-
-		return true, "All Pale Watcher visual and audio effects cleared."
-	end,
-})
-
 return pale_watcher.fx
