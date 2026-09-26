@@ -33,7 +33,8 @@ local FLASH_PEAK = 0.08     -- Full-brightness blinding peak before fade begins
 local function get_static_texture(intensity, time)
 	if intensity <= 0.01 then return "" end
 	local frame = (math.floor(time * 15) % 3) + 1
-	local alpha = math.min(255, math.floor(intensity * 255))
+	-- Cap maximum static opacity to ~41% (alpha 105) so terrain, trees, and notes remain legible in the dark
+	local alpha = math.min(105, math.floor(intensity * 105))
 	return string.format("pale_watcher_hud_static_%d.png^[opacity:%d", frame, alpha)
 end
 

@@ -58,13 +58,14 @@ core.register_node("pale_watcher:cursed_page", {
 
 		-- Orphan check: if session ended or server rebooted without active session, purge immediately
 		local sid = meta:get_string("session_id")
-		if sid ~= "" and not pale_watcher.ritual.is_session_active(sid) then
+		local session_active = sid ~= "" and pale_watcher.ritual.is_session_active(sid)
+		if sid ~= "" and not session_active then
 			core.remove_node(pos)
 			return false
 		end
 
-		-- TTL expired (10 minutes): safe cleanup
-		if age >= 600 then
+		-- TTL expired: only remove if orphaned without an active encounter session
+		if not session_active and age >= 600 then
 			core.remove_node(pos)
 			return false
 		end
@@ -349,9 +350,113 @@ core.register_node("pale_watcher:ritual_pyre_burning", {
 
 -- 5. Vintage Flash Camera Tool
 local camera_cooldowns = {}
+
+local function trigger_flash_camera(itemstack, user, _pointed_thing)
+	if not user or not user:is_player() then return itemstack end
+	local name = user:get_player_name()
+	local now = core.get_gametime()
+
+	if camera_cooldowns[name] and now - camera_cooldowns[name] < 7.0 then
+		local remain = 7.0 - (now - camera_cooldowns[name])
+		core.chat_send_player(name, core.colorize("#ff8888",
+			string.format("Camera capacitor charging... (%.1fs)", remain)))
+		return itemstack
+	end
+	camera_cooldowns[name] = now
+
+	local p_pos = user:get_pos()
+	local look_dir = user:get_look_dir()
+	local eye_pos = vector.add(p_pos, {x = 0, y = 1.625, z = 0})
+
+	-- 1. Full-screen white flash overlay for the user
+	pale_watcher.fx.trigger_flash(user)
+
+	-- 2. Shutter click and bulb pop sound
+	core.sound_play("pale_watcher_camera_flash", {pos = p_pos, gain = 1.0, max_hear_distance = 35}, true)
+
+	-- 3. Transient flash light burst at eye position to illuminate surrounding nodes
+	local flash_node_pos = vector.round(vector.add(eye_pos, vector.multiply(look_dir, 1.2)))
+	if core.get_node(flash_node_pos).name == "air" then
+		core.set_node(flash_node_pos, {name = "pale_watcher:flash_light"})
+	end
+
+	-- 4. Spark and smoke particles in front of the camera lens
+	core.add_particlespawner({
+		amount = 25,
+		time = 0.2,
+		pos = {
+			min = vector.add(eye_pos, vector.multiply(look_dir, 0.5)),
+			max = vector.add(eye_pos, vector.multiply(look_dir, 0.8)),
+		},
+		vel = {
+			min = vector.multiply(look_dir, 2.0),
+			max = vector.multiply(look_dir, 6.0),
+		},
+		acc = {min = {x = -1, y = -1, z = -1}, max = {x = 1, y = 1, z = 1}},
+		exptime = {min = 0.2, max = 0.6},
+		size = {min = 1.0, max = 3.0},
+		jitter = {min = {x = -0.5, y = -0.5, z = -0.5}, max = {x = 0.5, y = 0.5, z = 0.5}},
+		texpool = {
+			{name = "pale_watcher_hud_flash.png", blend = "add"},
+		},
+		minpos = vector.add(eye_pos, vector.multiply(look_dir, 0.5)),
+		maxpos = vector.add(eye_pos, vector.multiply(look_dir, 0.8)),
+		minvel = vector.multiply(look_dir, 2.0),
+		maxvel = vector.multiply(look_dir, 6.0),
+		minacc = {x = -1, y = -1, z = -1},
+		maxacc = {x = 1, y = 1, z = 1},
+		minexptime = 0.2,
+		maxexptime = 0.6,
+		minsize = 1.0,
+		maxsize = 3.0,
+		texture = "pale_watcher_hud_flash.png",
+		glow = 14,
+	})
+
+	-- 5. Stun Pale Watcher if in line of sight (up to 25m, forward cone dot >= 0.40 or close range <= 5m)
+	local objects = core.get_objects_inside_radius(p_pos, 25.0)
+	for _, obj in ipairs(objects) do
+		local luaent = obj:get_luaentity()
+		if luaent and luaent.name == "pale_watcher:pale_watcher" then
+			local mob_pos = obj:get_pos()
+			if mob_pos then
+				local dist_to_mob = vector.distance(p_pos, mob_pos)
+				local sample_points = {
+					vector.add(mob_pos, {x = 0, y = 2.6, z = 0}),
+					vector.add(mob_pos, {x = 0, y = 1.6, z = 0}),
+					vector.add(mob_pos, {x = 0, y = 0.8, z = 0}),
+				}
+
+				local hit = false
+				for _, target_pt in ipairs(sample_points) do
+					local to_mob = vector.direction(eye_pos, target_pt)
+					local dot = vector.dot(look_dir, to_mob)
+
+					if dot >= 0.40 or dist_to_mob <= 5.0 then
+						if (pale_watcher.has_visual_los and pale_watcher.has_visual_los(eye_pos, target_pt))
+							or core.line_of_sight(eye_pos, target_pt) then
+							hit = true
+							break
+						end
+					end
+				end
+
+				if hit and luaent.on_stunned then
+					luaent:on_stunned(user, 4.0)
+					core.chat_send_player(name, core.colorize("#ffff55",
+						"★ The blinding xenon flash stuns the Pale Watcher!"))
+					break
+				end
+			end
+		end
+	end
+
+	return itemstack
+end
+
 core.register_tool("pale_watcher:flash_camera", {
 	description = "Vintage Flash Camera\n" ..
-		core.colorize("#aaccff", "Right-Click: Release high-intensity xenon flash.\n") ..
+		core.colorize("#aaccff", "Left-Click or Right-Click: Release high-intensity xenon flash.\n") ..
 		core.colorize("#ffff88", "• Stuns the Pale Watcher for 3-5s if in line of sight.\n") ..
 		core.colorize("#e0e0e0", "• Illuminates deep darkness.\n") ..
 		core.colorize("#88aaff", "Cooldown: 7 seconds."),
@@ -360,92 +465,9 @@ core.register_tool("pale_watcher:flash_camera", {
 	wield_image = "pale_watcher_flash_camera.png",
 	stack_max = 1,
 
-	on_use = function(itemstack, user, _pointed_thing)
-		if not user or not user:is_player() then return itemstack end
-		local name = user:get_player_name()
-		local now = core.get_gametime()
-
-		if camera_cooldowns[name] and now - camera_cooldowns[name] < 7.0 then
-			local remain = 7.0 - (now - camera_cooldowns[name])
-			core.chat_send_player(name, core.colorize("#ff8888",
-				string.format("Camera capacitor charging... (%.1fs)", remain)))
-			return itemstack
-		end
-		camera_cooldowns[name] = now
-
-		local p_pos = user:get_pos()
-		local look_dir = user:get_look_dir()
-		local eye_pos = vector.add(p_pos, {x = 0, y = 1.625, z = 0})
-
-		-- 1. Full-screen white flash overlay for the user
-		pale_watcher.fx.trigger_flash(user)
-
-		-- 2. Shutter click and bulb pop sound
-		core.sound_play("pale_watcher_camera_flash", {pos = p_pos, gain = 1.0, max_hear_distance = 35}, true)
-
-		-- 3. Transient flash light burst at eye position to illuminate surrounding nodes
-		local flash_node_pos = vector.round(vector.add(eye_pos, vector.multiply(look_dir, 1.2)))
-		if core.get_node(flash_node_pos).name == "air" then
-			core.set_node(flash_node_pos, {name = "pale_watcher:flash_light"})
-		end
-
-		-- 4. Spark and smoke particles in front of the camera lens
-		core.add_particlespawner({
-			amount = 25,
-			time = 0.2,
-			pos = {
-				min = vector.add(eye_pos, vector.multiply(look_dir, 0.5)),
-				max = vector.add(eye_pos, vector.multiply(look_dir, 0.8)),
-			},
-			vel = {
-				min = vector.multiply(look_dir, 2.0),
-				max = vector.multiply(look_dir, 6.0),
-			},
-			acc = {min = {x = -1, y = -1, z = -1}, max = {x = 1, y = 1, z = 1}},
-			exptime = {min = 0.2, max = 0.6},
-			size = {min = 1.0, max = 3.0},
-			jitter = {min = {x = -0.5, y = -0.5, z = -0.5}, max = {x = 0.5, y = 0.5, z = 0.5}},
-			texpool = {
-				{name = "pale_watcher_hud_flash.png", blend = "add"},
-			},
-			minpos = vector.add(eye_pos, vector.multiply(look_dir, 0.5)),
-			maxpos = vector.add(eye_pos, vector.multiply(look_dir, 0.8)),
-			minvel = vector.multiply(look_dir, 2.0),
-			maxvel = vector.multiply(look_dir, 6.0),
-			minacc = {x = -1, y = -1, z = -1},
-			maxacc = {x = 1, y = 1, z = 1},
-			minexptime = 0.2,
-			maxexptime = 0.6,
-			minsize = 1.0,
-			maxsize = 3.0,
-			texture = "pale_watcher_hud_flash.png",
-			glow = 14,
-		})
-
-		-- 5. Stun Pale Watcher if in line of sight (up to 22m, forward cone dot >= 0.60)
-		local objects = core.get_objects_inside_radius(p_pos, 22.0)
-		for _, obj in ipairs(objects) do
-			local luaent = obj:get_luaentity()
-			if luaent and luaent.name == "pale_watcher:pale_watcher" then
-				local mob_pos = obj:get_pos()
-				if mob_pos then
-					local to_mob = vector.direction(eye_pos, vector.add(mob_pos, {x = 0, y = 2.0, z = 0}))
-					local dot = vector.dot(look_dir, to_mob)
-					if dot >= 0.60 then
-						-- Line of sight raycast
-						if x_mob_core.line_of_sight(eye_pos, vector.add(mob_pos, {x = 0, y = 2.0, z = 0})) then
-							if luaent.on_stunned then
-								luaent:on_stunned(user, 3.8)
-							end
-							break
-						end
-					end
-				end
-			end
-		end
-
-		return itemstack
-	end,
+	on_use = trigger_flash_camera,
+	on_secondary_use = trigger_flash_camera,
+	on_place = trigger_flash_camera,
 })
 
 -- 6. Dimensional Cloth Drop Item

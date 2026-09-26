@@ -59,5 +59,37 @@ function pale_watcher.spawn(pos)
 	return core.add_entity(pos, "pale_watcher:pale_watcher")
 end
 
+---Checks whether a target point is visually unobstructed by opaque solid terrain.
+---Foliage (leaves, flora) and transparent blocks (glass) do not block line of sight for horror mob detection.
+---@param p1 Vector Observer eye position
+---@param p2 Vector Target mob sample position
+---@return boolean is_visible
+function pale_watcher.has_visual_los(p1, p2)
+	if core.line_of_sight(p1, p2) then
+		return true
+	end
+
+	local ray = core.raycast(p1, p2, false, false)
+	if not ray then return false end
+
+	for pt in ray do
+		if pt.type == "node" then
+			local node = core.get_node(pt.under)
+			local def = core.registered_nodes[node.name]
+			if def and def.walkable then
+				local is_semi_transparent = (core.get_item_group(node.name, "leaves") > 0) or
+					(core.get_item_group(node.name, "flora") > 0) or
+					def.sunlight_propagates or
+					(def.drawtype == "allfaces" or def.drawtype == "allfaces_optional" or
+					 def.drawtype == "glasslike" or def.drawtype == "glasslike_framed")
+				if not is_semi_transparent then
+					return false
+				end
+			end
+		end
+	end
+	return true
+end
+
 return pale_watcher
 
