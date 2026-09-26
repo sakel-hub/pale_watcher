@@ -69,10 +69,7 @@ function pale_watcher.has_visual_los(p1, p2)
 		return true
 	end
 
-	local ray = core.raycast(p1, p2, false, false)
-	if not ray then return false end
-
-	for pt in ray do
+	for pt in core.raycast(p1, p2, false, false) do
 		if pt.type == "node" then
 			local node = core.get_node(pt.under)
 			local def = core.registered_nodes[node.name]
