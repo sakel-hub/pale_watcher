@@ -456,7 +456,7 @@ end
 
 core.register_tool("pale_watcher:flash_camera", {
 	description = "Vintage Flash Camera\n" ..
-		core.colorize("#aaccff", "Left-Click or Right-Click: Release high-intensity xenon flash.\n") ..
+		core.colorize("#aaccff", "Right-Click: Release high-intensity xenon flash.\n") ..
 		core.colorize("#ffff88", "• Stuns the Pale Watcher for 3-5s if in line of sight.\n") ..
 		core.colorize("#e0e0e0", "• Illuminates deep darkness.\n") ..
 		core.colorize("#88aaff", "Cooldown: 7 seconds."),
@@ -465,7 +465,6 @@ core.register_tool("pale_watcher:flash_camera", {
 	wield_image = "pale_watcher_flash_camera.png",
 	stack_max = 1,
 
-	on_use = trigger_flash_camera,
 	on_secondary_use = trigger_flash_camera,
 	on_place = trigger_flash_camera,
 })
