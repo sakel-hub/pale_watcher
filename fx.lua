@@ -124,7 +124,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 
 	-- HUD Overlays: Responsive Vignette + Animated Static
 	if state.intensity > 0.02 then
-		-- 1. Responsive Vignette
+		-- 1. Responsive Vignette (rendered on top of static noise)
 		local vignette_alpha = math.min(255, math.floor(state.intensity * 230 + 25))
 		local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vignette_alpha)
 		if not state.hud_vignette_id then
@@ -135,7 +135,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 				scale = {x = -100, y = -100}, -- Responsively spans 100% of viewport
 				text = vig_tex,
 				alignment = {x = 0, y = 0},
-				z_index = -3,
+				z_index = -2, -- Above static noise (-3) so dark border frames the view
 			})
 		else
 			player:hud_change(state.hud_vignette_id, "text", vig_tex)
@@ -151,7 +151,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 				scale = {x = -100, y = -100},
 				text = static_tex,
 				alignment = {x = 0, y = 0},
-				z_index = -2,
+				z_index = -3, -- Below vignette (-2)
 			})
 		else
 			player:hud_change(state.hud_static_id, "text", static_tex)
