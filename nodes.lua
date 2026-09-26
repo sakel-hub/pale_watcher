@@ -426,7 +426,7 @@ core.register_tool("pale_watcher:flash_camera", {
 		local objects = core.get_objects_inside_radius(p_pos, 22.0)
 		for _, obj in ipairs(objects) do
 			local luaent = obj:get_luaentity()
-			if luaent and (luaent.name == "pale_watcher:pale_watcher" or luaent.name == "x_slenderman:slenderman") then
+			if luaent and luaent.name == "pale_watcher:pale_watcher" then
 				local mob_pos = obj:get_pos()
 				if mob_pos then
 					local to_mob = vector.direction(eye_pos, vector.add(mob_pos, {x = 0, y = 2.0, z = 0}))
@@ -632,17 +632,6 @@ core.register_craft({
 		{"", "", ""},
 	},
 })
-
--- Backwards-compatible aliases
-core.register_alias("x_slenderman:flash_light", "pale_watcher:flash_light")
-core.register_alias("x_slenderman:cursed_page", "pale_watcher:cursed_page")
-core.register_alias("x_slenderman:cursed_page_item", "pale_watcher:cursed_page")
-core.register_alias("x_slenderman:ritual_pyre", "pale_watcher:ritual_pyre")
-core.register_alias("x_slenderman:ritual_pyre_burning", "pale_watcher:ritual_pyre_burning")
-core.register_alias("x_slenderman:flash_camera", "pale_watcher:flash_camera")
-core.register_alias("x_slenderman:dimensional_cloth", "pale_watcher:dimensional_cloth")
-core.register_alias("x_slenderman:shroud_of_stalking", "pale_watcher:shroud_of_stalking")
-core.register_alias("x_slenderman:static_core", "pale_watcher:static_core")
 
 -- LBM to purge any transient flash light nodes on mapblock load / server reboot
 core.register_lbm({

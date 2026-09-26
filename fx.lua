@@ -7,19 +7,20 @@
 ---@class PaleWatcherFX
 pale_watcher.fx = {}
 
+---@class PaleWatcherPlayerFXState
+---@field hud_static_id? integer
+---@field hud_vignette_id? integer
+---@field hud_flash_id? integer
+---@field flash_timer? number
+---@field sound_handle? any
+---@field intensity number
+---@field time number
+---@field is_gazing boolean
+---@field fog_active boolean
+---@field _refreshed_this_tick boolean
+
+---@type table<string, PaleWatcherPlayerFXState>
 local active_fx = {}
--- active_fx[player_name] = {
---     hud_static_id = id,
---     hud_vignette_id = id,
---     hud_flash_id = id,
---     flash_timer = 0,
---     sound_handle = handle,
---     intensity = 0.0,
---     time = 0.0,
---     is_gazing = false,
---     fog_active = false,
---     _refreshed_this_tick = false
--- }
 
 local function get_static_texture(intensity, time)
 	if intensity <= 0.01 then return "" end

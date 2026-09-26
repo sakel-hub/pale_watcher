@@ -15,9 +15,6 @@ pale_watcher = {
 	ritual = {},
 }
 
--- Backwards-compatible alias for dependent mods
-x_slenderman = pale_watcher
-
 ---Curated, legally distinct horror color palettes (Body, Suit, Tie)
 pale_watcher.palettes = {
 	abyssal_void = {

@@ -10,7 +10,6 @@
       "core",
       "minetest",
       "pale_watcher",
-      "x_slenderman",
       "x_mob_core",
       "vector",
       "ItemStack",

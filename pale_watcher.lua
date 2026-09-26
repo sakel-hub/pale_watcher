@@ -812,20 +812,4 @@ x_mob_core.register_spawn("pale_watcher:pale_watcher", {
 	active_object_count = 1,
 })
 
--- Backwards-compatible mob and entity aliases
-core.register_alias("x_slenderman:slenderman", "pale_watcher:pale_watcher")
-core.register_entity(":x_slenderman:slenderman", {
-	initial_properties = {
-		visual = "mesh",
-		mesh = "pale_watcher_mob.glb",
-	},
-	on_activate = function(self, staticdata, _dtime_s)
-		local pos = self.object:get_pos()
-		self.object:remove()
-		if pos then
-			core.add_entity(pos, "pale_watcher:pale_watcher", staticdata)
-		end
-	end,
-})
-
 return true

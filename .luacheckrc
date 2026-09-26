@@ -24,6 +24,5 @@ read_globals = {
     "pova"
 }
 globals = {
-    "pale_watcher",
-    "x_slenderman"
+    "pale_watcher"
 }
