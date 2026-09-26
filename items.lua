@@ -72,9 +72,9 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 				end
 
 				if hit and luaent.on_stunned then
-					luaent:on_stunned(user, 1.8)
+					luaent:on_stunned(user, 0.6)
 					core.chat_send_player(name, core.colorize(colors.warning,
-						"★ The blinding xenon flash stuns the Pale Watcher!"))
+						"★ The blinding xenon flash repels the Pale Watcher!"))
 					break
 				end
 			end
@@ -86,8 +86,8 @@ end
 
 core.register_tool("pale_watcher:flash_camera", {
 	description = "Vintage Flash Camera\n" ..
-		core.colorize(colors.system, "Right-Click: Release high-intensity xenon flash.\n") ..
-		core.colorize(colors.warning, "• Stuns the Pale Watcher for 3-5s if in line of sight.\n") ..
+		core.colorize(colors.system, "Left-Click: Release high-intensity xenon flash.\n") ..
+		core.colorize(colors.warning, "• Blinds the Pale Watcher, forcing an evasive retreat.\n") ..
 		core.colorize("#e0e0e0", "• Illuminates deep darkness.\n") ..
 		core.colorize(colors.system, "Cooldown: 7 seconds."),
 	short_description = "Flash Camera",
@@ -95,8 +95,7 @@ core.register_tool("pale_watcher:flash_camera", {
 	wield_image = "pale_watcher_flash_camera.png",
 	stack_max = 1,
 
-	on_secondary_use = trigger_flash_camera,
-	on_place = trigger_flash_camera,
+	on_use = trigger_flash_camera,
 })
 
 -- 2. Dimensional Cloth Drop Item

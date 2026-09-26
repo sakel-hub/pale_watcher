@@ -110,6 +110,57 @@ local function find_blind_spot_node(target_player, _current_mob_pos, step_min_di
 	return nil
 end
 
+---Finds a guaranteed safe, walkable retreat position in the distance away from the player.
+---Tiers:
+---1. Distant blind spots (26-38m away, behind or occluded by trees/hills)
+---2. Mid-range blind spots (16-24m away)
+---3. Radial multi-angle ground search (12 angles around player at 20-28m)
+---4. Rear ground search along look direction
+---5. Ultimate safety fallback: guaranteed air/ground offset
+---@param target_player ObjectRef
+---@param current_mob_pos Vector
+---@return Vector escape_pos
+local function find_guaranteed_retreat_pos(target_player, current_mob_pos)
+	-- Tier 1 & 2: Prefer true blind spot with line-of-sight occlusion
+	local cand = find_blind_spot_node(target_player, current_mob_pos, 26, 38)
+	if cand then return cand end
+	cand = find_blind_spot_node(target_player, current_mob_pos, 16, 24)
+	if cand then return cand end
+
+	local p_pos = target_player:get_pos()
+	if not p_pos then return current_mob_pos end
+
+	local look_dir = target_player:get_look_dir()
+	local p_yaw = core.dir_to_yaw(look_dir)
+
+	-- Tier 3: Scan 12 angles around player at varying distances (28m down to 16m)
+	for dist = 28, 16, -6 do
+		for step = 0, 11 do
+			local angle = p_yaw + math.pi + ((step - 5.5) * (math.pi / 6.0))
+			local cx = p_pos.x - math.sin(angle) * dist
+			local cz = p_pos.z + math.cos(angle) * dist
+			local ground = pale_watcher.find_ground_node(cx, p_pos.y, cz, 12, 16, 3)
+			if ground then
+				return {x = ground.x, y = ground.y + 1, z = ground.z}
+			end
+		end
+	end
+
+	-- Tier 4: Search straight behind the player
+	local inv_dir = vector.multiply(vector.normalize({x = look_dir.x, y = 0, z = look_dir.z}), -1)
+	for d = 24, 12, -4 do
+		local cx = p_pos.x + inv_dir.x * d
+		local cz = p_pos.z + inv_dir.z * d
+		local ground = pale_watcher.find_ground_node(cx, p_pos.y, cz, 10, 15, 3)
+		if ground then
+			return {x = ground.x, y = ground.y + 1, z = ground.z}
+		end
+	end
+
+	-- Tier 5: Absolute emergency fallback (offset horizontally from player)
+	return vector.add(p_pos, {x = inv_dir.x * 20, y = 0.5, z = inv_dir.z * 20})
+end
+
 ---Finds a safe, walkable ground position directly in front of the player for the gauntlet intercept ambush.
 ---Guarantees solid footing and 4 blocks of clear vertical headroom so The Pale Watcher (3.2m tall)
 ---never spawns inside blocks, underground, or at player foot level.
@@ -237,37 +288,20 @@ local function step_stun_window(self, dtime, players, pos)
 	self.object:set_velocity({x = 0, y = 0, z = 0})
 
 	if self.stun_timer <= 0 then
-		-- Stun expired: Immediate evasive phase retreat into distance
+		-- Stun expired: Immediate guaranteed evasive phase retreat into distance
 		local target = self.target_player or players[1]
-		local escape_pos = target and find_blind_spot_node(target, pos, 28, 42)
-		if not escape_pos and target then
-			escape_pos = find_blind_spot_node(target, pos, 16, 26)
-		end
-		if not escape_pos and target then
-			-- Guaranteed fallback: safe ground behind player
-			local p_pos = target:get_pos()
-			if p_pos then
-				local p_yaw = core.dir_to_yaw(target:get_look_dir())
-				local rear_x = p_pos.x + math.sin(p_yaw) * 25
-				local rear_z = p_pos.z - math.cos(p_yaw) * 25
-				local ground = pale_watcher.find_ground_node(rear_x, p_pos.y, rear_z, 10, 15, 3)
-				if ground then
-					escape_pos = {x = ground.x, y = ground.y + 1, z = ground.z}
-				end
-			end
-		end
+		local escape_pos = find_guaranteed_retreat_pos(target, pos)
 
 		-- Dramatic departure visual & audio at current position BEFORE teleporting
 		pale_watcher.particles.teleport_rift(pos)
 		core.sound_play("pale_watcher_scare", {pos = pos, gain = 0.8, max_hear_distance = 35}, true)
 
-		if escape_pos then
-			self.object:set_pos(escape_pos)
-			-- Arrival puff & distant audio
-			pale_watcher.particles.void_mist(escape_pos, 2.5, 25)
-			core.sound_play("pale_watcher_static", {pos = escape_pos, gain = 0.6, max_hear_distance = 25}, true)
-			x_mob_core.emit("pale_watcher:teleport_escaped", self, pos, escape_pos)
-		end
+		self.object:set_pos(escape_pos)
+		-- Arrival puff & distant audio
+		pale_watcher.particles.void_mist(escape_pos, 2.5, 25)
+		core.sound_play("pale_watcher_static", {pos = escape_pos, gain = 0.6, max_hear_distance = 25}, true)
+		x_mob_core.emit("pale_watcher:teleport_escaped", self, pos, escape_pos)
+
 		self.state = "stalking"
 	end
 
@@ -1029,10 +1063,17 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 
 	---Called when hit by high-intensity Flash Camera.
 	---@param user ObjectRef
-	---@param duration number Stun duration in seconds (3-5s)
+	---@param duration number Stun duration in seconds (0.6s)
 	on_stunned = function(self, user, duration)
+		if self.state == "banishing" or self.is_dead then return end
+
+		-- If already retreating from a flash, do not reset countdown
+		if self.state == "stunned" and (self.stun_timer or 0) > 0 then
+			return
+		end
+
 		self.state = "stunned"
-		self.stun_timer = duration or 3.8
+		self.stun_timer = duration or 0.6
 		self.object:set_velocity({x = 0, y = 0, z = 0})
 
 		x_mob_core.emit("pale_watcher:stunned", self, user, self.stun_timer)

@@ -29,6 +29,22 @@ core.register_node("pale_watcher:flash_light", {
 })
 
 -- 2. Cursed Page (Wall-Mounted Node)
+local function collect_page(pos, player)
+	if not player or not player:is_player() then return end
+
+	-- Burning paper particle effect (preset)
+	pale_watcher.particles.page_pickup(pos)
+
+	-- Sound of burning paper
+	core.sound_play("pale_watcher_paper_burn", {pos = pos, max_hear_distance = 25}, true)
+
+	-- Notify session manager (tracks progress in session & HUD only - zero inventory clutter)
+	pale_watcher.ritual.on_page_collected(pos, player)
+
+	-- Remove page node cleanly
+	core.remove_node(pos)
+end
+
 core.register_node("pale_watcher:cursed_page", {
 	description = "Cursed Page",
 	short_description = "Cursed Page",
@@ -36,7 +52,7 @@ core.register_node("pale_watcher:cursed_page", {
 	tiles = {"pale_watcher_cursed_page.png"},
 	inventory_image = "pale_watcher_cursed_page_item.png",
 	wield_image = "pale_watcher_cursed_page_item.png",
-	drop = "pale_watcher:cursed_page_item",
+	drop = "",
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
@@ -97,19 +113,16 @@ core.register_node("pale_watcher:cursed_page", {
 	end,
 
 	on_rightclick = function(pos, _node, clicker, _itemstack, _pointed_thing)
-		if not clicker or not clicker:is_player() then return end
+		collect_page(pos, clicker)
+	end,
 
-		-- Burning paper particle effect (preset)
-		pale_watcher.particles.page_pickup(pos)
+	on_punch = function(pos, _node, puncher, _pointed_thing)
+		collect_page(pos, puncher)
+	end,
 
-		-- Sound of burning paper
-		core.sound_play("pale_watcher_paper_burn", {pos = pos, max_hear_distance = 25}, true)
-
-		-- Notify session manager (tracks progress in session & HUD only - zero inventory clutter)
-		pale_watcher.ritual.on_page_collected(pos, clicker)
-
-		-- Remove page node cleanly
-		core.remove_node(pos)
+	on_dig = function(pos, _node, digger)
+		collect_page(pos, digger)
+		return true
 	end,
 })
 

@@ -30,11 +30,24 @@ local active_flashes = {}
 local FLASH_DURATION = 0.65 -- Total flash duration in seconds
 local FLASH_PEAK = 0.08     -- Full-brightness blinding peak before fade begins
 
+local DEFAULT_MAX_STATIC_ALPHA = 48    -- ~19% max opacity: provides eerie VHS noise without obscuring world vision
+local DEFAULT_MAX_VIGNETTE_ALPHA = 175  -- ~68% max opacity: darkens screen borders without blinding peripheral vision
+
+local function get_max_static_alpha()
+	local s = core.settings:get("pale_watcher_static_opacity")
+	return tonumber(s) or DEFAULT_MAX_STATIC_ALPHA
+end
+
+local function get_max_vignette_alpha()
+	local s = core.settings:get("pale_watcher_vignette_opacity")
+	return tonumber(s) or DEFAULT_MAX_VIGNETTE_ALPHA
+end
+
 local function get_static_texture(intensity, time)
 	if intensity <= 0.01 then return "" end
 	local frame = (math.floor(time * 15) % 3) + 1
-	-- Cap maximum static opacity to ~41% (alpha 105) so terrain, trees, and notes remain legible in the dark
-	local alpha = math.min(105, math.floor(intensity * 105))
+	local max_alpha = get_max_static_alpha()
+	local alpha = math.min(max_alpha, math.floor(intensity * max_alpha))
 	return string.format("pale_watcher_hud_static_%d.png^[opacity:%d", frame, alpha)
 end
 
@@ -135,7 +148,8 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 	-- HUD Overlays: Responsive Vignette + Animated Static
 	if state.intensity > 0.02 then
 		-- 1. Responsive Vignette (rendered on top of static noise)
-		local vignette_alpha = math.min(255, math.floor(state.intensity * 230 + 25))
+		local max_vig = get_max_vignette_alpha()
+		local vignette_alpha = math.min(max_vig, math.floor(state.intensity * (max_vig - 25) + 25))
 		local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vignette_alpha)
 		if not state.hud_vignette_id then
 			state.hud_vignette_id = player:hud_add({
