@@ -89,26 +89,35 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 			state.is_gazing = true
 		end
 
-		-- Narrows FOV dynamically based on proximity (0.85 down to 0.55)
-		local fov_factor = 0.85 - (1.0 - math.min(1.0, distance / 25.0)) * 0.30
-		fov_factor = math.max(0.55, math.min(0.90, fov_factor))
+		-- Dread Drag: Exponential movement slowdown & tunnel vision within 8m proximity
+		local slow_factor
+		local fov_factor
+		if distance <= 8.0 then
+			-- Heavy psychic drag: drops sharply from 0.45 down to 0.15 at 3.5m
+			local dread_t = math.max(0.0, math.min(1.0, (distance - 3.5) / 4.5))
+			slow_factor = 0.15 + (dread_t * 0.30)
+			fov_factor = 0.45 + (dread_t * 0.15)
+		else
+			-- Standard medium-range gaze slow (0.70 down to 0.45 at 8m)
+			local gaze_t = math.max(0.0, math.min(1.0, (distance - 8.0) / 16.0))
+			slow_factor = 0.45 + (gaze_t * 0.25)
+			fov_factor = 0.60 + (gaze_t * 0.25)
+		end
 		player:set_fov(fov_factor, true, 0.25)
-
-		-- Slow movement speed during direct gaze
-		local slow_factor = 0.70 - (1.0 - math.min(1.0, distance / 20.0)) * 0.35
 		pale_watcher.physics.apply_gaze_slow(player, slow_factor)
 
-		-- Sanity & Health drain
+		-- Sanity & Health drain (accelerates under 8m dread drag)
 		if distance <= 20.0 then
+			local drain_interval = (distance <= 8.0) and 0.75 or 1.0
 			state._drain_acc = (state._drain_acc or 0) + dtime
-			if state._drain_acc >= 1.0 then
+			if state._drain_acc >= drain_interval then
 				state._drain_acc = 0
 				local cur_hp = player:get_hp()
 				if cur_hp > 1 then
 					player:set_hp(cur_hp - 1, "pale_watcher:gaze_drain")
 					core.sound_play("pale_watcher_static", {
 						to_player = name,
-						gain = 0.4,
+						gain = (distance <= 8.0) and 0.6 or 0.4,
 						pitch = 1.2
 					})
 				end

@@ -95,7 +95,7 @@ end
 function pale_watcher.physics.apply_gaze_slow(player, factor)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
-	local clamped = math.max(0.2, math.min(1.0, factor))
+	local clamped = math.max(0.12, math.min(1.0, factor))
 	active_gaze_factors[name] = clamped
 
 	if core.global_exists("player_monoids") then

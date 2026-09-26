@@ -589,6 +589,23 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		if observer and x_mob_core.is_player_alive(observer) then
 			local obs_dist = vector.distance(pos, observer:get_pos())
 			pale_watcher.fx.update_player(observer, obs_dist, true, dtime, tier)
+
+			-- Proximity Slip: If player approaches within <= 3.5m while staring,
+			-- the Watcher refuses to be an easy melee target and slips into the void!
+			if obs_dist <= 3.5 then
+				pale_watcher.particles.teleport_rift(pos)
+				core.sound_play("pale_watcher_scare", {pos = pos, gain = 0.8, max_hear_distance = 35}, true)
+				local slip_pos = find_blind_spot_node(observer, pos, 18, 28)
+				if not slip_pos then
+					slip_pos = find_blind_spot_node(observer, pos, 10, 18)
+				end
+				if slip_pos then
+					self.object:set_pos(slip_pos)
+					pale_watcher.particles.void_mist(slip_pos, 2.5, 20)
+					core.sound_play("pale_watcher_static", {pos = slip_pos, gain = 0.6, max_hear_distance = 25}, true)
+				end
+				return
+			end
 		end
 		return
 	end
@@ -802,24 +819,52 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	end,
 
 	on_punch = function(self, puncher, _tflp, _tool_capabilities, _dir, _damage)
-		-- Combat Resilience: Cannot be damaged by normal weapons
-		-- Triggers immediate dimensional slip retreat into tree cover
+		-- Combat Resilience: Immune to physical weapons
+		-- Triggers immediate violent Psychic Backlash & dimensional slip retreat
 		if puncher and puncher:is_player() then
 			x_mob_core.indicate_damage(self.object)
 			local cur_pos = self.object:get_pos()
+			local p_pos = puncher:get_pos()
+			local name = puncher:get_player_name()
 
-			-- Departure dimensional rift particles
+			-- 1. Departure dimensional rift particles & scare sting
 			pale_watcher.particles.teleport_rift(cur_pos)
+			core.sound_play("pale_watcher_scare", {pos = cur_pos, gain = 1.0, max_hear_distance = 40}, true)
 
-			local escape_pos = find_blind_spot_node(puncher, cur_pos, 18, 28)
+			-- 2. Kinetic Shockwave: Blast attacker violently backward away from the entity
+			if p_pos then
+				local blast_dir = vector.direction(cur_pos, p_pos)
+				blast_dir.y = 0.35
+				local blast_vel = vector.multiply(vector.normalize(blast_dir), 11.0)
+				puncher:add_velocity(blast_vel)
+			end
+
+			-- 3. Psychic Backlash Damage: Deals 4 direct HP damage (bypassing armor mitigation)
+			local cur_hp = puncher:get_hp()
+			local backlash_dmg = 4
+			if cur_hp > backlash_dmg then
+				puncher:set_hp(cur_hp - backlash_dmg, "pale_watcher:psychic_backlash")
+			else
+				puncher:set_hp(1, "pale_watcher:psychic_backlash")
+			end
+
+			-- 4. Disorienting static shock on attacker's HUD
+			pale_watcher.fx.trigger_flash(puncher)
+
+			-- 5. Chat warning explaining why physical combat failed
+			core.chat_send_player(name, core.colorize(colors.void,
+				"★ An eldritch shockwave repels your strike! Physical weapons cannot harm the void!"))
+
+			-- 6. Dimensional phase retreat into distant tree cover
+			local escape_pos = find_blind_spot_node(puncher, cur_pos, 22, 34)
 			if not escape_pos then
-				escape_pos = find_blind_spot_node(puncher, cur_pos, 10, 18)
+				escape_pos = find_blind_spot_node(puncher, cur_pos, 12, 20)
 			end
 			if escape_pos then
 				self.object:set_pos(escape_pos)
 				pale_watcher.particles.void_mist(escape_pos, 2.5, 20)
+				core.sound_play("pale_watcher_static", {pos = escape_pos, gain = 0.6, max_hear_distance = 25}, true)
 			end
-			core.sound_play("pale_watcher_static", {pos = self.object:get_pos(), gain = 0.8, max_hear_distance = 25}, true)
 		end
 		return true -- Immune to standard weapon damage
 	end,
