@@ -776,10 +776,18 @@ local function step_pyre_banishment(self, dtime)
 			end
 		end
 
-		-- Guaranteed rare dimensional drops right into the pyre
+		-- Guaranteed rare dimensional drops launching in a radial holy fountain
 		local drop_pos = {x = pyre_pos.x, y = pyre_pos.y + 0.8, z = pyre_pos.z}
-		core.item_drop(ItemStack("pale_watcher:dimensional_cloth 3"), nil, drop_pos)
-		core.item_drop(ItemStack("pale_watcher:static_core 1"), nil, drop_pos)
+		x_mob_core.drop_items(drop_pos, {
+			{ name = "pale_watcher:dimensional_cloth", min = 3, max = 3, chance = 1.0 },
+			{ name = "pale_watcher:static_core", min = 1, max = 1, chance = 1.0 },
+		}, {
+			particle_color = "ffaa33",
+			up_vel_min = 3.6,
+			up_vel_max = 5.0,
+			spread_min = 0.8,
+			spread_max = 1.6,
+		})
 
 		-- End ritual session with victory
 		if self.session_id then
