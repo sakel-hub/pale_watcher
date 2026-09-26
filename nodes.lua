@@ -174,7 +174,7 @@ core.register_node("pale_watcher:ritual_pyre", {
 		local name = clicker:get_player_name()
 
 		-- Check active session for this player / location
-		local session = pale_watcher.ritual.get_player_session(name, pos)
+		local session, sid = pale_watcher.ritual.get_player_session(name, pos)
 		if not session then
 			core.chat_send_player(name,
 				core.colorize(colors.dimmed, "The Pyre remains cold. No dark presence is tethered here."))
@@ -198,8 +198,15 @@ core.register_node("pale_watcher:ritual_pyre", {
 		core.chat_send_all(core.colorize(colors.pyre,
 			"★ The 8 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!"))
 
+		-- Start the burning pyre timer and towering flame particles
+		local timer = core.get_node_timer(pos)
+		if timer then
+			timer:start(45)
+		end
+		pale_watcher.particles.pyre_roaring_flames(pos)
+
 		-- Begin Cleansing Flame Banishment Sequence
-		pale_watcher.ritual.trigger_pyre_banishment(pos, clicker)
+		pale_watcher.ritual.trigger_pyre_banishment(pos, clicker, sid)
 	end,
 })
 

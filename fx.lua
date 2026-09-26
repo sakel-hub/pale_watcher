@@ -194,14 +194,17 @@ end
 
 ---Triggers full-screen camera flash effect for a player with smooth quadratic opacity fade-out.
 ---@param player ObjectRef
-function pale_watcher.fx.trigger_flash(player)
+---@param duration? number Optional duration override in seconds
+function pale_watcher.fx.trigger_flash(player, duration)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	local flash = active_flashes[name]
+	local total_dur = duration or FLASH_DURATION
 
 	if flash then
 		-- Re-burst existing flash: reset timer and immediately restore peak opacity
-		flash.timer = FLASH_DURATION
+		flash.timer = total_dur
+		flash.max_duration = total_dur
 		player:hud_change(flash.id, "text", "pale_watcher_hud_flash.png^[opacity:255")
 	else
 		local id = player:hud_add({
@@ -215,12 +218,13 @@ function pale_watcher.fx.trigger_flash(player)
 		})
 		active_flashes[name] = {
 			id = id,
-			timer = FLASH_DURATION,
+			timer = total_dur,
+			max_duration = total_dur,
 		}
 	end
 
 	-- Fail-safe timer to guarantee removal if server steps are interrupted
-	core.after(FLASH_DURATION + 0.15, function()
+	core.after(total_dur + 0.15, function()
 		local f = active_flashes[name]
 		if f and f.timer <= 0.05 then
 			if player:is_player() then
@@ -341,11 +345,12 @@ end
 core.register_globalstep(function(dtime)
 	-- 1. Camera flash decay with smooth quadratic ease-out opacity transition
 	if next(active_flashes) then
-		local fade_window = FLASH_DURATION - FLASH_PEAK
 		for name, flash in pairs(active_flashes) do
 			flash.timer = flash.timer - dtime
 			local player = core.get_player_by_name(name)
 
+			local max_dur = flash.max_duration or FLASH_DURATION
+			local fade_window = max_dur - FLASH_PEAK
 			if flash.timer > 0 and player then
 				local alpha
 				if flash.timer >= fade_window then

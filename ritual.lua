@@ -456,23 +456,43 @@ end
 ---Executes the Cleansing Flame Banishment Sequence.
 ---Forcibly teleports Pale Watcher into the pyre, paralyzes him, plays death implode, and implodes into loot.
 ---@param pyre_pos Vector
----@param summoner ObjectRef
-function pale_watcher.ritual.trigger_pyre_banishment(pyre_pos, summoner)
-	-- Find closest active Pale Watcher
-	local target_session_id = nil
-	local min_dist = math.huge
+---@param summoner? ObjectRef
+---@param session_id? string
+function pale_watcher.ritual.trigger_pyre_banishment(pyre_pos, summoner, session_id)
+	local target_session_id = session_id
+	if not target_session_id and summoner and summoner:is_player() then
+		local _, sid = pale_watcher.ritual.get_player_session(summoner:get_player_name(), pyre_pos)
+		target_session_id = sid
+	end
 
-	for id, session in pairs(active_sessions) do
-		local d = vector.distance(pyre_pos, session.center)
-		if d < min_dist then
-			min_dist = d
-			target_session_id = id
+	if not target_session_id then
+		-- Find closest active Pale Watcher
+		local min_dist = math.huge
+		for id, session in pairs(active_sessions) do
+			local d = vector.distance(pyre_pos, session.center)
+			if d < min_dist then
+				min_dist = d
+				target_session_id = id
+			end
 		end
 	end
 
 	if not target_session_id then return end
 	local session = active_sessions[target_session_id]
+	if not session then return end
+
 	local mob_obj = session.mob_ref
+	if not mob_obj or not mob_obj:is_valid() then
+		-- Fallback: If mob was despawned or unloaded during page collection, summon fresh entity at pyre
+		mob_obj = core.add_entity(vector.add(pyre_pos, {x = 0, y = 0.5, z = 0}), "pale_watcher:pale_watcher", "pyre_banish")
+		if mob_obj then
+			session.mob_ref = mob_obj
+			local ent = mob_obj:get_luaentity()
+			if ent then
+				ent.session_id = target_session_id
+			end
+		end
+	end
 
 	if mob_obj and mob_obj:is_valid() then
 		local ent = mob_obj:get_luaentity()
@@ -521,10 +541,23 @@ core.register_globalstep(function(dtime)
 	ritual_step_timer = 0
 
 	for session_id, session in pairs(active_sessions) do
-		local mob_obj = session.mob_ref
-		if not mob_obj or not mob_obj:is_valid() then
-			pale_watcher.ritual.end_session(session_id, false)
+		-- Check if any players are participating in this session
+		local has_online_players = false
+		for pname, _ in pairs(session.players) do
+			if core.get_player_by_name(pname) then
+				has_online_players = true
+				break
+			end
+		end
+
+		if not has_online_players then
+			-- No players participating: increment orphan timeout
+			session.orphan_timer = (session.orphan_timer or 0) + 1.0
+			if session.orphan_timer >= 60.0 then
+				pale_watcher.ritual.end_session(session_id, false)
+			end
 		else
+			session.orphan_timer = 0
 			session.elapsed_time = (session.elapsed_time or 0) + 1.0
 			session.stalker_tier = calculate_stalker_tier(session)
 		end

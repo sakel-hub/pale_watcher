@@ -245,22 +245,74 @@ end
 
 ---Massive pyre implosion burst when the Pale Watcher is cleansed in the flames.
 ---@param pos Vector Mob/Pyre position
+---@param duration? number Duration of burst in seconds (default 1.5)
 ---@return integer|nil
-function pale_watcher.particles.pyre_implosion(pos)
+function pale_watcher.particles.pyre_implosion(pos, duration)
+	local dur = duration or 1.5
 	return pale_watcher.particles.spawn({
-		amount = 120,
-		time = 1.5,
-		pos = {min = vector.subtract(pos, 0.8), max = vector.add(pos, {x = 0.8, y = 3.2, z = 0.8})},
-		vel = {min = {x = -2.0, y = 1.0, z = -2.0}, max = {x = 2.0, y = 4.0, z = 2.0}},
-		acc = {min = {x = 0, y = -2.0, z = 0}, max = {x = 0, y = -0.5, z = 0}},
-		exptime = {min = 1.0, max = 2.5},
-		size = {min = 1.5, max = 4.0},
+		amount = 160,
+		time = dur,
+		pos = {
+			min = vector.subtract(pos, {x = 0.8, y = 0.2, z = 0.8}),
+			max = vector.add(pos, {x = 0.8, y = 3.2, z = 0.8}),
+		},
+		vel = {
+			min = {x = -1.5, y = 0.8, z = -1.5},
+			max = {x = 1.5, y = 4.0, z = 1.5},
+		},
+		acc = {
+			min = {x = -0.5, y = -1.5, z = -0.5},
+			max = {x = 0.5, y = 0.5, z = 0.5},
+		},
+		exptime = {min = 0.8, max = 2.0},
+		size = {min = 1.5, max = 4.5},
+		jitter = {min = {x = -0.5, y = -0.5, z = -0.5}, max = {x = 0.5, y = 0.5, z = 0.5}},
 		texpool = {
 			{name = "pale_watcher_particles.png^[verticalframe:8:1", blend = "add"},
 			{name = "pale_watcher_particles.png^[verticalframe:8:4", blend = "alpha"},
 			{name = "pale_watcher_particles.png^[verticalframe:8:7", blend = "add"},
 			{name = "pale_watcher_ritual_pyre_flame.png^[verticalframe:8:1", blend = "add"},
+			{name = "pale_watcher_ritual_pyre_flame.png^[verticalframe:8:3", blend = "add"},
+			{name = "pale_watcher_hud_flash.png", blend = "add"},
 		},
+		scale_tween = {start = 2.0, finish = 0.1},
+		alpha_tween = {start = 1.0, finish = 0.0},
+		glow = 14,
+	})
+end
+
+---Blinding supernova detonation shockwave when the Pale Watcher completely implodes.
+---@param pos Vector Center detonation point
+---@return integer|nil
+function pale_watcher.particles.pyre_supernova(pos)
+	return pale_watcher.particles.spawn({
+		amount = 220,
+		time = 0.3,
+		pos = {
+			min = vector.subtract(pos, {x = 0.5, y = 0.2, z = 0.5}),
+			max = vector.add(pos, {x = 0.5, y = 2.0, z = 0.5}),
+		},
+		vel = {
+			min = {x = -6.0, y = -0.5, z = -6.0},
+			max = {x = 6.0, y = 5.0, z = 6.0},
+		},
+		acc = {
+			min = {x = -2.0, y = -3.0, z = -2.0},
+			max = {x = 2.0, y = -0.5, z = 2.0},
+		},
+		exptime = {min = 0.8, max = 2.2},
+		size = {min = 2.5, max = 6.0},
+		jitter = {min = {x = -0.8, y = -0.8, z = -0.8}, max = {x = 0.8, y = 0.8, z = 0.8}},
+		texpool = {
+			{name = "pale_watcher_hud_flash.png", blend = "add"},
+			{name = "pale_watcher_ritual_pyre_flame.png^[verticalframe:8:1", blend = "add"},
+			{name = "pale_watcher_ritual_pyre_flame.png^[verticalframe:8:5", blend = "add"},
+			{name = "pale_watcher_particles.png^[verticalframe:8:1", blend = "add"},
+			{name = "pale_watcher_particles.png^[verticalframe:8:7", blend = "add"},
+		},
+		scale_tween = {start = 3.0, finish = 0.2},
+		alpha_tween = {start = 1.0, finish = 0.0},
+		glow = 14,
 	})
 end
 

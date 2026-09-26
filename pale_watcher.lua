@@ -695,6 +695,103 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 	end
 end
 
+---Cinematic step routine for Cleansing Flame Pyre banishment.
+---Locks the Pale Watcher in holy fire, facing the summoner, plays stagger into death_implode,
+---levitates him upward into the vortex, detonates in a supernova burst, and awards rare dimensional loot.
+---@param self table Entity table
+---@param dtime number Delta time in seconds
+local function step_pyre_banishment(self, dtime)
+	self.banish_timer = (self.banish_timer or 0) + dtime
+	local t = self.banish_timer
+	local pyre_pos = self.banish_pyre_pos
+	if not pyre_pos then return end
+
+	local summoner = self.banish_summoner
+	local cur_pos = self.object:get_pos() or pyre_pos
+
+	-- Keep velocity and acceleration firmly locked at 0
+	self.object:set_velocity({x = 0, y = 0, z = 0})
+	self.object:set_acceleration({x = 0, y = 0, z = 0})
+
+	-- Always keep mob facing summoner
+	if summoner and summoner:is_valid() then
+		local s_pos = summoner:get_pos()
+		if s_pos then
+			local dir = vector.direction(cur_pos, s_pos)
+			dir.y = 0
+			self.object:set_yaw(core.dir_to_yaw(dir))
+		end
+	end
+
+	-- Periodic particle licking and sizzle
+	self.banish_fx_timer = (self.banish_fx_timer or 0) + dtime
+	if self.banish_fx_timer >= 0.25 then
+		self.banish_fx_timer = 0
+		pale_watcher.particles.void_mist(cur_pos, 1.5, 15)
+	end
+
+	-- Cleansing fire implosion transition
+	if t >= 1.2 and not self._implode_started then
+		self._implode_started = true
+		x_mob_core.play_animation(self.object, "death_implode", {
+			speed = 0.8,
+			loop = false,
+			force = true,
+			priority = 35,
+		})
+		self.object:set_animation({x = 1, y = 40}, 16, 0.1, false)
+
+		core.sound_play("pale_watcher_paper_burn", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
+		core.sound_play("pale_watcher_death", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
+		pale_watcher.particles.pyre_implosion(cur_pos, 2.4)
+	end
+
+	-- Levitation and cosmic convulsion
+	if t >= 1.2 and t < 3.4 then
+		local progress = (t - 1.2) / 2.2
+		-- Slowly levitate upwards into the fire column
+		local base_y = pyre_pos.y + 0.45 + (progress * 0.55)
+		-- Cosmic jitter shake
+		local jitter_x = (math.random() - 0.5) * (0.05 + 0.10 * progress)
+		local jitter_z = (math.random() - 0.5) * (0.05 + 0.10 * progress)
+		self.object:set_pos({x = pyre_pos.x + jitter_x, y = base_y, z = pyre_pos.z + jitter_z})
+	end
+
+	-- Supernova detonation shockwave and victory awards
+	if t >= 3.4 then
+		self.state = "dead"
+		self.is_dead = true
+
+		-- Supernova explosion particles
+		pale_watcher.particles.pyre_supernova(cur_pos)
+		core.sound_play("pale_watcher_bell", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
+		core.sound_play("pale_watcher_death", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
+
+		-- Screen flash on summoner and nearby players
+		local players = core.get_connected_players()
+		for _, p in ipairs(players) do
+			local p_pos = p:get_pos()
+			if p_pos and vector.distance(p_pos, cur_pos) <= 45 then
+				pale_watcher.fx.trigger_flash(p, 0.9)
+			end
+		end
+
+		-- Guaranteed rare dimensional drops right into the pyre
+		local drop_pos = {x = pyre_pos.x, y = pyre_pos.y + 0.8, z = pyre_pos.z}
+		core.item_drop(ItemStack("pale_watcher:dimensional_cloth 3"), nil, drop_pos)
+		core.item_drop(ItemStack("pale_watcher:static_core 1"), nil, drop_pos)
+
+		-- End ritual session with victory
+		if self.session_id then
+			pale_watcher.ritual.end_session(self.session_id, true)
+			self.session_id = nil
+		end
+
+		-- Cleanly remove mob
+		self.object:remove()
+	end
+end
+
 x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	initial_properties = {
 		hp_max = 500,
@@ -750,19 +847,13 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		{ name = "pale_watcher:static_core", min = 1, max = 1, chance = 1.0 },
 	},
 
-	on_activate = function(self, _data, _dtime_s)
+	on_activate = function(self, staticdata, _dtime_s)
 		if self.object then
 			self.object:set_properties({
 				glow = 3,
 				mesh = "pale_watcher_mob.glb",
 				textures = pale_watcher.get_textures(),
 			})
-		end
-		local pos = self.object and self.object:get_pos()
-		if pos then
-			self.session_id = pale_watcher.ritual.start_session(self.object, pos)
-			self.origin_pos = pos
-			core.sound_play("pale_watcher_bell", {pos = pos, max_hear_distance = 45}, true)
 		end
 		self.state = "stalking"
 		self.quantum_locked = false
@@ -773,6 +864,17 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		self.sanctuary_stare_timer = 0
 		self.stun_timer = 0
 		self.attack_cooldown = 0
+
+		if staticdata == "pyre_banish" then
+			return
+		end
+
+		local pos = self.object and self.object:get_pos()
+		if pos then
+			self.session_id = pale_watcher.ritual.start_session(self.object, pos)
+			self.origin_pos = pos
+			core.sound_play("pale_watcher_bell", {pos = pos, max_hear_distance = 45}, true)
+		end
 	end,
 
 	on_despawn = cleanup_entity_session,
@@ -780,7 +882,11 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	on_deactivate = cleanup_entity_session,
 
 	on_step = function(self, dtime, _moveresult)
-		if self.is_dead or self.state == "dead" or self.state == "dying" or self.state == "banishing" then return end
+		if self.state == "banishing" then
+			step_pyre_banishment(self, dtime)
+			return
+		end
+		if self.is_dead or self.state == "dead" or self.state == "dying" then return end
 
 		local pos = self.object:get_pos()
 		if not pos then return end
@@ -819,6 +925,10 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	end,
 
 	on_punch = function(self, puncher, _tflp, _tool_capabilities, _dir, _damage)
+		if self.state == "banishing" or self.is_dead then
+			return true
+		end
+
 		-- Combat Resilience: Immune to physical weapons
 		-- Triggers immediate violent Psychic Backlash & dimensional slip retreat
 		if puncher and puncher:is_player() then
@@ -918,6 +1028,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	---Immediately prioritizes that player and snaps behind them.
 	---@param collector ObjectRef
 	on_page_collected = function(self, collector)
+		if self.state == "banishing" or self.is_dead then return end
 		if not collector or not collector:is_player() then return end
 		self.target_player = collector
 		x_mob_core.set_target(self, collector)
@@ -945,47 +1056,64 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	---The Cleansing Flame Banishment Sequence.
 	---The Pale Watcher is forcibly teleported into the pyre flames, paralyzed, implodes, and drops rare loot.
 	---@param pyre_pos Vector
-	---@param _summoner ObjectRef
-	on_pyre_banished = function(self, pyre_pos, _summoner)
+	---@param summoner? ObjectRef
+	on_pyre_banished = function(self, pyre_pos, summoner)
 		self.state = "banishing"
-		self.is_dead = true
+		self.is_dead = false
+		self.banish_timer = 0.0
+		self.banish_pyre_pos = vector.new(pyre_pos)
+		self.banish_summoner = summoner
+		self._implode_started = false
 
-		-- Forcibly snap directly into the pyre flames
-		local snap_pos = {x = pyre_pos.x, y = pyre_pos.y + 0.2, z = pyre_pos.z}
+		local snap_pos = {x = pyre_pos.x, y = pyre_pos.y + 0.45, z = pyre_pos.z}
+
+		-- Departure rift at entity's previous world location
+		local old_pos = self.object:get_pos()
+		if old_pos and vector.distance(old_pos, snap_pos) > 2.0 then
+			pale_watcher.particles.teleport_rift(old_pos)
+			core.sound_play("pale_watcher_scare", {pos = old_pos, gain = 1.0, max_hear_distance = 40})
+		end
+
+		-- Snap directly into the pyre flames and lock physics
 		self.object:set_pos(snap_pos)
 		self.object:set_velocity({x = 0, y = 0, z = 0})
-
-		-- Paralyze in death_implode animation
-		x_mob_core.play_animation(self.object, "death_implode", {
-			speed = 1.0,
-			loop = false,
-			force = true,
-			priority = 20,
+		self.object:set_acceleration({x = 0, y = 0, z = 0})
+		self.object:set_properties({
+			physical = false,
+			collide_with_objects = false,
+			pointable = false,
+			glow = 14,
 		})
 
-		core.sound_play("pale_watcher_paper_burn", {pos = snap_pos, gain = 1.0, max_hear_distance = 50})
-		core.sound_play("pale_watcher_death", {pos = snap_pos, gain = 1.0, max_hear_distance = 50})
-
-		-- Violent swirling implosion particles (preset)
-		pale_watcher.particles.pyre_implosion(snap_pos)
-
-		-- Drop dimensional loot at pyre position
-		x_mob_core.schedule(self, 2.0, "pyre_loot_drop", function(mob_self)
-			local cur = mob_self.object and mob_self.object:get_pos()
-			if cur then
-				core.item_drop(ItemStack("pale_watcher:dimensional_cloth 3"), nil, cur)
-				core.item_drop(ItemStack("pale_watcher:static_core 1"), nil, cur)
+		-- Face the summoner
+		if summoner and summoner:is_valid() then
+			local s_pos = summoner:get_pos()
+			if s_pos then
+				local dir = vector.direction(snap_pos, s_pos)
+				dir.y = 0
+				self.object:set_yaw(core.dir_to_yaw(dir))
 			end
+		end
 
-			if mob_self.session_id then
-				pale_watcher.ritual.end_session(mob_self.session_id, true)
-				mob_self.session_id = nil
-			end
+		-- Stagger in sacred fire
+		x_mob_core.play_animation(self.object, "stagger", {
+			speed = 1.0,
+			loop = true,
+			force = true,
+			priority = 30,
+		})
+		self.object:set_animation({x = 1, y = 55}, 20, 0.1, true)
 
-			if mob_self.object and mob_self.object:is_valid() then
-				mob_self.object:remove()
-			end
-		end)
+		-- Arrival dimensional burst & sound
+		pale_watcher.particles.teleport_rift(snap_pos)
+		pale_watcher.particles.pyre_roaring_flames(pyre_pos)
+		core.sound_play("pale_watcher_bell", {pos = snap_pos, gain = 1.0, max_hear_distance = 50})
+		core.sound_play("pale_watcher_scare", {pos = snap_pos, gain = 1.0, max_hear_distance = 50})
+
+		-- Screen static flash on summoner
+		if summoner and summoner:is_valid() then
+			pale_watcher.fx.trigger_flash(summoner)
+		end
 	end,
 })
 
