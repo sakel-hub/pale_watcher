@@ -9,27 +9,67 @@ local WATCHER_FOV_DOT = 0.55
 local WATCHER_TETHER_MAX = 70.0
 local WATCHER_AMBUSH_DIST = 60.0
 
+local OBSERVATION_POINTS = {
+	{x = 0, y = 2.6, z = 0}, -- Head / Eyes
+	{x = 0, y = 1.6, z = 0}, -- Chest / Center of mass (aligns with player eye level ~1.625)
+	{x = 0, y = 0.8, z = 0}, -- Torso / Waist
+}
+
+---Checks whether a target point is visually unobstructed by opaque solid terrain.
+---Foliage (leaves, flora) and transparent blocks (glass) do not block line of sight for horror mob detection.
+---@param p1 Vector Observer eye position
+---@param p2 Vector Target mob sample position
+---@return boolean is_visible
+local function has_visual_los(p1, p2)
+	if core.line_of_sight(p1, p2) then
+		return true
+	end
+
+	local ray = core.raycast(p1, p2, false, false)
+	if not ray then return false end
+
+	for pt in ray do
+		if pt.type == "node" then
+			local node = core.get_node(pt.under)
+			local def = core.registered_nodes[node.name]
+			if def and def.walkable then
+				local is_semi_transparent = (core.get_item_group(node.name, "leaves") > 0) or
+					(core.get_item_group(node.name, "flora") > 0) or
+					def.sunlight_propagates or
+					(def.drawtype == "allfaces" or def.drawtype == "allfaces_optional" or
+					 def.drawtype == "glasslike" or def.drawtype == "glasslike_framed")
+				if not is_semi_transparent then
+					return false
+				end
+			end
+		end
+	end
+	return true
+end
+
 ---Determines whether any connected living player is observing the mob within line of sight.
+---Tests multiple points across the 3.2m tall entity (head, chest, torso) to ensure reliable
+---quantum locking even in dense foliage, behind low obstacles, or at close proximity.
 ---@param pos Vector Entity world position
 ---@param players ObjectRef[] Connected players list
 ---@return boolean is_seen True if observed by a player
 ---@return ObjectRef|nil observer First observer player ObjectRef
 local function is_observed(pos, players)
-	local mob_eye = vector.add(pos, {x = 0, y = 2.8, z = 0})
-
 	for _, player in ipairs(players) do
 		if x_mob_core.is_player_alive(player) then
 			local p_pos = player:get_pos()
 			if p_pos then
 				local p_eye = vector.add(p_pos, {x = 0, y = 1.625, z = 0})
-				local to_mob = vector.direction(p_eye, mob_eye)
 				local look_dir = player:get_look_dir()
 
-				-- Player's view cone: within ~60° half-angle
-				if vector.dot(look_dir, to_mob) >= WATCHER_FOV_DOT then
-					-- Unobstructed raycast line of sight
-					if x_mob_core.line_of_sight(p_eye, mob_eye) then
-						return true, player
+				for _, offset in ipairs(OBSERVATION_POINTS) do
+					local target_pt = vector.add(pos, offset)
+					local to_pt = vector.direction(p_eye, target_pt)
+
+					if vector.dot(look_dir, to_pt) >= WATCHER_FOV_DOT then
+						if has_visual_los(p_eye, target_pt) then
+							return true, player
+						end
 					end
 				end
 			end
@@ -581,8 +621,15 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 			-- Normal Stalk Glide Movement & Attack
 			pale_watcher.fx.update_player(self.target_player, dist, false, dtime, tier)
 
-			if dist <= self.attack_range and not in_sanctuary then
+			local horiz_dist = vector.distance({x = pos.x, y = 0, z = pos.z}, {x = t_pos.x, y = 0, z = t_pos.z})
+			local vert_dist = math.abs(pos.y - t_pos.y)
+			local in_attack_proximity = (dist <= self.attack_range) or (horiz_dist <= 2.2 and vert_dist <= 2.5)
+
+			if in_attack_proximity and not in_sanctuary then
 				self.object:set_velocity({x = 0, y = 0, z = 0})
+				local to_t = vector.direction(pos, t_pos)
+				self.object:set_yaw(core.dir_to_yaw(to_t))
+
 				self.attack_cooldown = (self.attack_cooldown or 0) + dtime
 				if self.attack_cooldown >= self.attack_interval then
 					self.attack_cooldown = 0
@@ -592,6 +639,8 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 						damage_groups = {fleshy = self.damage}
 					})
 					core.sound_play("pale_watcher_scare", {to_player = self.target_player:get_player_name()}, true)
+				else
+					x_mob_core.play_animation(self.object, "stand", {speed = 1.0, loop = true})
 				end
 			else
 				-- Stalk glide towards target
@@ -709,18 +758,32 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		x_mob_core.set_target(self, collector)
 
 		local p_pos = collector:get_pos()
+		if not p_pos then return end
 		local p_look = collector:get_look_dir()
-		-- Teleport behind the collector
+		-- Teleport behind the collector into a valid spot with 3 blocks of headroom
 		local behind_pos = vector.add(p_pos, vector.multiply(p_look, -6.0))
-
-		-- Validate ground height
-		local check_ground = vector.round(behind_pos)
-		for dy = 2, -2, -1 do
-			local test_ground = {x = check_ground.x, y = check_ground.y + dy, z = check_ground.z}
-			local def = core.registered_nodes[core.get_node(test_ground).name]
-			if def and def.walkable then
-				behind_pos = {x = test_ground.x, y = test_ground.y + 1, z = test_ground.z}
-				break
+		local candidate = find_blind_spot_node(collector, p_pos, 5, 8)
+		if candidate then
+			behind_pos = candidate
+		else
+			local check_ground = vector.round(behind_pos)
+			for dy = 2, -3, -1 do
+				local test_ground = {x = check_ground.x, y = check_ground.y + dy, z = check_ground.z}
+				local def = core.registered_nodes[core.get_node(test_ground).name]
+				if def and def.walkable and def.liquidtype == "none" then
+					local a1 = core.get_node({x = test_ground.x, y = test_ground.y + 1, z = test_ground.z}).name
+					local a2 = core.get_node({x = test_ground.x, y = test_ground.y + 2, z = test_ground.z}).name
+					local a3 = core.get_node({x = test_ground.x, y = test_ground.y + 3, z = test_ground.z}).name
+					local def1 = core.registered_nodes[a1]
+					local def2 = core.registered_nodes[a2]
+					local def3 = core.registered_nodes[a3]
+					if (a1 == "air" or (def1 and not def1.walkable)) and
+					   (a2 == "air" or (def2 and not def2.walkable)) and
+					   (a3 == "air" or (def3 and not def3.walkable)) then
+						behind_pos = {x = test_ground.x, y = test_ground.y + 1, z = test_ground.z}
+						break
+					end
+				end
 			end
 		end
 
