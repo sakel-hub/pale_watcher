@@ -400,8 +400,16 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 					if def and def.light_source and def.light_source > 0 and not is_sanctuary then
 						local has_los = x_mob_core.line_of_sight(mob_eye, lpos) or x_mob_core.line_of_sight(mob_chest, lpos)
 						if has_los then
+							local drops = core.get_node_drops(lnode, "")
 							core.remove_node(lpos)
-							core.item_drop(ItemStack(lnode.name), nil, lpos)
+							if drops then
+								for i = 1, #drops do
+									local stack = ItemStack(drops[i])
+									if not stack:is_empty() then
+										core.item_drop(stack, nil, lpos)
+									end
+								end
+							end
 							core.sound_play("pale_watcher_paper_burn", {pos = lpos, gain = 0.4, max_hear_distance = 15}, true)
 							break -- 1 per pulse to create flickering dread
 						end
