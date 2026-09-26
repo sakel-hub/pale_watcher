@@ -93,36 +93,54 @@ local function spawn_pages_dynamically(center, count, session_id)
 					local air_pos = vector.add(node_pos, dir)
 					local node_at_air = core.get_node(air_pos)
 
-					-- Safe Node Validation:
-					-- 1. Candidate must be air
-					-- 2. Block below candidate must be walkable solid ground (eye level: player stands in front)
-					-- 3. Not underwater or in hazardous liquids
+					-- Safe Node Validation for Eye-Height Placement:
+					-- 1. Candidate must be air at eye level (air_pos: 2 blocks above ground)
+					-- 2. Space at foot level (air_pos.y - 1) must be open (air or non-walkable flora)
+					-- 3. Block at ground level (air_pos.y - 2) must be walkable solid ground
+					-- 4. Wall mounting surface (node_pos) and wall below must be solid
+					-- 5. Not underwater or in hazardous liquids
 					if node_at_air.name == "air" then
-						local below_pos = {x = air_pos.x, y = air_pos.y - 1, z = air_pos.z}
-						local below_node = core.get_node(below_pos)
-						local below_def = core.registered_nodes[below_node.name]
+						local foot_pos = {x = air_pos.x, y = air_pos.y - 1, z = air_pos.z}
+						local foot_node = core.get_node(foot_pos)
+						local foot_def = core.registered_nodes[foot_node.name]
+						local is_foot_clear = foot_node.name == "air"
+							or (foot_def and not foot_def.walkable and foot_def.liquidtype == "none")
 
-						if below_def and below_def.walkable and below_def.liquidtype == "none" then
-							-- Wallmounted direction points away from the surface into the air space
-							local wall_dir = vector.multiply(dir, -1)
-							local param2 = core.dir_to_wallmounted(wall_dir)
+						if is_foot_clear then
+							local ground_pos = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
+							local ground_node = core.get_node(ground_pos)
+							local ground_def = core.registered_nodes[ground_node.name]
 
-							core.set_node(air_pos, {
-								name = "pale_watcher:cursed_page",
-								param2 = param2,
-							})
+							if ground_def and ground_def.walkable and ground_def.liquidtype == "none" then
+								local wall_node = core.get_node(node_pos)
+								local wall_def = core.registered_nodes[wall_node.name]
+								local wall_below_pos = {x = node_pos.x, y = node_pos.y - 1, z = node_pos.z}
+								local wall_below_node = core.get_node(wall_below_pos)
+								local wall_below_def = core.registered_nodes[wall_below_node.name]
 
-							local meta = core.get_meta(air_pos)
-							if session_id then
-								meta:set_string("session_id", session_id)
+								if wall_def and wall_def.walkable and wall_below_def and wall_below_def.walkable then
+									-- Wallmounted direction points away from the surface into the air space
+									local wall_dir = vector.multiply(dir, -1)
+									local param2 = core.dir_to_wallmounted(wall_dir)
+
+									core.set_node(air_pos, {
+										name = "pale_watcher:cursed_page",
+										param2 = param2,
+									})
+
+									local meta = core.get_meta(air_pos)
+									if session_id then
+										meta:set_string("session_id", session_id)
+									end
+									meta:set_int("age", 0)
+
+									local hash = core.pos_to_string(air_pos)
+									placed[hash] = air_pos
+									table.insert(placed_list, air_pos)
+									spawned = spawned + 1
+									break
+								end
 							end
-							meta:set_int("age", 0)
-
-							local hash = core.pos_to_string(air_pos)
-							placed[hash] = air_pos
-							table.insert(placed_list, air_pos)
-							spawned = spawned + 1
-							break
 						end
 					end
 				end
