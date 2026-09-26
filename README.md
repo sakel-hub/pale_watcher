@@ -101,7 +101,7 @@ The mod is engineered with crash-resilience and multiplayer disconnect safety:
 If you cannot find all 8 pages, you can survive through three escape conditions:
 
 - **Condition A (The Sanctuary)**: Reach safe ground with light level $\ge 14$ (e.g. campfire or illuminated outpost). The Pale Watcher will stop at the light boundary, stare silently from the tree line for 5 seconds, and dissolve into mist.
-- **Condition B (The 70-Node Gauntlet)**: Cross 70 nodes away from where the encounter started. At node 60, he will attempt one final intercept ambush. Dodge past him; once you cross node 70, a deep foghorn drone sounds, the black fog lifts, and the encounter ends cleanly.
+- **Condition B (The 100-Node Gauntlet)**: Cross 100 nodes away from where the encounter started. At node 85, he will attempt one final intercept ambush. Dodge past him; once you cross node 100, a deep foghorn drone sounds, the black fog lifts, and the encounter ends cleanly.
 - **Condition C (Surviving until Dawn)**: Survive until sunrise (`timeofday > 0.23` and natural light $\ge 14$). The Pale Watcher catches fire, dissolves into static ash, and is banished.
 
 ### In-Game Survival Tips

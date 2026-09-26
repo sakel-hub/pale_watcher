@@ -1,0 +1,2 @@
+# Domain gauntlet tether radius in nodes (escape distance from ritual altar origin)
+pale_watcher_tether_radius (Domain gauntlet tether radius) float 100.0 50.0 300.0

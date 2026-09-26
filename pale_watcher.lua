@@ -6,8 +6,8 @@
 ]]
 
 local WATCHER_FOV_DOT = 0.55
-local WATCHER_TETHER_MAX = 70.0
-local WATCHER_AMBUSH_DIST = 60.0
+local WATCHER_TETHER_MAX = tonumber(core.settings:get("pale_watcher_tether_radius")) or 100.0
+local WATCHER_AMBUSH_DIST = math.max(20.0, WATCHER_TETHER_MAX - 15.0)
 
 local OBSERVATION_POINTS = {
 	{x = 0, y = 2.6, z = 0}, -- Head / Eyes
@@ -123,6 +123,69 @@ local function find_blind_spot_node(target_player, _current_mob_pos, step_min_di
 	return nil
 end
 
+---Finds a safe, walkable ground position directly in front of the player for the gauntlet intercept ambush.
+---Guarantees solid footing and 4 blocks of clear vertical headroom so The Pale Watcher (3.2m tall)
+---never spawns inside blocks, underground, or at player foot level.
+---@param target_player ObjectRef
+---@param preferred_dist? number Preferred forward distance (default 10)
+---@return Vector|nil ambush_pos
+local function find_intercept_ambush_pos(target_player, preferred_dist)
+	local p_pos = target_player:get_pos()
+	if not p_pos then return nil end
+	local p_look = target_player:get_look_dir()
+	local dists = {preferred_dist or 10.0, 8.0, 12.0, 6.0, 14.0}
+
+	local fwd_x = p_look.x
+	local fwd_z = p_look.z
+	local len = math.sqrt(fwd_x * fwd_x + fwd_z * fwd_z)
+	local base_yaw
+	if len > 0.01 then
+		fwd_x = fwd_x / len
+		fwd_z = fwd_z / len
+		base_yaw = core.dir_to_yaw({x = fwd_x, y = 0, z = fwd_z})
+	else
+		base_yaw = target_player:get_look_horizontal() or 0
+	end
+
+	-- Test angles centered on player's forward view
+	local angle_offsets = {0, 0.25, -0.25, 0.5, -0.5}
+
+	for _, dist in ipairs(dists) do
+		for _, offset in ipairs(angle_offsets) do
+			local angle = base_yaw + offset
+			local cand_x = p_pos.x - math.sin(angle) * dist
+			local cand_z = p_pos.z + math.cos(angle) * dist
+			local cx = math.floor(cand_x + 0.5)
+			local cz = math.floor(cand_z + 0.5)
+
+			-- Scan vertically from above the player down through ground level (+5 to -7)
+			for dy = 5, -7, -1 do
+				local gy = math.floor(p_pos.y + dy + 0.5)
+				local g_pos = {x = cx, y = gy, z = cz}
+				local g_def = core.registered_nodes[core.get_node(g_pos).name]
+				if g_def and g_def.walkable and g_def.liquidtype == "none" then
+					local a1 = core.get_node({x = cx, y = gy + 1, z = cz}).name
+					local a2 = core.get_node({x = cx, y = gy + 2, z = cz}).name
+					local a3 = core.get_node({x = cx, y = gy + 3, z = cz}).name
+					local a4 = core.get_node({x = cx, y = gy + 4, z = cz}).name
+					local def1 = core.registered_nodes[a1]
+					local def2 = core.registered_nodes[a2]
+					local def3 = core.registered_nodes[a3]
+					local def4 = core.registered_nodes[a4]
+					if (a1 == "air" or (def1 and not def1.walkable and def1.liquidtype == "none")) and
+					   (a2 == "air" or (def2 and not def2.walkable and def2.liquidtype == "none")) and
+					   (a3 == "air" or (def3 and not def3.walkable and def3.liquidtype == "none")) and
+					   (a4 == "air" or (def4 and not def4.walkable and def4.liquidtype == "none")) then
+						return {x = cx, y = gy + 0.55, z = cz}
+					end
+				end
+			end
+		end
+	end
+
+	return nil
+end
+
 ---Counts nearby air blocks around a player to detect underground bunker exploits.
 ---@param player_pos Vector
 ---@return integer air_count
@@ -203,7 +266,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	walk_speed = 2.5,
 	pursuit_speed = 4.2,
 	wander_speed = 1.0,
-	aggro_radius = 70.0,
+	aggro_radius = math.max(100.0, WATCHER_TETHER_MAX),
 	attack_range = 2.6,
 	damage = 8,
 	attack_interval = 1.0,
@@ -395,26 +458,37 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		local t_pos = self.target_player:get_pos()
 		local dist = vector.distance(pos, t_pos)
 
-		-- Tether Gauntlet Escapes (Condition B: 70-Node Gauntlet)
+		-- Tether Gauntlet Escapes (Condition B: Domain Gauntlet)
 		if self.origin_pos then
 			local dist_from_origin = vector.distance(t_pos, self.origin_pos)
 
-			-- Ambush at node 60: One final desperate intercept teleport
+			-- Ambush: One final desperate intercept teleport in front of the escaping player
 			if dist_from_origin >= WATCHER_AMBUSH_DIST and
 			   dist_from_origin < WATCHER_TETHER_MAX and
 			   not self.ambush_triggered then
-				self.ambush_triggered = true
-				local p_look = self.target_player:get_look_dir()
-				local ambush_pos = vector.add(t_pos, vector.multiply(p_look, 10.0))
-				self.object:set_pos(ambush_pos)
-				core.sound_play("pale_watcher_scare", {pos = ambush_pos, max_hear_distance = 30}, true)
+				local ambush_pos = find_intercept_ambush_pos(self.target_player, 10.0)
+				if not ambush_pos then
+					ambush_pos = find_blind_spot_node(self.target_player, t_pos, 8, 12)
+				end
+				if ambush_pos then
+					self.ambush_triggered = true
+					self.object:set_pos(ambush_pos)
+					local to_player = vector.direction(ambush_pos, t_pos)
+					self.object:set_yaw(core.dir_to_yaw(to_player))
+					self.object:set_velocity({x = 0, y = 0, z = 0})
+					x_mob_core.play_animation(self.object, "stand", {speed = 1.0, loop = true})
+					core.sound_play("pale_watcher_scare", {pos = ambush_pos, max_hear_distance = 30}, true)
+					return
+				end
 			end
 
-			-- Crossing node 70: Escaped the domain gauntlet!
+			-- Crossing the domain perimeter: Escaped the domain gauntlet!
 			if dist_from_origin >= WATCHER_TETHER_MAX then
-				core.sound_play("pale_watcher_drone", {pos = t_pos, max_hear_distance = 50})
-				core.chat_send_player(self.target_player:get_player_name(),
-					core.colorize("#55ff88", "★ You have broken through the 70-node domain tether and escaped into the night!"))
+				local escape_msg = string.format(
+					"★ You have broken through the %d-node domain tether and escaped into the night!",
+					math.floor(WATCHER_TETHER_MAX + 0.5)
+				)
+				core.chat_send_player(self.target_player:get_player_name(), core.colorize("#55ff88", escape_msg))
 				if self.session_id then
 					pale_watcher.ritual.end_session(self.session_id, false)
 					self.session_id = nil
