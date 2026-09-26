@@ -783,10 +783,6 @@ local function step_pyre_banishment(self, dtime)
 			{ name = "pale_watcher:static_core", min = 1, max = 1, chance = 1.0 },
 		}, {
 			particle_color = "ffaa33",
-			up_vel_min = 3.6,
-			up_vel_max = 5.0,
-			spread_min = 0.8,
-			spread_max = 1.6,
 		})
 
 		-- End ritual session with victory
