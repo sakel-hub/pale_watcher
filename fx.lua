@@ -176,6 +176,40 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 	end
 end
 
+---Sweeps and removes any orphaned Pale Watcher flash HUD elements from a player.
+---@param player ObjectRef
+local function sweep_orphaned_flash(player)
+	if not player or not player:is_player() then return end
+	for id = 0, 200 do
+		local elem = player:hud_get(id)
+		if elem then
+			local is_flash = elem.name == "pale_watcher_flash"
+				or (type(elem.text) == "string" and elem.text:find("pale_watcher_hud_flash", 1, true) ~= nil)
+			if is_flash then
+				player:hud_remove(id)
+			end
+		end
+	end
+end
+
+---Sweeps and removes all orphaned Pale Watcher HUD elements from a player.
+---@param player ObjectRef
+local function sweep_orphaned_hud(player)
+	if not player or not player:is_player() then return end
+	for id = 0, 200 do
+		local elem = player:hud_get(id)
+		if elem then
+			local is_pw = elem.name == "pale_watcher_flash"
+				or elem.name == "pale_watcher_vignette"
+				or elem.name == "pale_watcher_static"
+				or (type(elem.text) == "string" and elem.text:find("pale_watcher_hud_", 1, true) ~= nil)
+			if is_pw then
+				player:hud_remove(id)
+			end
+		end
+	end
+end
+
 ---Triggers full-screen camera flash effect for a player.
 ---@param player ObjectRef
 function pale_watcher.fx.trigger_flash(player)
@@ -198,7 +232,17 @@ function pale_watcher.fx.trigger_flash(player)
 	end
 
 	state.flash_timer = 0.4 -- 0.4s flash decay
+
+	-- Check if existing hud_flash_id is still valid on player
+	if state.hud_flash_id then
+		local existing = player:hud_get(state.hud_flash_id)
+		if not existing then
+			state.hud_flash_id = nil
+		end
+	end
+
 	if not state.hud_flash_id then
+		sweep_orphaned_flash(player)
 		state.hud_flash_id = player:hud_add({
 			hud_elem_type = "image",
 			position = {x = 0.5, y = 0.5},
@@ -211,6 +255,17 @@ function pale_watcher.fx.trigger_flash(player)
 	else
 		player:hud_change(state.hud_flash_id, "text", "pale_watcher_hud_flash.png^[opacity:255")
 	end
+
+	-- Fail-safe timer to guarantee removal even if globalstep is suspended or delayed
+	core.after(0.45, function()
+		if not player:is_player() then return end
+		local s = active_fx[name]
+		if s and s.hud_flash_id and (s.flash_timer or 0) <= 0.05 then
+			player:hud_remove(s.hud_flash_id)
+			s.hud_flash_id = nil
+			s.flash_timer = 0
+		end
+	end)
 end
 
 ---Sets claustrophobic black domain fog for a player inside the haunted zone.
@@ -281,6 +336,7 @@ function pale_watcher.fx.clear_player(player)
 			player:hud_remove(state.hud_flash_id)
 			state.hud_flash_id = nil
 		end
+		state.flash_timer = 0
 		if state.sound_handle then
 			core.sound_stop(state.sound_handle)
 			state.sound_handle = nil
@@ -295,6 +351,7 @@ function pale_watcher.fx.clear_player(player)
 		end
 		active_fx[name] = nil
 	end
+	sweep_orphaned_hud(player)
 end
 
 ---Cleans up all active effects across all players.
@@ -306,6 +363,9 @@ function pale_watcher.fx.clear_all()
 		end
 	end
 	active_fx = {}
+	for _, player in ipairs(core.get_connected_players()) do
+		sweep_orphaned_hud(player)
+	end
 end
 
 -- Globalstep decay and Geiger-counter check
@@ -316,18 +376,27 @@ core.register_globalstep(function(dtime)
 		local player = core.get_player_by_name(name)
 
 		-- Flash overlay decay
-		if state.flash_timer > 0 then
+		if (state.flash_timer or 0) > 0 then
 			state.flash_timer = state.flash_timer - dtime
-			if player and state.hud_flash_id then
-				if state.flash_timer > 0 then
-					local flash_alpha = math.floor((state.flash_timer / 0.4) * 255)
+			if state.flash_timer > 0 then
+				if player and state.hud_flash_id then
+					local flash_alpha = math.max(0, math.min(255, math.floor((state.flash_timer / 0.4) * 255)))
 					player:hud_change(state.hud_flash_id, "text",
 						string.format("pale_watcher_hud_flash.png^[opacity:%d", flash_alpha))
-				else
-					player:hud_remove(state.hud_flash_id)
-					state.hud_flash_id = nil
 				end
+			else
+				state.flash_timer = 0
+				if player and state.hud_flash_id then
+					player:hud_remove(state.hud_flash_id)
+				end
+				state.hud_flash_id = nil
 			end
+		elseif state.hud_flash_id then
+			if player then
+				player:hud_remove(state.hud_flash_id)
+			end
+			state.hud_flash_id = nil
+			state.flash_timer = 0
 		end
 
 		-- Natural static decay when player looks away or distance increases
@@ -350,6 +419,7 @@ core.register_globalstep(function(dtime)
 					player:hud_change(state.hud_static_id, "text", static_tex)
 				end
 			else
+				state.intensity = 0
 				if player then
 					if state.hud_vignette_id then
 						player:hud_remove(state.hud_vignette_id)
@@ -359,16 +429,32 @@ core.register_globalstep(function(dtime)
 						player:hud_remove(state.hud_static_id)
 						state.hud_static_id = nil
 					end
+				else
+					state.hud_vignette_id = nil
+					state.hud_static_id = nil
 				end
 				if state.sound_handle then
 					core.sound_stop(state.sound_handle)
 					state.sound_handle = nil
 				end
-				active_fx[name] = nil
 			end
 		end
 
 		state._refreshed_this_tick = false
+
+		-- Prune player from active_fx only when ALL horror & flash effects are completely idle
+		local is_busy = (state.intensity > 0.02)
+			or ((state.flash_timer or 0) > 0)
+			or (state.hud_flash_id ~= nil)
+			or (state.hud_vignette_id ~= nil)
+			or (state.hud_static_id ~= nil)
+			or state.fog_active
+			or state.is_gazing
+			or (state.sound_handle ~= nil)
+
+		if not is_busy then
+			active_fx[name] = nil
+		end
 	end
 end)
 
@@ -389,5 +475,20 @@ end)
 core.register_on_shutdown(function()
 	pale_watcher.fx.clear_all()
 end)
+
+core.register_chatcommand("pw_clear", {
+	description = "Clears all active Pale Watcher horror HUD and visual effects",
+	privs = {},
+	func = function(name)
+		local player = core.get_player_by_name(name)
+		if not player then
+			return false, "Player not found."
+		end
+		pale_watcher.fx.clear_player(player)
+		player:set_fov(0)
+		pale_watcher.fx.clear_claustrophobic_fog(player)
+		return true, "All Pale Watcher visual and audio effects cleared."
+	end,
+})
 
 return pale_watcher.fx
