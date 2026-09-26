@@ -266,6 +266,7 @@ local function step_stun_window(self, dtime, players, pos)
 			-- Arrival puff & distant audio
 			pale_watcher.particles.void_mist(escape_pos, 2.5, 25)
 			core.sound_play("pale_watcher_static", {pos = escape_pos, gain = 0.6, max_hear_distance = 25}, true)
+			x_mob_core.emit("pale_watcher:teleport_escaped", self, pos, escape_pos)
 		end
 		self.state = "stalking"
 	end
@@ -465,7 +466,14 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 						for j = 1, #drops do
 							local stack = ItemStack(drops[j])
 							if not stack:is_empty() then
-								core.item_drop(stack, nil, lpos)
+								x_mob_core.drop_item(lpos, stack, nil, {
+									spread_min = 0.5,
+									spread_max = 1.2,
+									up_vel_min = 1.8,
+									up_vel_max = 3.2,
+									particles = true,
+									trails = true,
+								})
 							end
 						end
 						pale_watcher.particles.void_mist(lpos, 0.8, 12)
@@ -491,7 +499,14 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 			local item_is_sanctuary = wdef and wdef.light_source and wdef.light_source >= 14
 
 			if is_light_item and not item_is_sanctuary and not wield:is_empty() then
-				core.item_drop(wield, self.target_player, t_pos)
+				x_mob_core.drop_item(t_pos, wield, nil, {
+					spread_min = 0.5,
+					spread_max = 1.2,
+					up_vel_min = 1.8,
+					up_vel_max = 3.0,
+					particles = true,
+					trails = true,
+				})
 				self.target_player:set_wielded_item(ItemStack(""))
 				core.sound_play("pale_watcher_static", {to_player = self.target_player:get_player_name(), gain = 0.8}, true)
 				core.chat_send_player(self.target_player:get_player_name(),
@@ -672,16 +687,19 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		local to_t = vector.direction(pos, t_pos)
 		self.object:set_yaw(core.dir_to_yaw(to_t))
 
-		self.attack_cooldown = (self.attack_cooldown or 0) + dtime
-		if self.attack_cooldown >= self.attack_interval then
-			self.attack_cooldown = 0
+		local attack_cd = (self.cooldowns and self.cooldowns.attack) or self.attack_cooldown or 0
+		if attack_cd <= 0 then
+			if self.cooldowns then
+				self.cooldowns.attack = self.attack_interval or 1.0
+			end
+			self.attack_cooldown = self.attack_interval or 1.0
 			x_mob_core.play_animation(self.object, "attack", {speed = 1.0, loop = false, force = true})
 			local punch_fleshy = calculate_armor_scaled_punch(self.target_player, self.damage, 0.25, 2)
 			self.target_player:punch(self.object, 1.0, {
 				full_punch_interval = 1.0,
 				damage_groups = {fleshy = punch_fleshy}
 			})
-			core.sound_play("pale_watcher_scare", {to_player = self.target_player:get_player_name()}, true)
+			x_mob_core.play_sound(self, "attack", {to_player = self.target_player:get_player_name()})
 		else
 			x_mob_core.play_animation(self.object, "stand", {speed = 1.0, loop = true})
 		end
@@ -785,6 +803,8 @@ local function step_pyre_banishment(self, dtime)
 			particle_color = "ffaa33",
 		})
 
+		x_mob_core.emit("pale_watcher:pyre_banished", cur_pos, self.session_id, self.banish_summoner)
+
 		-- End ritual session with victory
 		if self.session_id then
 			pale_watcher.ritual.end_session(self.session_id, true)
@@ -827,10 +847,34 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	can_climb = false,
 	can_open_doors = false,
 
+	cooldowns = {
+		attack = 0.0,
+	},
+
+	damage_effect = {
+		type = "spectral",
+		colors = {"#4A148C", "#20162e", "#7B1FA2"},
+		scale = 1.3,
+	},
+
+	drop_options = {
+		particle_color = "ffaa33",
+	},
+
 	sounds = {
+		distance = 40.0,
+		gain = 1.0,
+		pitch_jitter = 0.08,
 		hurt = "pale_watcher_static",
 		death = "pale_watcher_death",
 		attack = "pale_watcher_scare",
+		random = {
+			name = "pale_watcher_drone",
+			distance = 35.0,
+			gain = 0.8,
+			min_interval = 14.0,
+			max_interval = 32.0,
+		},
 	},
 
 	animations = {
@@ -990,6 +1034,8 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		self.state = "stunned"
 		self.stun_timer = duration or 3.8
 		self.object:set_velocity({x = 0, y = 0, z = 0})
+
+		x_mob_core.emit("pale_watcher:stunned", self, user, self.stun_timer)
 
 		-- Face the player while staggering back
 		local to_user = vector.direction(self.object:get_pos(), user:get_pos())

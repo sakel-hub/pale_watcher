@@ -295,7 +295,7 @@ end
 ---@param center_pos Vector Origin spawn point
 ---@return string session_id Unique identifier for session
 function pale_watcher.ritual.start_session(mob_ref, center_pos)
-	local session_id = tostring(mob_ref)
+	local session_id = x_mob_core.generate_uuid()
 
 	local placed_pages = spawn_pages_dynamically(center_pos, 8, session_id)
 	local page_count = 0
@@ -318,6 +318,7 @@ function pale_watcher.ritual.start_session(mob_ref, center_pos)
 	active_sessions[session_id] = session
 
 	pale_watcher.ritual.update_session_players(session_id, center_pos)
+	x_mob_core.emit("pale_watcher:session_started", session_id, center_pos, page_count)
 
 	return session_id
 end
@@ -354,6 +355,8 @@ end
 function pale_watcher.ritual.end_session(session_id, victory)
 	local session = active_sessions[session_id]
 	if not session then return end
+
+	x_mob_core.emit("pale_watcher:session_ended", session_id, victory)
 
 	-- Instant Cleanup Purge: Revert all uncollected pages back to air
 	purge_session_pages(session)
@@ -440,8 +443,12 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 		end
 	end
 
+	x_mob_core.emit("pale_watcher:page_collected", clicker,
+		session.pages_collected, session.pages_total, session.session_id)
+
 	-- Check if all 8 pages collected: inform players to ignite the Ritual Pyre
 	if session.pages_collected >= session.pages_total then
+		x_mob_core.emit("pale_watcher:all_pages_collected", clicker, session.session_id)
 		for name, _ in pairs(session.players) do
 			local p = core.get_player_by_name(name)
 			if p then
