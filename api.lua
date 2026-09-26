@@ -9,7 +9,6 @@
 ---@field nodes table Cursed Page, Ritual Pyre, Flash Camera, and Dimensional artifacts
 ---@field ritual table 8-page soul-burn ritual session manager
 ---@field distance_sq fun(p1: Vector, p2: Vector): number Calculates squared Euclidean distance
----@field distance fun(p1: Vector, p2: Vector): number Calculates Euclidean distance
 pale_watcher = {
 	physics = {},
 	fx = {},
@@ -72,14 +71,6 @@ function pale_watcher.distance_sq(p1, p2)
 	local dy = p1.y - p2.y
 	local dz = p1.z - p2.z
 	return dx * dx + dy * dy + dz * dz
-end
-
----Calculates the Euclidean distance between two 3D positions using standard Luanti API.
----@param p1 Vector First position
----@param p2 Vector Second position
----@return number Euclidean distance
-function pale_watcher.distance(p1, p2)
-	return vector.distance(p1, p2)
 end
 
 return pale_watcher
