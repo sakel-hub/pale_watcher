@@ -32,48 +32,32 @@ pale_watcher.colors = {
 	dimmed   = "#aaaaaa", -- Neutral / dormant status
 }
 
----Builds a native Luanti HSL texture modifier string.
----Uses the engine's built-in `^[hsl:<hue>:<saturation>:<lightness>` modifier.
----@param base_texture string Base PNG texture file name
----@param hue number Hue shift in degrees [-180, 180] (or [0, 360], automatically normalized)
----@param saturation? number Saturation delta percentage [-100, 100] (default 0)
----@param lightness? number Lightness delta percentage [-100, 100] (default 0)
----@return string texture_modifier_string
-function pale_watcher.hsl(base_texture, hue, saturation, lightness)
-	local h = math.floor((hue or 0) + 0.5)
-	h = (h + 180) % 360 - 180
-	local s = math.floor(math.max(-100, math.min(100, saturation or 0)) + 0.5)
-	local l = math.floor(math.max(-100, math.min(100, lightness or 0)) + 0.5)
-
-	return string.format("%s^[hsl:%d:%d:%d", base_texture, h, s, l)
-end
-
 ---Curated, legally distinct horror color palettes (Body, Suit, Tie)
 ---Tuned with native Luanti `^[hsl:` texture modifiers for muted, desaturated horror tones.
 pale_watcher.palettes = {
 	abyssal_void = {
 		name = "Abyssal Void (Obsidian Plum Suit & Withered Blood Wine Tie)",
-		body = pale_watcher.hsl("pale_watcher_body.png", -90, 6, 0),
-		suit = pale_watcher.hsl("pale_watcher_suit.png", -85, 18, -25),
-		tie  = pale_watcher.hsl("pale_watcher_tie.png", -10, 36, -15),
+		body = "pale_watcher_body.png^[hsl:-90:6:0",
+		suit = "pale_watcher_suit.png^[hsl:-85:18:-25",
+		tie  = "pale_watcher_tie.png^[hsl:-10:36:-15",
 	},
 	forest_wraith = {
 		name = "Forest Wraith (Blackened Spruce Suit & Tarnished Brass Tie)",
-		body = pale_watcher.hsl("pale_watcher_body.png", 120, 5, 0),
-		suit = pale_watcher.hsl("pale_watcher_suit.png", 145, 18, -25),
-		tie  = pale_watcher.hsl("pale_watcher_tie.png", 42, 32, -15),
+		body = "pale_watcher_body.png^[hsl:120:5:0",
+		suit = "pale_watcher_suit.png^[hsl:145:18:-25",
+		tie  = "pale_watcher_tie.png^[hsl:42:32:-15",
 	},
 	quantum_slate = {
 		name = "Quantum Slate (Cold Charcoal Steel Suit & Desaturated Amethyst Tie)",
-		body = pale_watcher.hsl("pale_watcher_body.png", -155, 6, 0),
-		suit = pale_watcher.hsl("pale_watcher_suit.png", -145, 16, -22),
-		tie  = pale_watcher.hsl("pale_watcher_tie.png", -75, 28, -15),
+		body = "pale_watcher_body.png^[hsl:-155:6:0",
+		suit = "pale_watcher_suit.png^[hsl:-145:16:-22",
+		tie  = "pale_watcher_tie.png^[hsl:-75:28:-15",
 	},
 	monochrome_noir = {
 		name = "Monochrome Noir (Stark Noir Suit & Ash Charcoal Tie)",
 		body = "pale_watcher_body.png",
-		suit = pale_watcher.hsl("pale_watcher_suit.png", 0, 0, -30),
-		tie  = pale_watcher.hsl("pale_watcher_tie.png", 0, 0, -10),
+		suit = "pale_watcher_suit.png^[hsl:0:0:-30",
+		tie  = "pale_watcher_tie.png^[hsl:0:0:-10",
 	},
 }
 
