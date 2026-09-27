@@ -53,44 +53,24 @@ end
 pale_watcher.palettes = {
 	abyssal_void = {
 		name = "Abyssal Void (Obsidian Plum Suit & Withered Blood Wine Tie)",
-		hsl = {
-			suit = {h = -85, s = 18, l = -25},
-			tie  = {h = -10, s = 36, l = -15},
-			body = {h = -90, s = 6,  l = 0},
-		},
 		body = pale_watcher.hsl("pale_watcher_body.png", -90, 6, 0),
 		suit = pale_watcher.hsl("pale_watcher_suit.png", -85, 18, -25),
 		tie  = pale_watcher.hsl("pale_watcher_tie.png", -10, 36, -15),
 	},
 	forest_wraith = {
 		name = "Forest Wraith (Blackened Spruce Suit & Tarnished Brass Tie)",
-		hsl = {
-			suit = {h = 145, s = 18, l = -25},
-			tie  = {h = 42,  s = 32, l = -15},
-			body = {h = 120, s = 5,  l = 0},
-		},
 		body = pale_watcher.hsl("pale_watcher_body.png", 120, 5, 0),
 		suit = pale_watcher.hsl("pale_watcher_suit.png", 145, 18, -25),
 		tie  = pale_watcher.hsl("pale_watcher_tie.png", 42, 32, -15),
 	},
 	quantum_slate = {
 		name = "Quantum Slate (Cold Charcoal Steel Suit & Desaturated Amethyst Tie)",
-		hsl = {
-			suit = {h = -145, s = 16, l = -22},
-			tie  = {h = -75,  s = 28, l = -15},
-			body = {h = -155, s = 6,  l = 0},
-		},
 		body = pale_watcher.hsl("pale_watcher_body.png", -155, 6, 0),
 		suit = pale_watcher.hsl("pale_watcher_suit.png", -145, 16, -22),
 		tie  = pale_watcher.hsl("pale_watcher_tie.png", -75, 28, -15),
 	},
 	monochrome_noir = {
 		name = "Monochrome Noir (Stark Noir Suit & Ash Charcoal Tie)",
-		hsl = {
-			suit = {h = 0, s = 0, l = -30},
-			tie  = {h = 0, s = 0, l = -10},
-			body = {h = 0, s = 0, l = 0},
-		},
 		body = "pale_watcher_body.png",
 		suit = pale_watcher.hsl("pale_watcher_suit.png", 0, 0, -30),
 		tie  = pale_watcher.hsl("pale_watcher_tie.png", 0, 0, -10),
