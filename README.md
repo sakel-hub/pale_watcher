@@ -113,22 +113,22 @@ If you cannot find all pages, you can still survive through two escape methods (
 
 ## Game Mechanics & Creature Behavior
 
-### 1. Quantum Stalking Rules
+### Quantum Stalking Rules
 - **Direct Gaze Freeze**: When you look directly in his direction, the Pale Watcher freezes motionless with an imposing stare. He will not vanish when you turn around or approach—giving you the full, chilling jumpscare!
 - **Close-Range Retaliation**: If you dare to approach him within melee striking reach (around 2.5 blocks), the Pale Watcher delivers a vicious punch that deals heavy damage and knocks you flying backward!
 - **Unseen Movement**: The moment your back is turned or trees block your sight, he slips forward in complete silence, leaping closer through the shadows.
 - **Immunity to Standard Weapons**: Hitting him with ordinary swords, bows, or tools will not kill him. Striking him triggers an eldritch shockwave that blasts you back, and causes him to slip into the trees behind you.
 
-### 2. Atmosphere & Screen Effects
+### Atmosphere & Screen Effects
 - **Creeping Screen Shadows**: Dark vignettes close in around the borders of your display as danger approaches, heightening the tension.
 - **Dense Black Fog**: Heavy fog limits your view, hiding tree trunks until you are close.
-- **Heartbeat & Static**: As he gets closer, a pounding heartbeat sounds in your ears, accompanied by eerie radio static.
+- **Heartbeat & Dynamic Static**: As he gets closer, a pounding heartbeat sounds in your ears, accompanied by eerie radio static. The static interference dynamically adapts to ambient light: gentle, legible film noise during dark nights so tree notes remain easy to find, and fierce, high-contrast glitch snow during the day cutting through bright sunlight.
 
-### 3. Light Source Interference
+### Light Source Interference
 - **Flickering Torches**: Hand-placed torches and lanterns within arm's reach (about 5 blocks) flicker and drop to the floor when he can see them. He cannot put out lights through solid walls, and powerful sanctuary lights are immune.
 - **Trembling Hands**: Holding a torch or lantern in your hand while staring directly into his face causes your character to drop the light source in terror.
 
-### 4. Page Counter Plaque & Dynamic Scaling
+### Page Counter Plaque & Dynamic Scaling
 - A gothic plaque appears at the top of your screen to track your collected pages.
 - Solo players need **5 pages**, while multiplayer groups scale dynamically (+3 pages per additional player up to 14).
 - The counter shows in clean, high-contrast ivory while hunting, and switches to a glowing radiant gold active plaque once all required pages are found and the ritual pyre is ready.

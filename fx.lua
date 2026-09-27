@@ -29,13 +29,59 @@ local active_flashes = {}
 local FLASH_DURATION = 0.65 -- Total flash duration in seconds
 local FLASH_PEAK = 0.08     -- Full-brightness blinding peak before fade begins
 
-local DEFAULT_MAX_STATIC_ALPHA = 20    -- ~8% max opacity: subtle retro film noise, keeps world & notes fully legible
-local DEFAULT_MAX_VIGNETTE_ALPHA = 100  -- ~39% max opacity: gentle dark border framing without choking screen
+-- Static & Vignette intensity bounds: gentle noise at night, strong high-contrast snow in daylight
+local NIGHT_MAX_STATIC_ALPHA = 22   -- ~8.6% max opacity: gentle film noise for dark night / caves
+local DAY_MAX_STATIC_ALPHA = 95     -- ~37.2% max opacity: high-contrast snow cutting through daylight
+local NIGHT_MAX_VIGNETTE_ALPHA = 100 -- ~39% max opacity: soft dark framing at night
+local DAY_MAX_VIGNETTE_ALPHA = 135  -- ~53% max opacity: deep cinematic gloom contrasting with bright day
 
-local function get_static_texture(intensity, time)
-	if intensity <= 0.02 then return "" end
+---Calculates daylight / ambient luminance factor for a player.
+---Returns 0.0 for deep night or unlit dark caves, scaling up to 1.0 for bright sunlit daytime.
+---@param player ObjectRef?
+---@return number factor Between 0.0 and 1.0
+local function get_daylight_factor(player)
+	local tod = core.get_timeofday() or 0.5
+	local tod_factor = 0.0
+	if tod >= 0.20 and tod <= 0.80 then
+		local t = (tod - 0.20) / 0.60
+		tod_factor = math.sin(t * math.pi)
+	end
+
+	local factor = tod_factor
+	if player and player:is_player() then
+		local pos = player:get_pos()
+		if pos then
+			local light = core.get_node_light(pos) or (tod_factor * 15)
+			-- Light levels 0-4 are deep dark/night (0.0 factor)
+			-- Light levels 13-15 are full bright daylight (1.0 factor)
+			local l_scale = math.max(0.0, math.min(1.0, (light - 4) / 9.0))
+			factor = l_scale * tod_factor
+		end
+	end
+	return math.max(0.0, math.min(1.0, factor))
+end
+
+---Calculates the maximum static alpha based on daylight conditions for a player.
+---@param player ObjectRef?
+---@return integer max_alpha
+local function get_max_static_alpha(player)
+	local day_factor = get_daylight_factor(player)
+	return math.floor(NIGHT_MAX_STATIC_ALPHA + (DAY_MAX_STATIC_ALPHA - NIGHT_MAX_STATIC_ALPHA) * day_factor)
+end
+
+---Calculates the maximum vignette alpha based on daylight conditions for a player.
+---@param player ObjectRef?
+---@return integer max_vignette
+local function get_max_vignette_alpha(player)
+	local day_factor = get_daylight_factor(player)
+	return math.floor(NIGHT_MAX_VIGNETTE_ALPHA + (DAY_MAX_VIGNETTE_ALPHA - NIGHT_MAX_VIGNETTE_ALPHA) * day_factor)
+end
+
+local function get_static_texture(intensity, time, player)
+	if intensity <= 0.015 then return "" end
 	local frame = (math.floor(time * 15) % 3) + 1
-	local alpha = math.min(DEFAULT_MAX_STATIC_ALPHA, math.floor(intensity * DEFAULT_MAX_STATIC_ALPHA))
+	local max_alpha = get_max_static_alpha(player)
+	local alpha = math.max(1, math.min(max_alpha, math.floor(intensity * max_alpha)))
 	return string.format("pale_watcher_hud_static_%d.png^[opacity:%d", frame, alpha)
 end
 
@@ -78,8 +124,11 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 			-- Direct gaze heavily surges static interference
 			target_intensity = proximity_t * 0.70 + 0.30
 		else
-			-- Ambient proximity: very gentle background whisper so world and tree notes remain clearly visible
-			target_intensity = proximity_t * proximity_t * 0.25
+			-- Ambient proximity: gentle whisper at night, responsive menacing presence during the day
+			local day_f = get_daylight_factor(player)
+			local ambient_weight = 0.25 + (day_f * 0.15)
+			local curve_power = 2.0 - (day_f * 0.6)
+			target_intensity = (proximity_t ^ curve_power) * ambient_weight
 		end
 	end
 	target_intensity = math.max(0.0, math.min(1.0, target_intensity))
@@ -137,9 +186,9 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 	end
 
 	-- HUD Overlays: Responsive Vignette and Animated Static
-	if state.intensity > 0.04 then
+	if state.intensity > 0.02 then
 		-- Responsive Vignette (rendered on top of static noise)
-		local max_vig = DEFAULT_MAX_VIGNETTE_ALPHA
+		local max_vig = get_max_vignette_alpha(player)
 		local vignette_alpha = math.min(max_vig, math.floor(state.intensity * max_vig))
 		local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vignette_alpha)
 		if not state.hud_vignette_id then
@@ -157,7 +206,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 		end
 
 		-- Static Noise Overlay
-		local static_tex = get_static_texture(state.intensity, state.time)
+		local static_tex = get_static_texture(state.intensity, state.time, player)
 		if not state.hud_static_id then
 			state.hud_static_id = player:hud_add({
 				hud_elem_type = "image",
@@ -399,12 +448,13 @@ core.register_globalstep(function(dtime)
 				end
 
 				if player and state.intensity > 0.02 then
-					local vig_alpha = math.min(255, math.floor(state.intensity * 230 + 25))
+					local max_vig = get_max_vignette_alpha(player)
+					local vig_alpha = math.min(max_vig, math.floor(state.intensity * max_vig))
 					local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vig_alpha)
 					if state.hud_vignette_id then
 						player:hud_change(state.hud_vignette_id, "text", vig_tex)
 					end
-					local static_tex = get_static_texture(state.intensity, state.time + dtime)
+					local static_tex = get_static_texture(state.intensity, state.time + dtime, player)
 					if state.hud_static_id then
 						player:hud_change(state.hud_static_id, "text", static_tex)
 					end
