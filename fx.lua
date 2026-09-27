@@ -31,9 +31,9 @@ local FLASH_PEAK = 0.08     -- Full-brightness blinding peak before fade begins
 
 -- Static & Vignette intensity bounds: gentle noise at night, strong high-contrast snow in daylight
 local NIGHT_MAX_STATIC_ALPHA = 22   -- ~8.6% max opacity: gentle film noise for dark night / caves
-local DAY_MAX_STATIC_ALPHA = 95     -- ~37.2% max opacity: high-contrast snow cutting through daylight
+local DAY_MAX_STATIC_ALPHA = 130    -- ~51.0% max opacity: high-contrast snow cutting through daylight
 local NIGHT_MAX_VIGNETTE_ALPHA = 100 -- ~39% max opacity: soft dark framing at night
-local DAY_MAX_VIGNETTE_ALPHA = 135  -- ~53% max opacity: deep cinematic gloom contrasting with bright day
+local DAY_MAX_VIGNETTE_ALPHA = 150  -- ~58.8% max opacity: deep cinematic gloom contrasting with bright day
 
 ---Calculates daylight / ambient luminance factor for a player.
 ---Returns 0.0 for deep night or unlit dark caves, scaling up to 1.0 for bright sunlit daytime.
@@ -44,7 +44,8 @@ local function get_daylight_factor(player)
 	local tod_factor = 0.0
 	if tod >= 0.20 and tod <= 0.80 then
 		local t = (tod - 0.20) / 0.60
-		tod_factor = math.sin(t * math.pi)
+		-- Broader daylight peak from mid-morning to late afternoon
+		tod_factor = math.sin(t * math.pi) ^ 0.70
 	end
 
 	local factor = tod_factor
@@ -52,10 +53,16 @@ local function get_daylight_factor(player)
 		local pos = player:get_pos()
 		if pos then
 			local light = core.get_node_light(pos) or (tod_factor * 15)
-			-- Light levels 0-4 are deep dark/night (0.0 factor)
-			-- Light levels 13-15 are full bright daylight (1.0 factor)
-			local l_scale = math.max(0.0, math.min(1.0, (light - 4) / 9.0))
-			factor = l_scale * tod_factor
+			-- If deep underground or in unlit sealed dungeon (light <= 3), treat as dark night/cave
+			if light <= 3 then
+				factor = 0.0
+			elseif light < 10 then
+				-- Moderate forest canopy or shadowed terrain during the day maintains strong daytime presence
+				local canopy_scale = 0.6 + 0.4 * math.max(0.0, (light - 3) / 7.0)
+				factor = tod_factor * canopy_scale
+			else
+				factor = tod_factor
+			end
 		end
 	end
 	return math.max(0.0, math.min(1.0, factor))
@@ -126,8 +133,8 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 		else
 			-- Ambient proximity: gentle whisper at night, responsive menacing presence during the day
 			local day_f = get_daylight_factor(player)
-			local ambient_weight = 0.25 + (day_f * 0.15)
-			local curve_power = 2.0 - (day_f * 0.6)
+			local ambient_weight = 0.25 + (day_f * 0.22)
+			local curve_power = 2.0 - (day_f * 0.75)
 			target_intensity = (proximity_t ^ curve_power) * ambient_weight
 		end
 	end
