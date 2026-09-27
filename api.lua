@@ -35,24 +35,28 @@ pale_watcher.colors = {
 ---Curated, legally distinct horror color palettes (Body, Suit, Tie)
 pale_watcher.palettes = {
 	abyssal_void = {
-		name = "Abyssal Void (Obsidian Plum Suit & Withered Blood Wine Tie)",
-		suit = "pale_watcher_suit.png^[colorize:#161324:200",
-		tie = "pale_watcher_tie.png^[colorize:#4f0d1b:220",
+		name = "Abyssal Void (Obsidian Plum Suit & Blood Crimson Tie)",
+		body = "pale_watcher_body.png^[colorize:#eae0f8:40",
+		suit = "pale_watcher_suit.png^[colorize:#4e1b70:190",
+		tie = "pale_watcher_tie.png^[colorize:#d4163c:240",
 	},
 	forest_wraith = {
 		name = "Forest Wraith (Blackened Spruce Suit & Tarnished Brass Tie)",
-		suit = "pale_watcher_suit.png^[colorize:#0f1714:210",
-		tie = "pale_watcher_tie.png^[colorize:#56451e:220",
+		body = "pale_watcher_body.png^[colorize:#e0f0e2:40",
+		suit = "pale_watcher_suit.png^[colorize:#1a5c3a:195",
+		tie = "pale_watcher_tie.png^[colorize:#e6a817:240",
 	},
 	quantum_slate = {
-		name = "Quantum Slate (Cold Charcoal Steel Suit & Desaturated Amethyst Tie)",
-		suit = "pale_watcher_suit.png^[colorize:#161920:200",
-		tie = "pale_watcher_tie.png^[colorize:#382042:220",
+		name = "Quantum Slate (Cold Charcoal Steel Suit & Radiant Amethyst Tie)",
+		body = "pale_watcher_body.png^[colorize:#dcf0fa:45",
+		suit = "pale_watcher_suit.png^[colorize:#1f487c:195",
+		tie = "pale_watcher_tie.png^[colorize:#a855f7:240",
 	},
 	monochrome_noir = {
-		name = "Monochrome Noir (Pure Greyscale Contrast)",
-		suit = "pale_watcher_suit.png^[colorize:#1c1c1c:180",
-		tie = "pale_watcher_tie.png^[colorize:#333333:180",
+		name = "Monochrome Noir (Stark Noir Suit & Bleached Bone Tie)",
+		body = "pale_watcher_body.png^[colorize:#ffffff:30",
+		suit = "pale_watcher_suit.png^[colorize:#141414:190",
+		tie = "pale_watcher_tie.png^[colorize:#f5f5f5:250",
 	},
 }
 
@@ -64,21 +68,27 @@ pale_watcher.palette_keys = {
 	"monochrome_noir",
 }
 
+-- Seed pseudo-random generator with high-resolution clock entropy to ensure varied palette selection
+local random_seed = (core and core.get_us_time and core.get_us_time()) or os.time()
+math.randomseed(tonumber(tostring(random_seed):reverse():sub(1, 9)) or random_seed)
+for _ = 1, 3 do math.random() end
+
 ---Builds the 3-material texture array for the Pale Watcher model.
 ---Picks a curated palette at random if neither custom textures nor a palette key are provided.
 ---@param suit_mod? string Optional suit texture with modifier
 ---@param tie_mod? string Optional tie texture with modifier
 ---@param palette_key? string Optional specific palette name from pale_watcher.palettes
+---@param body_mod? string Optional body texture with modifier
 ---@return string[] textures Array of 3 material textures: {body, suit, tie}
 ---@return string chosen_key Name of the chosen color palette
-function pale_watcher.get_textures(suit_mod, tie_mod, palette_key)
+function pale_watcher.get_textures(suit_mod, tie_mod, palette_key, body_mod)
 	local p_key = palette_key
 	if not p_key or not pale_watcher.palettes[p_key] then
 		p_key = pale_watcher.palette_keys[math.random(#pale_watcher.palette_keys)]
 	end
 	local p = pale_watcher.palettes[p_key] or pale_watcher.palettes.abyssal_void
 	return {
-		"pale_watcher_body.png",
+		body_mod or p.body or "pale_watcher_body.png",
 		suit_mod or p.suit,
 		tie_mod or p.tie,
 	}, p_key
@@ -89,7 +99,11 @@ end
 ---@param palette_key? string Optional palette key from pale_watcher.palettes (random if omitted)
 ---@return ObjectRef|nil mob_obj Spawned ObjectRef or nil
 function pale_watcher.spawn(pos, palette_key)
-	local staticdata = palette_key and core.serialize({palette_name = palette_key}) or nil
+	local chosen_key = palette_key
+	if not chosen_key or not pale_watcher.palettes[chosen_key] then
+		chosen_key = pale_watcher.palette_keys[math.random(#pale_watcher.palette_keys)]
+	end
+	local staticdata = core.serialize({palette_name = chosen_key})
 	return core.add_entity(pos, "pale_watcher:pale_watcher", staticdata)
 end
 
