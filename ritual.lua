@@ -442,10 +442,8 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 				-- Ensure this player's HUD is updated
 				update_player_hud(player, session)
 
-				-- Apply domain fog if deep in the encounter zone (>15m)
-				if dist >= 15.0 then
-					pale_watcher.fx.apply_claustrophobic_fog(player)
-				end
+				-- Apply atmospheric domain fog to all enrolled encounter participants
+				pale_watcher.fx.apply_claustrophobic_fog(player)
 			elseif dist > exit_radius and session.players[name] then
 				-- Player moved outside encounter zone: start 20s departure grace
 				if not session.departed_players[name] then

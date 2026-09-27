@@ -297,6 +297,9 @@ function pale_watcher.fx.trigger_flash(player, duration)
 	end)
 end
 
+local DOMAIN_FOG_DISTANCE = 18 -- Upper bound viewing distance in blocks during domain fog
+local DOMAIN_FOG_START = 0.35  -- Mist begins ramping at ~6.3 blocks, dense by 18 blocks
+
 ---Sets claustrophobic black domain fog for a player inside the haunted zone.
 ---@param player ObjectRef
 function pale_watcher.fx.apply_claustrophobic_fog(player)
@@ -321,10 +324,24 @@ function pale_watcher.fx.apply_claustrophobic_fog(player)
 	state.fog_active = true
 	player:set_sky({
 		fog = {
-			fog_distance = 12,
-			fog_start = 0.1,
+			fog_distance = DOMAIN_FOG_DISTANCE,
+			fog_start = DOMAIN_FOG_START,
 		}
 	})
+end
+
+---Returns whether domain fog is active for a player and the maximum visible distance.
+---@param player ObjectRef
+---@return boolean is_active
+---@return number view_distance Maximum visibility distance in blocks
+function pale_watcher.fx.get_fog_status(player)
+	if not player or not player:is_player() then return false, 100 end
+	local name = player:get_player_name()
+	local state = active_fx[name]
+	if state and state.fog_active then
+		return true, DOMAIN_FOG_DISTANCE
+	end
+	return false, 100
 end
 
 ---Restores standard fog and view distance when escaping domain or defeating Pale Watcher.

@@ -42,7 +42,14 @@ local function is_observed(pos, players)
 				local dx = pos.x - p_pos.x
 				local dy = pos.y - p_pos.y
 				local dz = pos.z - p_pos.z
-				if (dx * dx + dy * dy + dz * dz) <= MAX_OBSERVE_DIST_SQ then
+				local dist_sq = dx * dx + dy * dy + dz * dz
+				local max_dist_sq = MAX_OBSERVE_DIST_SQ
+				local has_fog, fog_dist = pale_watcher.fx.get_fog_status(player)
+				if has_fog then
+					-- Cannot observe, zoom FOV, or quantum-lock through opaque fog beyond visible range
+					max_dist_sq = fog_dist * fog_dist
+				end
+				if dist_sq <= max_dist_sq then
 					scratch_eye.x = p_pos.x
 					scratch_eye.y = p_pos.y + 1.625
 					scratch_eye.z = p_pos.z
@@ -679,8 +686,8 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 
 	if self.stalk_timer >= teleport_cooldown and dist > self.attack_range then
 		self.stalk_timer = 0
-		local step_min = math.max(4, 12 - tier * 2)
-		local step_max = math.max(8, 22 - tier * 2)
+		local step_min = math.max(3.5, 7.0 - tier * 0.8)
+		local step_max = math.max(6.0, 13.0 - tier * 1.5)
 		local next_spot = find_blind_spot_node(self.target_player, pos, step_min, step_max)
 
 		if next_spot then
@@ -703,9 +710,9 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		if vector.dot(p_look, to_watcher) < -0.2 then
 			local intercept_chance = 0.35 + (tier * 0.15)
 			if math.random() < intercept_chance * dtime * 0.4 then
-				local intercept_dist = math.random(14, 18)
+				local intercept_dist = math.random(9, 13)
 				local forward_target = vector.add(t_pos, vector.multiply(p_look, intercept_dist))
-				local ground_dest = find_blind_spot_node(self.target_player, forward_target, 12, 18)
+				local ground_dest = find_blind_spot_node(self.target_player, forward_target, 6, 11)
 				if ground_dest then
 					self.object:set_pos(ground_dest)
 					self.object:set_yaw(core.dir_to_yaw(vector.direction(ground_dest, t_pos)))
