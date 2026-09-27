@@ -33,31 +33,31 @@ pale_watcher.colors = {
 }
 
 ---Curated, legally distinct horror color palettes (Body, Suit, Tie)
----Tuned with native Luanti `^[hsl:` texture modifiers for muted, desaturated horror tones.
+---Tuned with native Luanti `^[colorizehsl:` texture modifiers for muted, visible horror tones.
 pale_watcher.palettes = {
 	abyssal_void = {
 		name = "Abyssal Void (Obsidian Plum Suit & Withered Blood Wine Tie)",
-		body = "pale_watcher_body.png^[hsl:-90:6:0",
-		suit = "pale_watcher_suit.png^[hsl:-85:18:-25",
-		tie  = "pale_watcher_tie.png^[hsl:-10:36:-15",
+		body = "pale_watcher_body.png^[colorizehsl:-90:6:0",
+		suit = "pale_watcher_suit.png^[colorizehsl:-85:30:-18",
+		tie  = "pale_watcher_tie.png^[colorizehsl:-10:48:-8",
 	},
 	forest_wraith = {
 		name = "Forest Wraith (Blackened Spruce Suit & Tarnished Brass Tie)",
-		body = "pale_watcher_body.png^[hsl:120:5:0",
-		suit = "pale_watcher_suit.png^[hsl:145:18:-25",
-		tie  = "pale_watcher_tie.png^[hsl:42:32:-15",
+		body = "pale_watcher_body.png^[colorizehsl:120:5:0",
+		suit = "pale_watcher_suit.png^[colorizehsl:145:28:-18",
+		tie  = "pale_watcher_tie.png^[colorizehsl:42:45:-8",
 	},
 	quantum_slate = {
 		name = "Quantum Slate (Cold Charcoal Steel Suit & Desaturated Amethyst Tie)",
-		body = "pale_watcher_body.png^[hsl:-155:6:0",
-		suit = "pale_watcher_suit.png^[hsl:-145:16:-22",
-		tie  = "pale_watcher_tie.png^[hsl:-75:28:-15",
+		body = "pale_watcher_body.png^[colorizehsl:-155:6:0",
+		suit = "pale_watcher_suit.png^[colorizehsl:-145:26:-18",
+		tie  = "pale_watcher_tie.png^[colorizehsl:-75:42:-8",
 	},
 	monochrome_noir = {
 		name = "Monochrome Noir (Stark Noir Suit & Ash Charcoal Tie)",
 		body = "pale_watcher_body.png",
-		suit = "pale_watcher_suit.png^[hsl:0:0:-30",
-		tie  = "pale_watcher_tie.png^[hsl:0:0:-10",
+		suit = "pale_watcher_suit.png^[colorizehsl:0:0:-25",
+		tie  = "pale_watcher_tie.png^[colorizehsl:0:0:-5",
 	},
 }
 
