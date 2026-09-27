@@ -32,32 +32,14 @@ pale_watcher.colors = {
 	dimmed   = "#aaaaaa", -- Neutral / dormant status
 }
 
----Builds a native Luanti colorize HSL texture modifier string.
----Uses the engine's built-in `^[colorizehsl:<hue>:<saturation>:<lightness>` modifier.
----Converts the texture into greyscale and tints it via HSL coordinates.
----@param base_texture string Base PNG texture file name
----@param hue number Hue in degrees [-180, 180] (or [0, 360], automatically normalized)
----@param saturation? number Saturation percentage [0, 100] (0 = pure greyscale, default 50)
----@param lightness? number Lightness adjustment percentage [-100, 100] (default 0)
----@return string texture_modifier_string
-function pale_watcher.colorize_hsl(base_texture, hue, saturation, lightness)
-	local h = math.floor((hue or 0) + 0.5)
-	h = (h + 180) % 360 - 180
-	local s = math.floor(math.max(0, math.min(100, saturation or 50)) + 0.5)
-	local l = math.floor(math.max(-100, math.min(100, lightness or 0)) + 0.5)
-
-	return string.format("%s^[colorizehsl:%d:%d:%d", base_texture, h, s, l)
-end
-
----Builds a native Luanti HSL adjustment texture modifier string.
+---Builds a native Luanti HSL texture modifier string.
 ---Uses the engine's built-in `^[hsl:<hue>:<saturation>:<lightness>` modifier.
----Adjusts existing hue [-180, 180], saturation percentage [-100, 100], and lightness percentage [-100, 100].
 ---@param base_texture string Base PNG texture file name
----@param hue number Hue shift in degrees [-180, 180]
+---@param hue number Hue shift in degrees [-180, 180] (or [0, 360], automatically normalized)
 ---@param saturation? number Saturation delta percentage [-100, 100] (default 0)
 ---@param lightness? number Lightness delta percentage [-100, 100] (default 0)
 ---@return string texture_modifier_string
-function pale_watcher.adjust_hsl(base_texture, hue, saturation, lightness)
+function pale_watcher.hsl(base_texture, hue, saturation, lightness)
 	local h = math.floor((hue or 0) + 0.5)
 	h = (h + 180) % 360 - 180
 	local s = math.floor(math.max(-100, math.min(100, saturation or 0)) + 0.5)
@@ -66,11 +48,8 @@ function pale_watcher.adjust_hsl(base_texture, hue, saturation, lightness)
 	return string.format("%s^[hsl:%d:%d:%d", base_texture, h, s, l)
 end
 
--- Backwards-compatible alias
-pale_watcher.hsl_colorize = pale_watcher.colorize_hsl
-
 ---Curated, legally distinct horror color palettes (Body, Suit, Tie)
----Tuned with native Luanti `^[colorizehsl:` texture modifiers for muted, desaturated horror tones.
+---Tuned with native Luanti `^[hsl:` texture modifiers for muted, desaturated horror tones.
 pale_watcher.palettes = {
 	abyssal_void = {
 		name = "Abyssal Void (Obsidian Plum Suit & Withered Blood Wine Tie)",
@@ -79,9 +58,9 @@ pale_watcher.palettes = {
 			tie  = {h = -10, s = 36, l = -15},
 			body = {h = -90, s = 6,  l = 0},
 		},
-		body = pale_watcher.colorize_hsl("pale_watcher_body.png", -90, 6, 0),
-		suit = pale_watcher.colorize_hsl("pale_watcher_suit.png", -85, 18, -25),
-		tie  = pale_watcher.colorize_hsl("pale_watcher_tie.png", -10, 36, -15),
+		body = pale_watcher.hsl("pale_watcher_body.png", -90, 6, 0),
+		suit = pale_watcher.hsl("pale_watcher_suit.png", -85, 18, -25),
+		tie  = pale_watcher.hsl("pale_watcher_tie.png", -10, 36, -15),
 	},
 	forest_wraith = {
 		name = "Forest Wraith (Blackened Spruce Suit & Tarnished Brass Tie)",
@@ -90,9 +69,9 @@ pale_watcher.palettes = {
 			tie  = {h = 42,  s = 32, l = -15},
 			body = {h = 120, s = 5,  l = 0},
 		},
-		body = pale_watcher.colorize_hsl("pale_watcher_body.png", 120, 5, 0),
-		suit = pale_watcher.colorize_hsl("pale_watcher_suit.png", 145, 18, -25),
-		tie  = pale_watcher.colorize_hsl("pale_watcher_tie.png", 42, 32, -15),
+		body = pale_watcher.hsl("pale_watcher_body.png", 120, 5, 0),
+		suit = pale_watcher.hsl("pale_watcher_suit.png", 145, 18, -25),
+		tie  = pale_watcher.hsl("pale_watcher_tie.png", 42, 32, -15),
 	},
 	quantum_slate = {
 		name = "Quantum Slate (Cold Charcoal Steel Suit & Desaturated Amethyst Tie)",
@@ -101,9 +80,9 @@ pale_watcher.palettes = {
 			tie  = {h = -75,  s = 28, l = -15},
 			body = {h = -155, s = 6,  l = 0},
 		},
-		body = pale_watcher.colorize_hsl("pale_watcher_body.png", -155, 6, 0),
-		suit = pale_watcher.colorize_hsl("pale_watcher_suit.png", -145, 16, -22),
-		tie  = pale_watcher.colorize_hsl("pale_watcher_tie.png", -75, 28, -15),
+		body = pale_watcher.hsl("pale_watcher_body.png", -155, 6, 0),
+		suit = pale_watcher.hsl("pale_watcher_suit.png", -145, 16, -22),
+		tie  = pale_watcher.hsl("pale_watcher_tie.png", -75, 28, -15),
 	},
 	monochrome_noir = {
 		name = "Monochrome Noir (Stark Noir Suit & Ash Charcoal Tie)",
@@ -113,8 +92,8 @@ pale_watcher.palettes = {
 			body = {h = 0, s = 0, l = 0},
 		},
 		body = "pale_watcher_body.png",
-		suit = pale_watcher.colorize_hsl("pale_watcher_suit.png", 0, 0, -30),
-		tie  = pale_watcher.colorize_hsl("pale_watcher_tie.png", 0, 0, -10),
+		suit = pale_watcher.hsl("pale_watcher_suit.png", 0, 0, -30),
+		tie  = pale_watcher.hsl("pale_watcher_tie.png", 0, 0, -10),
 	},
 }
 
