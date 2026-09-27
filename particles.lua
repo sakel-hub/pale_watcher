@@ -4,8 +4,7 @@
 	and atmospheric horror visual presets.
 ]]
 
----@class PaleWatcherParticles
-pale_watcher.particles = {}
+pale_watcher.particles = pale_watcher.particles or {}
 
 ---Spawns a particle spawner with automatic population of legacy engine fallback keys.
 ---Ensures 100% compatibility across all Luanti engine versions while keeping code DRY.
@@ -107,11 +106,13 @@ end
 
 ---Towering cleansing flame loop for burning ritual pyre.
 ---@param pos Vector Center position
+---@param duration? number Duration in seconds (default: 45)
 ---@return integer|nil
-function pale_watcher.particles.pyre_roaring_flames(pos)
+function pale_watcher.particles.pyre_roaring_flames(pos, duration)
+	local dur = duration or 45.0
 	return pale_watcher.particles.spawn({
 		amount = 40,
-		time = 0,
+		time = dur,
 		pos = {
 			min = {x = pos.x - 0.3, y = pos.y, z = pos.z - 0.3},
 			max = {x = pos.x + 0.3, y = pos.y + 0.5, z = pos.z + 0.3},
@@ -183,25 +184,6 @@ function pale_watcher.particles.void_mist(pos, height, amount)
 			{name = "pale_watcher_particles.png^[verticalframe:8:0", blend = "alpha"},
 			{name = "pale_watcher_particles.png^[verticalframe:8:1", blend = "add"},
 			{name = "pale_watcher_particles.png^[verticalframe:8:7", blend = "add"},
-		},
-	})
-end
-
----Radiant white-gold embers dissolving the mob at sunrise.
----@param pos Vector Mob base position
----@return integer|nil
-function pale_watcher.particles.dawn_banish_burn(pos)
-	return pale_watcher.particles.spawn({
-		amount = 60,
-		time = 2.0,
-		pos = {min = vector.subtract(pos, 0.5), max = vector.add(pos, {x = 0.5, y = 3.0, z = 0.5})},
-		vel = {min = {x = -0.5, y = 0.5, z = -0.5}, max = {x = 0.5, y = 2.0, z = 0.5}},
-		acc = {min = {x = 0, y = 0.5, z = 0}, max = {x = 0, y = 1.0, z = 0}},
-		exptime = {min = 1.0, max = 2.5},
-		size = {min = 1.0, max = 3.5},
-		texpool = {
-			{name = "pale_watcher_particles.png^[verticalframe:8:1", blend = "add"},
-			{name = "pale_watcher_particles.png^[verticalframe:8:4", blend = "alpha"},
 		},
 	})
 end

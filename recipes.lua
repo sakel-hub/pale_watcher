@@ -3,7 +3,7 @@
 	Ritual Pyre, Flash Camera, Shroud of Stalking, and Transient Light Purge LBM.
 ]]
 
--- 1. Ritual Pyre Recipe (Stone + Wood + Torch/Coal)
+-- Ritual Pyre Recipe (Stone + Wood + Torch/Coal)
 core.register_craft({
 	output = "pale_watcher:ritual_pyre",
 	recipe = {
@@ -23,7 +23,7 @@ core.register_craft({
 	},
 })
 
--- 2. Flash Camera Recipe (Steel + Glass + Torch)
+-- Flash Camera Recipe (Steel + Glass + Torch)
 core.register_craft({
 	output = "pale_watcher:flash_camera",
 	recipe = {
@@ -43,7 +43,7 @@ core.register_craft({
 	},
 })
 
--- 3. Shroud of Stalking Recipe (4x Dimensional Cloth + Static Core)
+-- Shroud of Stalking Recipe (4x Dimensional Cloth + Static Core)
 core.register_craft({
 	output = "pale_watcher:shroud_of_stalking",
 	recipe = {

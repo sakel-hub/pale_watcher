@@ -3,8 +3,7 @@
 	Multi-mod physics compatibility supporting player_monoids, playerphysics, pova, and native fallback.
 ]]
 
----@class PaleWatcherPhysics
-pale_watcher.physics = {}
+pale_watcher.physics = pale_watcher.physics or {}
 
 -- Cache of baseline physics overrides per player
 local default_physics = {}

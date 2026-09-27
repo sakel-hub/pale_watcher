@@ -4,8 +4,7 @@
 	and audio whispering / Geiger compass effects.
 ]]
 
----@class PaleWatcherFX
-pale_watcher.fx = {}
+pale_watcher.fx = pale_watcher.fx or {}
 
 ---@class PaleWatcherPlayerFXState
 ---@field hud_static_id? integer
@@ -30,24 +29,13 @@ local active_flashes = {}
 local FLASH_DURATION = 0.65 -- Total flash duration in seconds
 local FLASH_PEAK = 0.08     -- Full-brightness blinding peak before fade begins
 
-local DEFAULT_MAX_STATIC_ALPHA = 48    -- ~19% max opacity: provides eerie VHS noise without obscuring world vision
-local DEFAULT_MAX_VIGNETTE_ALPHA = 175  -- ~68% max opacity: darkens screen borders without blinding peripheral vision
-
-local function get_max_static_alpha()
-	local s = core.settings:get("pale_watcher_static_opacity")
-	return tonumber(s) or DEFAULT_MAX_STATIC_ALPHA
-end
-
-local function get_max_vignette_alpha()
-	local s = core.settings:get("pale_watcher_vignette_opacity")
-	return tonumber(s) or DEFAULT_MAX_VIGNETTE_ALPHA
-end
+local DEFAULT_MAX_STATIC_ALPHA = 20    -- ~8% max opacity: subtle retro film noise, keeps world & notes fully legible
+local DEFAULT_MAX_VIGNETTE_ALPHA = 100  -- ~39% max opacity: gentle dark border framing without choking screen
 
 local function get_static_texture(intensity, time)
-	if intensity <= 0.01 then return "" end
+	if intensity <= 0.02 then return "" end
 	local frame = (math.floor(time * 15) % 3) + 1
-	local max_alpha = get_max_static_alpha()
-	local alpha = math.min(max_alpha, math.floor(intensity * max_alpha))
+	local alpha = math.min(DEFAULT_MAX_STATIC_ALPHA, math.floor(intensity * DEFAULT_MAX_STATIC_ALPHA))
 	return string.format("pale_watcher_hud_static_%d.png^[opacity:%d", frame, alpha)
 end
 
@@ -85,10 +73,13 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 	-- Calculate target static intensity
 	local target_intensity = 0.0
 	if distance and distance < static_max_radius then
-		target_intensity = 1.0 - (distance / static_max_radius)
+		local proximity_t = 1.0 - (distance / static_max_radius)
 		if is_looked_at then
-			-- Direct gaze heavily intensifies static interference
-			target_intensity = target_intensity * 1.6 + 0.25
+			-- Direct gaze heavily surges static interference
+			target_intensity = proximity_t * 0.70 + 0.30
+		else
+			-- Ambient proximity: very gentle background whisper so world and tree notes remain clearly visible
+			target_intensity = proximity_t * proximity_t * 0.25
 		end
 	end
 	target_intensity = math.max(0.0, math.min(1.0, target_intensity))
@@ -145,11 +136,11 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 		end
 	end
 
-	-- HUD Overlays: Responsive Vignette + Animated Static
-	if state.intensity > 0.02 then
-		-- 1. Responsive Vignette (rendered on top of static noise)
-		local max_vig = get_max_vignette_alpha()
-		local vignette_alpha = math.min(max_vig, math.floor(state.intensity * (max_vig - 25) + 25))
+	-- HUD Overlays: Responsive Vignette and Animated Static
+	if state.intensity > 0.04 then
+		-- Responsive Vignette (rendered on top of static noise)
+		local max_vig = DEFAULT_MAX_VIGNETTE_ALPHA
+		local vignette_alpha = math.min(max_vig, math.floor(state.intensity * max_vig))
 		local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vignette_alpha)
 		if not state.hud_vignette_id then
 			state.hud_vignette_id = player:hud_add({
@@ -165,7 +156,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 			player:hud_change(state.hud_vignette_id, "text", vig_tex)
 		end
 
-		-- 2. Static Noise Overlay
+		-- Static Noise Overlay
 		local static_tex = get_static_texture(state.intensity, state.time)
 		if not state.hud_static_id then
 			state.hud_static_id = player:hud_add({
@@ -181,7 +172,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 			player:hud_change(state.hud_static_id, "text", static_tex)
 		end
 
-		-- 3. Looping Static Audio
+		-- Looping Static Audio
 		if not state.sound_handle then
 			state.sound_handle = core.sound_play("pale_watcher_static", {
 				to_player = name,
@@ -241,8 +232,9 @@ function pale_watcher.fx.trigger_flash(player, duration)
 	core.after(total_dur + 0.15, function()
 		local f = active_flashes[name]
 		if f and f.timer <= 0.05 then
-			if player:is_player() then
-				player:hud_remove(f.id)
+			local p = core.get_player_by_name(name)
+			if p then
+				p:hud_remove(f.id)
 			end
 			active_flashes[name] = nil
 		end
@@ -285,15 +277,15 @@ function pale_watcher.fx.clear_claustrophobic_fog(player)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	local state = active_fx[name]
-	if state then
+	if state and state.fog_active then
 		state.fog_active = false
+		player:set_sky({
+			fog = {
+				fog_distance = -1,
+				fog_start = -1,
+			}
+		})
 	end
-	player:set_sky({
-		fog = {
-			fog_distance = -1,
-			fog_start = -1,
-		}
-	})
 end
 
 ---Cleans up all HUD and audio effects for a single player.
@@ -357,7 +349,14 @@ end
 
 -- Globalstep decay for camera flash and horror effects
 core.register_globalstep(function(dtime)
-	-- 1. Camera flash decay with smooth quadratic ease-out opacity transition
+	if not next(active_flashes) and not next(active_fx) then
+		return
+	end
+	if #core.get_connected_players() == 0 then
+		return
+	end
+
+	-- Camera flash decay with smooth quadratic ease-out opacity transition
 	if next(active_flashes) then
 		for name, flash in pairs(active_flashes) do
 			flash.timer = flash.timer - dtime
@@ -385,7 +384,7 @@ core.register_globalstep(function(dtime)
 		end
 	end
 
-	-- 2. Horror mob static decay
+	-- Horror mob static decay
 	if next(active_fx) then
 		for name, state in pairs(active_fx) do
 			local player = core.get_player_by_name(name)

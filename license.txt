@@ -45,6 +45,7 @@ Copyright (C) 2026 SaKeL (CC BY-SA 4.0)
 `textures/pale_watcher_flash_camera.png`
 `textures/pale_watcher_hud_flash.png`
 `textures/pale_watcher_hud_pages_bg.png`
+`textures/pale_watcher_hud_pages_bg_active.png`
 `textures/pale_watcher_hud_static_1.png`
 `textures/pale_watcher_hud_static_2.png`
 `textures/pale_watcher_hud_static_3.png`

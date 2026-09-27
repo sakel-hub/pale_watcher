@@ -24,14 +24,9 @@ core.register_chatcommand("pw_clear", {
 		pale_watcher.fx.clear_player(player)
 		player:set_fov(0)
 		pale_watcher.fx.clear_claustrophobic_fog(player)
-
-		-- Emergency manual recovery: remove any legacy stuck elements from previous sessions
-		for id = 0, 50 do
-			local elem = player:hud_get(id)
-			if elem and (elem.name == "pale_watcher_flash"
-					or (type(elem.text) == "string" and elem.text:find("pale_watcher_hud_", 1, true))) then
-				player:hud_remove(id)
-			end
+		pale_watcher.physics.clear_all(player)
+		if pale_watcher.items and pale_watcher.items.clear_player then
+			pale_watcher.items.clear_player(player)
 		end
 
 		return true, "All Pale Watcher visual and audio effects cleared for " .. target_name .. "."
@@ -77,8 +72,10 @@ core.register_chatcommand("pw_locate", {
 
 		table.sort(remaining, function(a, b) return a.dist < b.dist end)
 
+		local needed = math.max(0, session.pages_total - session.pages_collected)
 		local lines = {
-			string.format("Cursed Pages remaining: %d / %d", #remaining, session.pages_total)
+			string.format("Cursed Pages remaining to collect: %d / %d (Manifested in woods: %d)",
+				needed, session.pages_total, #remaining)
 		}
 		for i, page in ipairs(remaining) do
 			local p = page.pos
@@ -102,5 +99,43 @@ core.register_chatcommand("pw_locate", {
 		end
 
 		return true, table.concat(lines, "\n")
+	end,
+})
+
+core.register_chatcommand("pw_test_hud", {
+	params = "[<pages>]",
+	description = "Tests the cursed pages HUD overlay (default: all pages for completion highlight)",
+	privs = {server = true},
+	func = function(name, param)
+		local player = core.get_player_by_name(name)
+		if not player then
+			return false, "Player '" .. name .. "' not found."
+		end
+		local p_pos = player:get_pos()
+
+		local session = pale_watcher.ritual.get_player_session(name, p_pos)
+		if session then
+			local count = tonumber(param) or session.pages_total
+			count = math.max(0, math.min(session.pages_total, count))
+			session.pages_collected = count
+			pale_watcher.ritual.update_session_players(session.session_id, p_pos)
+			return true, string.format("Set active encounter HUD progress to %d / %d pages.", count, session.pages_total)
+		end
+
+		local obj = pale_watcher.spawn(p_pos)
+		if obj then
+			local ent = obj:get_luaentity()
+			if ent and ent.session_id then
+				local s = pale_watcher.ritual.get_player_session(name, p_pos)
+				if s then
+					local count = tonumber(param) or s.pages_total
+					count = math.max(0, math.min(s.pages_total, count))
+					s.pages_collected = count
+					pale_watcher.ritual.update_session_players(ent.session_id, p_pos)
+					return true, string.format("Started test encounter with %d / %d pages.", count, s.pages_total)
+				end
+			end
+		end
+		return false, "Failed to initialize test encounter HUD."
 	end,
 })

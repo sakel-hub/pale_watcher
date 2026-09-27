@@ -9,16 +9,15 @@
 ---@field particles table Universal particle factory & visual presets
 ---@field nodes table Cursed Page and Ritual Pyre world structures
 ---@field items table Wieldable tools and artifact materials
----@field ritual table 8-page soul-burn ritual session manager
+---@field ritual table Dynamically scaling cursed page ritual session manager
 ---@field colors table Semantic chat & HUD color palette
-pale_watcher = {
-	physics = {},
-	fx = {},
-	particles = {},
-	nodes = {},
-	items = {},
-	ritual = {},
-}
+pale_watcher = pale_watcher or {}
+pale_watcher.physics = pale_watcher.physics or {}
+pale_watcher.fx = pale_watcher.fx or {}
+pale_watcher.particles = pale_watcher.particles or {}
+pale_watcher.nodes = pale_watcher.nodes or {}
+pale_watcher.items = pale_watcher.items or {}
+pale_watcher.ritual = pale_watcher.ritual or {}
 
 ---Semantic UI & chat feedback color palette for high legibility
 pale_watcher.colors = {
@@ -26,7 +25,7 @@ pale_watcher.colors = {
 	warning  = "#ffff55", -- Flash stun / page count warnings
 	danger   = "#ff3333", -- High dread / cursed collection
 	pyre     = "#ffaa33", -- Ritual pyre messages
-	victory  = "#55ff88", -- Dawn banishment / sanctuary holding / gauntlet escape
+	victory  = "#55ff88", -- Pyre banishment / sanctuary holding / gauntlet escape
 	void     = "#ff2222", -- Anti-bunker psychic choke
 	system   = "#aaccff", -- Tool descriptions & camera status
 	recharge = "#ff8888", -- Camera capacitor cooldown
@@ -57,24 +56,41 @@ pale_watcher.palettes = {
 	},
 }
 
+---Ordered list of palette identifiers for deterministic or random selection.
+pale_watcher.palette_keys = {
+	"abyssal_void",
+	"forest_wraith",
+	"quantum_slate",
+	"monochrome_noir",
+}
+
 ---Builds the 3-material texture array for the Pale Watcher model.
+---Picks a curated palette at random if neither custom textures nor a palette key are provided.
 ---@param suit_mod? string Optional suit texture with modifier
 ---@param tie_mod? string Optional tie texture with modifier
----@return string[]
-function pale_watcher.get_textures(suit_mod, tie_mod)
-	local p = pale_watcher.palettes.abyssal_void
+---@param palette_key? string Optional specific palette name from pale_watcher.palettes
+---@return string[] textures Array of 3 material textures: {body, suit, tie}
+---@return string chosen_key Name of the chosen color palette
+function pale_watcher.get_textures(suit_mod, tie_mod, palette_key)
+	local p_key = palette_key
+	if not p_key or not pale_watcher.palettes[p_key] then
+		p_key = pale_watcher.palette_keys[math.random(#pale_watcher.palette_keys)]
+	end
+	local p = pale_watcher.palettes[p_key] or pale_watcher.palettes.abyssal_void
 	return {
 		"pale_watcher_body.png",
 		suit_mod or p.suit,
 		tie_mod or p.tie,
-	}
+	}, p_key
 end
 
 ---Spawns a Pale Watcher entity at the specified world coordinate.
 ---@param pos Vector World position
+---@param palette_key? string Optional palette key from pale_watcher.palettes (random if omitted)
 ---@return ObjectRef|nil mob_obj Spawned ObjectRef or nil
-function pale_watcher.spawn(pos)
-	return core.add_entity(pos, "pale_watcher:pale_watcher")
+function pale_watcher.spawn(pos, palette_key)
+	local staticdata = palette_key and core.serialize({palette_name = palette_key}) or nil
+	return core.add_entity(pos, "pale_watcher:pale_watcher", staticdata)
 end
 
 ---Checks whether a target point is visually unobstructed by opaque solid terrain.

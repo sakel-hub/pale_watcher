@@ -3,12 +3,11 @@
 	Cursed Page, Ritual Pyre, Burning Cleansing Flame, and Flash Light.
 ]]
 
----@class PaleWatcherNodes
-pale_watcher.nodes = {}
+pale_watcher.nodes = pale_watcher.nodes or {}
 
 local colors = pale_watcher.colors
 
--- 1. Transient invisible light node created during camera flash
+-- Transient invisible light node created during camera flash
 core.register_node("pale_watcher:flash_light", {
 	drawtype = "airlike",
 	paramtype = "light",
@@ -28,7 +27,7 @@ core.register_node("pale_watcher:flash_light", {
 	end,
 })
 
--- 2. Cursed Page (Wall-Mounted Node)
+-- Cursed Page (Wall-Mounted Node)
 local function collect_page(pos, player)
 	if not player or not player:is_player() then return end
 
@@ -92,9 +91,14 @@ core.register_node("pale_watcher:cursed_page", {
 		local has_nearby = false
 		for i = 1, #players do
 			local p_pos = players[i]:get_pos()
-			if p_pos and vector.distance(pos, p_pos) <= 15.0 then
-				has_nearby = true
-				break
+			if p_pos then
+				local dx = pos.x - p_pos.x
+				local dy = pos.y - p_pos.y
+				local dz = pos.z - p_pos.z
+				if (dx * dx + dy * dy + dz * dz) <= 225.0 then
+					has_nearby = true
+					break
+				end
 			end
 		end
 
@@ -126,13 +130,13 @@ core.register_node("pale_watcher:cursed_page", {
 	end,
 })
 
--- 3. Cursed Page Drop Craftitem (fallback if dug with tools)
+-- Cursed Page Drop Craftitem (fallback if dug with tools)
 core.register_craftitem("pale_watcher:cursed_page_item", {
 	description = "Cursed Page\n" .. core.colorize(colors.whisper, "A torn parchment inscribed with eldritch scrawls."),
 	short_description = "Cursed Page",
 	inventory_image = "pale_watcher_cursed_page_item.png",
 	wield_image = "pale_watcher_cursed_page_item.png",
-	stack_max = 8,
+	stack_max = 16,
 	groups = {not_in_creative_inventory = 1},
 
 	on_use = function(itemstack, user, _pointed_thing)
@@ -153,12 +157,12 @@ core.register_craftitem("pale_watcher:cursed_page_item", {
 	end,
 })
 
--- 4. Ritual Pyre (Unlit Altar)
+-- Ritual Pyre (Unlit Altar)
 -- Attuned directly to the active Pale Watcher encounter session: no page items in inventory required
 core.register_node("pale_watcher:ritual_pyre", {
 	description = "Ritual Pyre\n" ..
 		core.colorize(colors.pyre, "Attuned to the Cursed Pages in the active encounter.\n") ..
-		core.colorize(colors.warning, "Right-Click when all 8 pages are found to ignite the Cleansing Flame."),
+		core.colorize(colors.warning, "Right-Click when all cursed pages are found to ignite the Cleansing Flame."),
 	short_description = "Ritual Pyre",
 	drawtype = "nodebox",
 	paramtype = "light",
@@ -179,7 +183,7 @@ core.register_node("pale_watcher:ritual_pyre", {
 
 	on_construct = function(pos)
 		local meta = core.get_meta(pos)
-		meta:set_string("infotext", "Ritual Pyre (Requires all 8 Cursed Pages found in active encounter)")
+		meta:set_string("infotext", "Ritual Pyre (Requires all Cursed Pages found in active encounter)")
 	end,
 
 	on_rightclick = function(pos, node, clicker, _itemstack)
@@ -195,7 +199,7 @@ core.register_node("pale_watcher:ritual_pyre", {
 		end
 
 		if session.pages_collected < session.pages_total then
-			local msg = string.format("The Pyre refuses to ignite... All 8 Cursed Pages must be found! (%d/%d Collected)",
+			local msg = string.format("The Pyre refuses to ignite... All Cursed Pages must be found! (%d/%d Collected)",
 				session.pages_collected, session.pages_total)
 			core.chat_send_player(name, core.colorize(colors.danger, msg))
 
@@ -205,25 +209,24 @@ core.register_node("pale_watcher:ritual_pyre", {
 			return
 		end
 
-		-- All 8 pages collected: Ignite the Cleansing Flame directly from session progress!
+		-- All required pages collected: Ignite the Cleansing Flame directly from session progress!
 		core.swap_node(pos, {name = "pale_watcher:ritual_pyre_burning", param2 = node.param2})
 		core.sound_play("pale_watcher_paper_burn", {pos = pos, gain = 1.0, max_hear_distance = 40})
-		core.chat_send_all(core.colorize(colors.pyre,
-			"★ The 8 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!"))
+		local ignite_msg = string.format(
+			"★ The %d bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!",
+			session.pages_total)
+		core.chat_send_all(core.colorize(colors.pyre, ignite_msg))
 
 		-- Start the burning pyre timer and towering flame particles
-		local timer = core.get_node_timer(pos)
-		if timer then
-			timer:start(45)
-		end
-		pale_watcher.particles.pyre_roaring_flames(pos)
+		core.get_node_timer(pos):start(45)
+		pale_watcher.particles.pyre_roaring_flames(pos, 45)
 
 		-- Begin Cleansing Flame Banishment Sequence
 		pale_watcher.ritual.trigger_pyre_banishment(pos, clicker, sid)
 	end,
 })
 
--- 5. Ritual Pyre (Burning Cleansing Flame)
+-- Ritual Pyre (Burning Cleansing Flame)
 core.register_node("pale_watcher:ritual_pyre_burning", {
 	description = "Cleansing Flame Pyre",
 	short_description = "Cleansing Flame Pyre",
@@ -262,8 +265,8 @@ core.register_node("pale_watcher:ritual_pyre_burning", {
 
 	on_construct = function(pos)
 		core.get_node_timer(pos):start(45) -- Cleansing flame burns for 45s then returns to dormant stone pyre
-		-- Continuous roaring flame particles (preset)
-		pale_watcher.particles.pyre_roaring_flames(pos)
+		-- Continuous roaring flame particles (preset with 45s lifespan)
+		pale_watcher.particles.pyre_roaring_flames(pos, 45)
 	end,
 })
 

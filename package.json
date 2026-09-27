@@ -1,7 +1,7 @@
 {
     "name": "pale_watcher",
     "version": "1.0.0",
-    "description": "Psychological horror mob featuring quantum stalking, 8 cursed pages, flash camera, and cleansing pyre banishment.",
+    "description": "Psychological horror mob featuring quantum stalking, scaling cursed pages ritual, flash camera, and cleansing pyre banishment.",
     "main": "init.lua",
     "type": "module",
     "engines": {
