@@ -32,31 +32,101 @@ pale_watcher.colors = {
 	dimmed   = "#aaaaaa", -- Neutral / dormant status
 }
 
+---Converts HSL color space coordinates to a 6-digit hex color (#RRGGBB).
+---Enables precise, desaturated tone balancing for horror character design.
+---@param h number Hue in degrees [0, 360)
+---@param s number Saturation in range [0, 1]
+---@param l number Lightness in range [0, 1]
+---@return string hex 6-character hex string (e.g. "#1d1821")
+function pale_watcher.hsl_to_hex(h, s, l)
+	h = (h or 0) % 360
+	s = math.max(0, math.min(1, s or 0))
+	l = math.max(0, math.min(1, l or 0))
+
+	local c = (1 - math.abs(2 * l - 1)) * s
+	local hp = h / 60
+	local x = c * (1 - math.abs((hp % 2) - 1))
+	local m = l - c * 0.5
+
+	local r1, g1, b1
+	if hp < 1 then
+		r1, g1, b1 = c, x, 0
+	elseif hp < 2 then
+		r1, g1, b1 = x, c, 0
+	elseif hp < 3 then
+		r1, g1, b1 = 0, c, x
+	elseif hp < 4 then
+		r1, g1, b1 = 0, x, c
+	elseif hp < 5 then
+		r1, g1, b1 = x, 0, c
+	else
+		r1, g1, b1 = c, 0, x
+	end
+
+	local r = math.floor((r1 + m) * 255 + 0.5)
+	local g = math.floor((g1 + m) * 255 + 0.5)
+	local b = math.floor((b1 + m) * 255 + 0.5)
+	return string.format("#%02x%02x%02x", r, g, b)
+end
+
+---Builds a Luanti texture modifier string using HSL colorization.
+---@param base_texture string Base PNG texture file name
+---@param h number Hue in degrees [0, 360)
+---@param s number Saturation in range [0, 1]
+---@param l number Lightness in range [0, 1]
+---@param ratio? number Colorize alpha ratio in range [0, 255] (default 200)
+---@return string texture_modifier_string
+function pale_watcher.hsl_colorize(base_texture, h, s, l, ratio)
+	local hex = pale_watcher.hsl_to_hex(h, s, l)
+	return string.format("%s^[colorize:%s:%d", base_texture, hex, ratio or 200)
+end
+
 ---Curated, legally distinct horror color palettes (Body, Suit, Tie)
+---Tuned with muted, desaturated HSL coordinates to avoid polarizing or bright comic hues.
 pale_watcher.palettes = {
 	abyssal_void = {
-		name = "Abyssal Void (Obsidian Plum Suit & Blood Crimson Tie)",
-		body = "pale_watcher_body.png^[colorize:#eae0f8:40",
-		suit = "pale_watcher_suit.png^[colorize:#4e1b70:190",
-		tie = "pale_watcher_tie.png^[colorize:#d4163c:240",
+		name = "Abyssal Void (Obsidian Plum Suit & Withered Blood Wine Tie)",
+		hsl = {
+			suit = {h = 275, s = 0.16, l = 0.11, ratio = 200},
+			tie  = {h = 348, s = 0.32, l = 0.22, ratio = 210},
+			body = {h = 270, s = 0.08, l = 0.94, ratio = 25},
+		},
+		body = pale_watcher.hsl_colorize("pale_watcher_body.png", 270, 0.08, 0.94, 25),
+		suit = pale_watcher.hsl_colorize("pale_watcher_suit.png", 275, 0.16, 0.11, 200),
+		tie  = pale_watcher.hsl_colorize("pale_watcher_tie.png", 348, 0.32, 0.22, 210),
 	},
 	forest_wraith = {
 		name = "Forest Wraith (Blackened Spruce Suit & Tarnished Brass Tie)",
-		body = "pale_watcher_body.png^[colorize:#e0f0e2:40",
-		suit = "pale_watcher_suit.png^[colorize:#1a5c3a:195",
-		tie = "pale_watcher_tie.png^[colorize:#e6a817:240",
+		hsl = {
+			suit = {h = 155, s = 0.16, l = 0.11, ratio = 200},
+			tie  = {h = 42,  s = 0.30, l = 0.24, ratio = 210},
+			body = {h = 135, s = 0.06, l = 0.93, ratio = 25},
+		},
+		body = pale_watcher.hsl_colorize("pale_watcher_body.png", 135, 0.06, 0.93, 25),
+		suit = pale_watcher.hsl_colorize("pale_watcher_suit.png", 155, 0.16, 0.11, 200),
+		tie  = pale_watcher.hsl_colorize("pale_watcher_tie.png", 42, 0.30, 0.24, 210),
 	},
 	quantum_slate = {
-		name = "Quantum Slate (Cold Charcoal Steel Suit & Radiant Amethyst Tie)",
-		body = "pale_watcher_body.png^[colorize:#dcf0fa:45",
-		suit = "pale_watcher_suit.png^[colorize:#1f487c:195",
-		tie = "pale_watcher_tie.png^[colorize:#a855f7:240",
+		name = "Quantum Slate (Cold Charcoal Steel Suit & Desaturated Amethyst Tie)",
+		hsl = {
+			suit = {h = 215, s = 0.15, l = 0.12, ratio = 200},
+			tie  = {h = 280, s = 0.26, l = 0.23, ratio = 210},
+			body = {h = 205, s = 0.08, l = 0.93, ratio = 25},
+		},
+		body = pale_watcher.hsl_colorize("pale_watcher_body.png", 205, 0.08, 0.93, 25),
+		suit = pale_watcher.hsl_colorize("pale_watcher_suit.png", 215, 0.15, 0.12, 200),
+		tie  = pale_watcher.hsl_colorize("pale_watcher_tie.png", 280, 0.26, 0.23, 210),
 	},
 	monochrome_noir = {
-		name = "Monochrome Noir (Stark Noir Suit & Bleached Bone Tie)",
-		body = "pale_watcher_body.png^[colorize:#ffffff:30",
-		suit = "pale_watcher_suit.png^[colorize:#141414:190",
-		tie = "pale_watcher_tie.png^[colorize:#f5f5f5:250",
+		name = "Monochrome Noir (Stark Noir Suit & Ash Charcoal Tie)",
+		hsl = {
+			suit = {h = 0, s = 0.00, l = 0.09, ratio = 190},
+			tie  = {h = 0, s = 0.00, l = 0.26, ratio = 190},
+			body = {h = 0, s = 0.00, l = 0.95, ratio = 20},
+		},
+		body = pale_watcher.hsl_colorize("pale_watcher_body.png", 0, 0.00, 0.95, 20),
+		suit = pale_watcher.hsl_colorize("pale_watcher_suit.png", 0, 0.00, 0.09, 190),
+		tie  = pale_watcher.hsl_colorize("pale_watcher_tie.png", 0, 0.00, 0.26, 190),
 	},
 }
 
