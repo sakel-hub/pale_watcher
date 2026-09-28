@@ -69,7 +69,7 @@ Your goal is simple yet terrifying:
   - A clean gothic plaque appears at the top of your screen, displaying `CURSED PAGES: 0 / [Total]`.
 
 ### Phase 2: Finding the Cursed Pages
-- **Whispers and Ink**: When you get within 15 blocks of a page, faint whispers echo around you and dark ink wisps drift off the tree bark.
+- **Whispers and Ink**: When you get within 24 blocks of a page, faint whispers echo around you and dark ink wisps drift off the tree bark.
 - **Instant Absorption**: Punch or right-click a page to pick it up. The curse is instantly absorbed into your ritual progress—pages never clutter your bag with unnecessary items.
 - **The Static Core Scanner**: If you find or craft a **Static Core**, holding it and clicking (left or right) acts like a paranormal detector. If you point directly toward a hidden page within 20 blocks, the core crackles loudly with static and eerie whispers.
 - **Ritual Ready**: Once your team finds the required number of pages, the counter at the top of your screen shifts from soft ivory to bright glowing gold: `★ PAGES: [Total] / [Total] — IGNITE RITUAL PYRE! ★`.
@@ -77,7 +77,7 @@ Your goal is simple yet terrifying:
 ### Phase 3: Surviving the Stalker
 While you search for pages, the Pale Watcher will be hunting you:
 - **The Glancing Rule**: Looking straight at him freezes him in place. However, staring continuously drains your sanity, gives you tunnel vision, slows your movement, and slowly hurts you. Glance at him for a second or two to stop his advance, then look away to keep running.
-- **Vintage Flash Camera**: If he corners you, bring up your **Vintage Flash Camera** and click (left or right). The blinding xenon flash stuns him for 3 to 5 seconds, making him cover his face and retreat into the misty tree line. The camera holds 5 flash charges and takes 10 seconds to recharge between shots.
+- **Vintage Flash Camera**: If he corners you, bring up your **Vintage Flash Camera** and click (left or right). The blinding xenon flash stuns him for 3 to 5 seconds, making him cover his face and retreat into the misty tree line. The camera holds 3 flash charges and takes 10 seconds to recharge between shots.
 - **Do Not Hide in Tiny Holes**: Digging down and sealing yourself inside a tight 1x1 or 1x2 bunker will not save you. Cramped hideouts trigger his **Anti-Bunker Curse**—he will phase straight through the wall and choke you with dark energy.
 - **Weave Through Trees**: If you sprint in a straight line, he will anticipate your path and teleport ahead of you behind the trees. Weave around tree trunks to break his line of approach.
 
@@ -146,7 +146,7 @@ The altar used to ignite the Cleansing Flame and banish the creature.
 ```
 
 ### Vintage Flash Camera (`pale_watcher:flash_camera`)
-Defensive flash camera with 5 charges. Click (left or right) to release a blinding xenon flash. Blinds and stuns the Pale Watcher for 3 to 5 seconds up to 22 blocks away. Recharges every 10 seconds.
+Defensive flash camera with 3 charges. Click (left or right) to release a blinding xenon flash. Blinds and stuns the Pale Watcher for 3 to 5 seconds up to 22 blocks away. Recharges every 10 seconds.
 ```text
 [        ] [  Torch  ] [        ]
 [ Steel  ] [  Glass  ] [ Steel  ]
