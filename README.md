@@ -4,7 +4,7 @@
 [![ContentDB Downloads](https://content.luanti.org/packages/SaKeL/pale_watcher/shields/downloads/)](https://content.luanti.org/packages/SaKeL/pale_watcher/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](license.txt)
 [![Media License: CC-BY-SA 4.0](https://img.shields.io/badge/Media-CC_BY--SA_4.0-lightgrey.svg)](license.txt)
-![Luanti](https://img.shields.io/badge/Luanti-5.0%2B-5599ff.svg)
+![Luanti](https://img.shields.io/badge/Luanti-5.17%2B-5599ff.svg)
 [![Luacheck](https://img.shields.io/github/actions/workflow/status/sakel-hub/pale_watcher/luacheck.yml?label=Luacheck&logo=lua)](https://github.com/sakel-hub/pale_watcher/actions)
 ![AI-Assisted](https://img.shields.io/badge/AI--assisted-gray)
 
