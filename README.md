@@ -10,6 +10,8 @@
 
 A psychological horror mob mod for Luanti powered by the `x_mob_core` framework.
 
+![The Pale Watcher](screenshot.png)
+
 The Pale Watcher is an eerie nightmare creature that stalks players through dark forests. Rather than chasing you like a standard monster, he uses **True Quantum Stalking**: freezing completely still whenever you look straight at him, and silently lunging forward through blind spots the instant you look away.
 
 ---
@@ -215,4 +217,5 @@ npm run push:ci -- --title="v1.0.0"
 - **Media & Assets**: [CC-BY-SA-4.0](license.txt) — Copyright (C) 2026 SaKeL
   - 3D Model: `models/pale_watcher_mob.glb`
   - Textures: `textures/pale_watcher_*.png`
+  - Screenshot: `screenshot.png`
   - Audio: `sounds/pale_watcher_*.ogg`

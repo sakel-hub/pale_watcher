@@ -33,12 +33,10 @@ desktop.ini
 # ==============================================================================
 # Python scripts, cache, bytecode, and virtual environments
 # ==============================================================================
+*.py
 __pycache__/
 *.py[cod]
 *$py.class
-*.py
-assets/scripts/
-scripts/
 .venv/
 venv/
 ENV/

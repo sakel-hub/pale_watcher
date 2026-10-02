@@ -5,6 +5,8 @@
   "license": "MIT",
   "media_license": "CC-BY-SA-4.0",
   "type": "mod",
+  "repo": "https://github.com/sakel-hub/pale_watcher",
+  "issue_tracker": "https://github.com/sakel-hub/pale_watcher/issues",
   "ai_disclosure": "ASSISTED",
   "short_description": "Psychological horror mob with quantum stalking, scaling cursed pages ritual, flash camera, and cleansing pyre banishment.",
   "long_description": "A psychological horror mob for Luanti featuring quantum stalking mechanics (freezes in direct gaze, steps forward into blind spots when unobserved), responsive vignette and static HUD overlays, FOV narrowing, flashlight/camera flash stun mechanics, dynamically scaling cursed pages ritual, and the Cleansing Flame banishment ritual."
