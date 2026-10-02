@@ -9,22 +9,15 @@ pale_watcher.physics = pale_watcher.physics or {}
 local default_physics = {}
 local active_gaze_factors = {}
 local active_terror = {}
+local terror_timers = {}
 
 local function get_effective_speed(name)
 	local factor = 1.0
 	if active_terror[name] then
-		factor = factor * 0.8
+		factor = factor * 0.85
 	end
 	if active_gaze_factors[name] then
 		factor = factor * active_gaze_factors[name]
-	end
-	return factor
-end
-
-local function get_effective_jump(name)
-	local factor = 1.0
-	if active_terror[name] then
-		factor = factor * 0.85
 	end
 	return factor
 end
@@ -37,7 +30,7 @@ local function apply_native_override(player)
 	local base = default_physics[name] or {speed = 1.0, jump = 1.0, gravity = 1.0}
 	player:set_physics_override({
 		speed = (base.speed or 1.0) * get_effective_speed(name),
-		jump = (base.jump or 1.0) * get_effective_jump(name),
+		jump = base.jump or 1.0,
 	})
 end
 
@@ -47,15 +40,14 @@ function pale_watcher.physics.apply_terror(player)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	active_terror[name] = true
+	terror_timers[name] = 2.5
 
 	if core.global_exists("player_monoids") then
-		player_monoids.speed:add_change(player, 0.8, "pale_watcher:terror")
-		player_monoids.jump:add_change(player, 0.85, "pale_watcher:terror")
+		player_monoids.speed:add_change(player, 0.85, "pale_watcher:terror")
 	elseif core.global_exists("playerphysics") then
-		playerphysics.add_physics_factor(player, "speed", "pale_watcher:terror", 0.8)
-		playerphysics.add_physics_factor(player, "jump", "pale_watcher:terror", 0.85)
+		playerphysics.add_physics_factor(player, "speed", "pale_watcher:terror", 0.85)
 	elseif core.global_exists("pova") then
-		pova.add_override(name, "pale_watcher_terror", {speed = -0.2, jump = -0.15})
+		pova.add_override(name, "pale_watcher_terror", {speed = -0.15})
 		pova.do_override(player)
 	else
 		apply_native_override(player)
@@ -68,6 +60,7 @@ function pale_watcher.physics.clear_terror(player)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	active_terror[name] = nil
+	terror_timers[name] = nil
 
 	if core.global_exists("player_monoids") then
 		player_monoids.speed:del_change(player, "pale_watcher:terror")
@@ -141,16 +134,43 @@ function pale_watcher.physics.clear_all(player)
 	pale_watcher.physics.clear_terror(player)
 	pale_watcher.physics.clear_gaze_slow(player)
 	local name = player:get_player_name()
+	terror_timers[name] = nil
 	if default_physics[name] then
 		player:set_physics_override(default_physics[name])
 		default_physics[name] = nil
 	end
 end
 
+-- Globalstep decay for sprint terror debuff
+local terror_decay_timer = 0
+core.register_globalstep(function(dtime)
+	if not next(active_terror) then return end
+	terror_decay_timer = terror_decay_timer + dtime
+	if terror_decay_timer < 0.2 then return end
+	local elapsed = terror_decay_timer
+	terror_decay_timer = 0
+
+	for name, timer in pairs(terror_timers) do
+		local rem = timer - elapsed
+		if rem <= 0 then
+			local player = core.get_player_by_name(name)
+			if player then
+				pale_watcher.physics.clear_terror(player)
+			else
+				active_terror[name] = nil
+				terror_timers[name] = nil
+			end
+		else
+			terror_timers[name] = rem
+		end
+	end
+end)
+
 core.register_on_leaveplayer(function(player)
 	pale_watcher.physics.clear_all(player)
 	local name = player:get_player_name()
 	active_terror[name] = nil
+	terror_timers[name] = nil
 	active_gaze_factors[name] = nil
 	default_physics[name] = nil
 end)
@@ -160,6 +180,23 @@ core.register_on_dieplayer(function(player)
 end)
 
 core.register_on_joinplayer(function(player)
+	-- Purge any saved/persisted jump and speed debuffs from third-party physics mods
+	if core.global_exists("playerphysics") then
+		playerphysics.remove_physics_factor(player, "jump", "pale_watcher:terror")
+		playerphysics.remove_physics_factor(player, "speed", "pale_watcher:terror")
+		playerphysics.remove_physics_factor(player, "speed", "pale_watcher:gaze")
+	end
+	if core.global_exists("player_monoids") then
+		player_monoids.jump:del_change(player, "pale_watcher:terror")
+		player_monoids.speed:del_change(player, "pale_watcher:terror")
+		player_monoids.speed:del_change(player, "pale_watcher:gaze")
+	end
+	if core.global_exists("pova") then
+		local name = player:get_player_name()
+		pova.del_override(name, "pale_watcher_terror")
+		pova.del_override(name, "pale_watcher_gaze")
+		pova.do_override(player)
+	end
 	pale_watcher.physics.clear_all(player)
 end)
 

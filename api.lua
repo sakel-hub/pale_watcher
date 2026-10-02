@@ -11,7 +11,7 @@
 ---@field items table Wieldable tools and artifact materials
 ---@field ritual table Dynamically scaling cursed page ritual session manager
 ---@field colors table Semantic chat & HUD color palette
-pale_watcher = pale_watcher or {}
+pale_watcher = rawget(_G, "pale_watcher") or {}
 pale_watcher.physics = pale_watcher.physics or {}
 pale_watcher.fx = pale_watcher.fx or {}
 pale_watcher.particles = pale_watcher.particles or {}
@@ -137,10 +137,20 @@ function pale_watcher.has_visual_los(p1, p2)
 	return true
 end
 
----Tests if a node is solid walkable ground and not a liquid.
+---Tests if a node is solid walkable ground and not a liquid or foliage.
+---Excludes tree canopies, leaves, needles, and decorative flora to prevent spawning on canopies.
 ---@param node_name string
 ---@return boolean
 function pale_watcher.is_walkable_ground(node_name)
+	if node_name == "air" or node_name == "ignore" then
+		return false
+	end
+	if core.get_item_group(node_name, "leaves") > 0 then
+		return false
+	end
+	if core.get_item_group(node_name, "flora") > 0 then
+		return false
+	end
 	local def = core.registered_nodes[node_name]
 	return (def and def.walkable and def.liquidtype == "none") and true or false
 end
@@ -174,6 +184,7 @@ function pale_watcher.has_clear_headroom(pos, height)
 end
 
 ---Scans vertically at (x, z) around y_center to find a solid walkable ground node with clear headroom.
+---Searches downwards from near player elevation first to prioritize real terrain over elevated structures.
 ---@param x number X coordinate
 ---@param y_center number Center Y elevation
 ---@param z number Z coordinate
@@ -186,7 +197,9 @@ function pale_watcher.find_ground_node(x, y_center, z, search_up, search_down, r
 	local cz = math.floor(z + 0.5)
 	local headroom = required_headroom or 3
 
-	for dy = search_up, -search_down, -1 do
+	-- Search downwards from near player eye/head level (+2 down to -search_down) first
+	local initial_up = math.min(search_up, 2)
+	for dy = initial_up, -search_down, -1 do
 		local gy = math.floor(y_center + dy + 0.5)
 		local g_pos = {x = cx, y = gy, z = cz}
 		if pale_watcher.is_walkable_ground(core.get_node(g_pos).name) then
@@ -195,6 +208,20 @@ function pale_watcher.find_ground_node(x, y_center, z, search_up, search_down, r
 			end
 		end
 	end
+
+	-- If no ground found downwards (e.g. uphill slope), search upwards from lowest to highest
+	if search_up > initial_up then
+		for dy = initial_up + 1, search_up do
+			local gy = math.floor(y_center + dy + 0.5)
+			local g_pos = {x = cx, y = gy, z = cz}
+			if pale_watcher.is_walkable_ground(core.get_node(g_pos).name) then
+				if pale_watcher.has_clear_headroom(g_pos, headroom) then
+					return g_pos
+				end
+			end
+		end
+	end
+
 	return nil
 end
 

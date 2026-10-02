@@ -23,7 +23,7 @@ core.register_chatcommand("pw_clear", {
 
 		pale_watcher.fx.clear_player(player)
 		player:set_fov(0)
-		pale_watcher.fx.clear_claustrophobic_fog(player)
+		pale_watcher.fx.clear_claustrophobic_fog(player, true)
 		pale_watcher.physics.clear_all(player)
 		if pale_watcher.items and pale_watcher.items.clear_player then
 			pale_watcher.items.clear_player(player)
