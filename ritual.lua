@@ -381,7 +381,19 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 			local dist = math.min(dist_center, dist_mob)
 			local name = player:get_player_name()
 			local is_enrolled = (session.players and session.players[name] ~= nil)
-			local in_bounds = is_enrolled and (dist <= exit_radius) or (dist <= join_radius)
+
+			-- Mutual exclusivity: Do not enroll players who are actively participating in another session
+			local enrolled_elsewhere = false
+			if not is_enrolled then
+				for other_id, other_session in pairs(active_sessions) do
+					if other_id ~= session_id and other_session.players and other_session.players[name] then
+						enrolled_elsewhere = true
+						break
+					end
+				end
+			end
+
+			local in_bounds = not enrolled_elsewhere and (is_enrolled and (dist <= exit_radius) or (dist <= join_radius))
 
 			if in_bounds and x_mob_core.is_player_alive(player) then
 				-- Check if player was returning from grace period
@@ -492,7 +504,15 @@ end
 ---@param center_pos Vector Origin spawn point
 ---@return string session_id Unique identifier for session
 function pale_watcher.ritual.start_session(mob_ref, center_pos)
-	local session_id = x_mob_core.generate_uuid()
+	-- Deduplicate: Check if an active encounter session already exists in this area
+	for sid, session in pairs(active_sessions) do
+		if session.center and vector.distance(center_pos, session.center) <= (SESSION_RADIUS * 1.5) then
+			if mob_ref and mob_ref:is_valid() and (not session.mob_ref or not session.mob_ref:is_valid()) then
+				session.mob_ref = mob_ref
+			end
+			return sid
+		end
+	end
 
 	-- Count alive players within encounter radius at spawn time
 	local initial_count = 0
@@ -501,6 +521,16 @@ function pale_watcher.ritual.start_session(mob_ref, center_pos)
 		if x_mob_core.is_player_alive(player) then
 			local p_pos = player:get_pos()
 			if p_pos and vector.distance(p_pos, center_pos) <= SESSION_RADIUS then
+				-- If player is already enrolled in an active session, reuse that session
+				local p_name = player:get_player_name()
+				for sid, session in pairs(active_sessions) do
+					if session.players and session.players[p_name] then
+						if mob_ref and mob_ref:is_valid() and (not session.mob_ref or not session.mob_ref:is_valid()) then
+							session.mob_ref = mob_ref
+						end
+						return sid
+					end
+				end
 				initial_count = initial_count + 1
 			end
 		end
@@ -508,6 +538,8 @@ function pale_watcher.ritual.start_session(mob_ref, center_pos)
 	if initial_count < 1 then
 		initial_count = 1
 	end
+
+	local session_id = x_mob_core.generate_uuid()
 
 	local target_pages = calculate_target_pages(initial_count)
 	local placed_pages = spawn_pages_dynamically(center_pos, target_pages, session_id)

@@ -515,8 +515,14 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 				damage_groups = {fleshy = punch_fleshy}
 			})
 
-			-- Heavy kinetic knockback repelling the escaping player backward into the domain
-			local knockback_dir = vector.direction(pos, t_pos)
+			-- Heavy kinetic knockback repelling the escaping player backward into the domain towards center
+			local origin = self.origin_pos or (self.session_id and pale_watcher.ritual.get_session_center(self.session_id))
+			local knockback_dir
+			if origin then
+				knockback_dir = vector.direction(t_pos, origin)
+			else
+				knockback_dir = vector.direction(pos, t_pos)
+			end
 			knockback_dir.y = 0.45
 			self.target_player:add_velocity(vector.multiply(vector.normalize(knockback_dir), 24.0))
 
@@ -1146,9 +1152,21 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 				self.session_id = saved_sid
 				self.origin_pos = pale_watcher.ritual.rebind_mob(saved_sid, self.object) or pos
 			else
-				self.session_id = pale_watcher.ritual.start_session(self.object, pos)
-				self.origin_pos = pos
-				core.sound_play("pale_watcher_bell", {pos = pos, max_hear_distance = math.max(60, WATCHER_AMBUSH_DIST)}, true)
+				local existing_session, existing_sid = pale_watcher.ritual.get_player_session(nil, pos)
+				if existing_session and existing_sid then
+					local cur_mob = existing_session.mob_ref
+					if cur_mob and cur_mob:is_valid() and cur_mob ~= self.object then
+						-- Redundant duplicate Pale Watcher entity in an already active encounter
+						self.object:remove()
+						return
+					end
+					self.session_id = existing_sid
+					self.origin_pos = pale_watcher.ritual.rebind_mob(existing_sid, self.object) or pos
+				else
+					self.session_id = pale_watcher.ritual.start_session(self.object, pos)
+					self.origin_pos = pos
+					core.sound_play("pale_watcher_bell", {pos = pos, max_hear_distance = math.max(60, WATCHER_AMBUSH_DIST)}, true)
+				end
 			end
 			self.saved_data.session_id = self.session_id
 		end
