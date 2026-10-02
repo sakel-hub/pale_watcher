@@ -55,22 +55,71 @@ Copyright (C) 2026 SaKeL (CC BY-SA 4.0)
 `textures/pale_watcher_ritual_pyre_side.png`
 `textures/pale_watcher_ritual_pyre_top.png`
 `textures/pale_watcher_shroud_of_stalking.png`
+`screenshot.png`
 Copyright (C) 2026 SaKeL (CC BY-SA 4.0)
 
 ### Audio & Sound Effects
-Synthesized and mastered specifically for The Pale Watcher:
-`sounds/pale_watcher_bell.ogg`
-`sounds/pale_watcher_camera_flash.ogg`
-`sounds/pale_watcher_death.ogg`
-`sounds/pale_watcher_drone.ogg`
-`sounds/pale_watcher_page_whisper.ogg`
-`sounds/pale_watcher_paper_burn.ogg`
-`sounds/pale_watcher_scare.ogg`
-`sounds/pale_watcher_static.ogg`
-`sounds/pale_watcher_stun.ogg`
-Copyright (C) 2026 SaKeL (CC BY-SA 4.0)
+Mastered, sliced, trimmed, and transcoded specifically for The Pale Watcher in Luanti by SaKeL:
 
----
+- `sounds/pale_watcher_bell.1.ogg`, `sounds/pale_watcher_bell.2.ogg`:
+  Source: "Gothic church bells.mp3" (Sound #180330) by Aeonemi
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/Aeonemi/sounds/180330/
+
+- `sounds/pale_watcher_camera_flash.ogg`:
+  Source: "Camera shutter and flash combined" (Sound #353044) by montclairguy
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/montclairguy/sounds/353044/
+
+- `sounds/pale_watcher_death.1.ogg`:
+  Source: "Monster screech" (Sound #565024) by Khrinx
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/Khrinx/sounds/565024/
+
+- `sounds/pale_watcher_death.2.ogg`:
+  Source: "Monster Screech.wav" (Sound #125388) by thegoose09
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/thegoose09/sounds/125388/
+
+- `sounds/pale_watcher_drone.ogg`:
+  Source: "Suspense/Horror - (Drone 1)" (Sound #420786) by Erokia
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/Erokia/sounds/420786/
+
+- `sounds/pale_watcher_page_whisper.1.ogg`, `sounds/pale_watcher_page_whisper.2.ogg`, `sounds/pale_watcher_page_whisper.3.ogg`:
+  Source: "Ghost Whispers" (Sound #175944) by Litruv
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/Litruv/sounds/175944/
+
+- `sounds/pale_watcher_paper_burn.1.ogg`:
+  Source: "Fire.wav" (Sound #386751) by ken788
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/ken788/sounds/386751/
+
+- `sounds/pale_watcher_paper_burn.2.ogg`:
+  Source: "light fire in wood stove with match strike paper burn crackle metal door close.flac" (Sound #453472) by kyles
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/kyles/sounds/453472/
+
+- `sounds/pale_watcher_scare.1.ogg`:
+  Source: "Horror Stinger 8_Innocent Children.wav" (Sound #636724) by Ulrich_Wehner
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+  https://freesound.org/people/Ulrich_Wehner/sounds/636724/
+
+- `sounds/pale_watcher_scare.2.ogg`:
+  Source: "PanicScare.wav" (Sound #124955) by SirBedlam
+  License: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  https://freesound.org/people/SirBedlam/sounds/124955/
+
+- `sounds/pale_watcher_static.1.ogg`, `sounds/pale_watcher_static.2.ogg`, `sounds/pale_watcher_static.3.ogg`:
+  Source: "TV Static.wav" (Sound #116395) by DiArchangeli
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/DiArchangeli/sounds/116395/
+
+- `sounds/pale_watcher_stun.1.ogg`, `sounds/pale_watcher_stun.2.ogg`:
+  Source: "tinnitus.wav" (Sound #211726) by Sclolex
+  License: Creative Commons 0 1.0 Universal (CC0 1.0)
+  https://freesound.org/people/Sclolex/sounds/211726/
 
 You are free to:
 - Share — copy and redistribute the material in any medium or format.
