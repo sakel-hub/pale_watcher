@@ -200,7 +200,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 		local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vignette_alpha)
 		if not state.hud_vignette_id then
 			state.hud_vignette_id = player:hud_add({
-				hud_elem_type = "image",
+				type = "image",
 				position = {x = 0.5, y = 0.5},
 				name = "pale_watcher_vignette",
 				scale = {x = -100, y = -100}, -- Responsively spans 100% of viewport
@@ -216,7 +216,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 		local static_tex = get_static_texture(state.intensity, state.time, player)
 		if not state.hud_static_id then
 			state.hud_static_id = player:hud_add({
-				hud_elem_type = "image",
+				type = "image",
 				position = {x = 0.5, y = 0.5},
 				name = "pale_watcher_static",
 				scale = {x = -100, y = -100},
@@ -269,7 +269,7 @@ function pale_watcher.fx.trigger_flash(player, duration)
 		player:hud_change(flash.id, "text", "pale_watcher_hud_flash.png^[opacity:255")
 	else
 		local id = player:hud_add({
-			hud_elem_type = "image",
+			type = "image",
 			position = {x = 0.5, y = 0.5},
 			name = "pale_watcher_flash",
 			scale = {x = -100, y = -100},
@@ -298,15 +298,15 @@ function pale_watcher.fx.trigger_flash(player, duration)
 end
 
 local DOMAIN_FOG_DISTANCE = 18 -- Upper bound viewing distance in blocks during domain fog
-local DOMAIN_FOG_START = 0.35  -- Mist begins ramping at ~6.3 blocks, dense by 18 blocks
+local DOMAIN_FOG_START = 0.25  -- Mist begins ramping at ~4.5 blocks, thick by 18 blocks
 
----Sets claustrophobic black domain fog for a player inside the haunted zone.
+---Sets claustrophobic domain fog for a player inside the haunted zone.
 ---@param player ObjectRef
-function pale_watcher.fx.apply_claustrophobic_fog(player)
+---@param force? boolean If true, forces set_sky update even if fog_active is already recorded
+function pale_watcher.fx.apply_claustrophobic_fog(player, force)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	local state = active_fx[name]
-	if state and state.fog_active then return end
 
 	if not state then
 		state = {
@@ -319,6 +319,14 @@ function pale_watcher.fx.apply_claustrophobic_fog(player)
 			fog_active = false,
 		}
 		active_fx[name] = state
+	end
+
+	-- Check if fog is already properly applied on the engine side
+	if not force and state.fog_active then
+		local cur_sky = player:get_sky(true)
+		if cur_sky and cur_sky.fog and cur_sky.fog.fog_distance == DOMAIN_FOG_DISTANCE then
+			return
+		end
 	end
 
 	state.fog_active = true
@@ -346,12 +354,15 @@ end
 
 ---Restores standard fog and view distance when escaping domain or defeating Pale Watcher.
 ---@param player ObjectRef
-function pale_watcher.fx.clear_claustrophobic_fog(player)
+---@param force? boolean If true, resets sky even if state is not currently marked active
+function pale_watcher.fx.clear_claustrophobic_fog(player, force)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	local state = active_fx[name]
-	if state and state.fog_active then
-		state.fog_active = false
+	if force or (state and state.fog_active) then
+		if state then
+			state.fog_active = false
+		end
 		player:set_sky({
 			fog = {
 				fog_distance = -1,
@@ -363,7 +374,8 @@ end
 
 ---Cleans up all HUD and audio effects for a single player.
 ---@param player ObjectRef
-function pale_watcher.fx.clear_player(player)
+---@param clear_fog? boolean Whether to clear fog (default true)
+function pale_watcher.fx.clear_player(player, clear_fog)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 
@@ -394,10 +406,12 @@ function pale_watcher.fx.clear_player(player)
 			pale_watcher.physics.clear_gaze_slow(player)
 			state.is_gazing = false
 		end
-		if state.fog_active then
-			pale_watcher.fx.clear_claustrophobic_fog(player)
+		if (clear_fog == nil or clear_fog == true) and state.fog_active then
+			pale_watcher.fx.clear_claustrophobic_fog(player, true)
 		end
-		active_fx[name] = nil
+		if clear_fog ~= false then
+			active_fx[name] = nil
+		end
 	end
 end
 
@@ -421,12 +435,38 @@ function pale_watcher.fx.clear_all()
 end
 
 -- Globalstep decay for camera flash and horror effects
+local fog_watchdog_timer = 0
 core.register_globalstep(function(dtime)
 	if not next(active_flashes) and not next(active_fx) then
 		return
 	end
 	if #core.get_connected_players() == 0 then
 		return
+	end
+
+	-- Periodic domain fog enforcement: defends against external skybox resets (e.g. everness/weather)
+	if next(active_fx) then
+		fog_watchdog_timer = fog_watchdog_timer + dtime
+		if fog_watchdog_timer >= 0.5 then
+			fog_watchdog_timer = 0
+			for name, state in pairs(active_fx) do
+				if state.fog_active then
+					local player = core.get_player_by_name(name)
+					if player then
+						local cur_sky = player:get_sky(true)
+						local cur_dist = cur_sky and cur_sky.fog and cur_sky.fog.fog_distance
+						if cur_dist ~= DOMAIN_FOG_DISTANCE then
+							player:set_sky({
+								fog = {
+									fog_distance = DOMAIN_FOG_DISTANCE,
+									fog_start = DOMAIN_FOG_START,
+								}
+							})
+						end
+					end
+				end
+			end
+		end
 	end
 
 	-- Camera flash decay with smooth quadratic ease-out opacity transition
@@ -530,9 +570,26 @@ core.register_on_dieplayer(function(player)
 end)
 
 core.register_on_joinplayer(function(player)
-	pale_watcher.fx.clear_player(player)
 	player:set_fov(0)
-	pale_watcher.fx.clear_claustrophobic_fog(player)
+
+	-- If the joining player is inside an active encounter session,
+	-- avoid wiping their sky/fog and instead immediately re-assert domain fog.
+	local name = player:get_player_name()
+	local in_session = false
+	if pale_watcher.ritual and pale_watcher.ritual.get_player_session then
+		local s = pale_watcher.ritual.get_player_session(name, player:get_pos())
+		if s then
+			in_session = true
+		end
+	end
+
+	pale_watcher.fx.clear_player(player, not in_session)
+
+	if in_session then
+		pale_watcher.fx.apply_claustrophobic_fog(player, true)
+	else
+		pale_watcher.fx.clear_claustrophobic_fog(player, true)
+	end
 end)
 
 core.register_on_shutdown(function()

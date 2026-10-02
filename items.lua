@@ -44,9 +44,9 @@ local function handle_target_rightclick(itemstack, user, pointed_thing)
 	return false, itemstack
 end
 
--- Vintage Flash Camera Tool (5 Uses via add_wear_by_uses)
+-- Vintage Flash Camera Tool (3 Uses via add_wear_by_uses)
 local CAMERA_COOLDOWN = 10.0
-local CAMERA_MAX_USES = 5
+local CAMERA_MAX_USES = 3
 local camera_cooldowns = {}
 
 local function trigger_flash_camera(itemstack, user, _pointed_thing)
@@ -118,7 +118,7 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 		end
 	end
 
-	-- Consume 1 charge of durability (5 uses total via add_wear_by_uses)
+	-- Consume 1 charge of durability (3 uses total via add_wear_by_uses)
 	local is_creative = core.is_creative_enabled and core.is_creative_enabled(name)
 	if not is_creative then
 		itemstack:add_wear_by_uses(CAMERA_MAX_USES)
@@ -150,7 +150,7 @@ core.register_tool("pale_watcher:flash_camera", {
 		core.colorize(colors.system, "Left-Click or Right-Click: Release high-intensity xenon flash.\n") ..
 		core.colorize(colors.warning, "• Blinds the Pale Watcher, forcing an evasive retreat.\n") ..
 		core.colorize("#e0e0e0", "• Illuminates deep darkness.\n") ..
-		core.colorize(colors.dimmed, "Durability: 5 flash charges.\n") ..
+		core.colorize(colors.dimmed, "Durability: 3 flash charges.\n") ..
 		core.colorize(colors.system, "Cooldown: 10 seconds."),
 	short_description = "Flash Camera",
 	inventory_image = "pale_watcher_flash_camera.png",

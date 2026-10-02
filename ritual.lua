@@ -21,9 +21,13 @@ local active_sessions = {}
 --     orphan_timer = number,
 -- }
 
-local SESSION_RADIUS = 85.0
-local SESSION_EXIT_RADIUS = 120.0
-local SESSION_COMPLETE_EXIT_RADIUS = 160.0
+pale_watcher.ritual.SESSION_RADIUS = 85.0
+pale_watcher.ritual.SESSION_EXIT_RADIUS = 120.0
+pale_watcher.ritual.SESSION_COMPLETE_EXIT_RADIUS = 160.0
+
+local SESSION_RADIUS = pale_watcher.ritual.SESSION_RADIUS
+local SESSION_EXIT_RADIUS = pale_watcher.ritual.SESSION_EXIT_RADIUS
+local SESSION_COMPLETE_EXIT_RADIUS = pale_watcher.ritual.SESSION_COMPLETE_EXIT_RADIUS
 local SPAWN_RADIUS_MIN = 15.0
 local SPAWN_RADIUS_MAX = 45.0
 local MIN_PAGE_DISTANCE = 8.0 -- Primary spacing between pages
@@ -263,7 +267,7 @@ local function update_player_hud(player, session)
 	-- Centered Gothic Plaque Background (384x32) with golden active highlight
 	if not p_data.hud_bg_id then
 		p_data.hud_bg_id = player:hud_add({
-			hud_elem_type = "image",
+			type = "image",
 			position = {x = 0.5, y = 0.04},
 			alignment = {x = 0, y = 0},
 			offset = {x = 0, y = 0},
@@ -280,7 +284,7 @@ local function update_player_hud(player, session)
 	-- Horizontally Centered Accessible Text Element
 	if not p_data.hud_text_id then
 		p_data.hud_text_id = player:hud_add({
-			hud_elem_type = "text",
+			type = "text",
 			position = {x = 0.5, y = 0.04},
 			alignment = {x = 0, y = 0},
 			offset = {x = 0, y = 0},
@@ -376,8 +380,10 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 			local dist_mob = mob_pos and vector.distance(p_pos, mob_pos) or 9999
 			local dist = math.min(dist_center, dist_mob)
 			local name = player:get_player_name()
+			local is_enrolled = (session.players and session.players[name] ~= nil)
+			local in_bounds = is_enrolled and (dist <= exit_radius) or (dist <= join_radius)
 
-			if dist <= join_radius and x_mob_core.is_player_alive(player) then
+			if in_bounds and x_mob_core.is_player_alive(player) then
 				-- Check if player was returning from grace period
 				local was_in_grace = (session.departed_players[name] ~= nil)
 				if was_in_grace then
@@ -387,7 +393,7 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 							"★ You step back into the cursed mist... The ritual claims you once more."))
 				end
 
-				local is_new = not session.players[name]
+				local is_new = not is_enrolled
 				if is_new then
 					session.players[name] = {
 						pages_found = 0,
@@ -463,11 +469,22 @@ end
 ---Rebinds a newly loaded or restored mob entity to an existing active session.
 ---@param session_id string
 ---@param mob_ref ObjectRef
+---@return Vector|nil center
 function pale_watcher.ritual.rebind_mob(session_id, mob_ref)
 	local session = active_sessions[session_id]
 	if session then
 		session.mob_ref = mob_ref
+		return session.center
 	end
+	return nil
+end
+
+---Retrieves the origin center coordinates of an active encounter session.
+---@param session_id string
+---@return Vector|nil center
+function pale_watcher.ritual.get_session_center(session_id)
+	local session = active_sessions[session_id]
+	return session and session.center
 end
 
 ---Starts a new Ephemeral Encounter Session bound to the Pale Watcher entity instance.
@@ -527,6 +544,16 @@ function pale_watcher.ritual.get_stalker_tier(session_id)
 	local session = active_sessions[session_id]
 	if not session then return 0 end
 	return session.stalker_tier or 0
+end
+
+---Checks if a player is currently an enrolled participant in a session.
+---@param session_id string
+---@param player_name string
+---@return boolean is_enrolled
+function pale_watcher.ritual.is_player_enrolled(session_id, player_name)
+	local session = active_sessions[session_id]
+	if not session or not session.players then return false end
+	return session.players[player_name] ~= nil
 end
 
 ---Finds the active encounter session for a player or near a world position.
@@ -871,8 +898,55 @@ core.register_on_joinplayer(function(player)
 			session.players[name].hud_text_id = nil
 			session.players[name].last_text = nil
 			session.players[name].last_bg = nil
+			if session.departed_players then
+				session.departed_players[name] = nil
+			end
 		end
 	end
+
+	-- Delayed multi-stage resync once the client's local renderer finishes initializing
+	core.after(0.5, function()
+		if not player:is_player() or not player:is_valid() then return end
+		local p_name = player:get_player_name()
+		local p_pos = player:get_pos()
+		if not p_pos then return end
+
+		for session_id, session in pairs(active_sessions) do
+			local center = session.center
+			local mob_obj = session.mob_ref
+			local mob_pos = mob_obj and mob_obj:is_valid() and mob_obj:get_pos()
+			local dist_center = center and vector.distance(p_pos, center) or 9999
+			local dist_mob = mob_pos and vector.distance(p_pos, mob_pos) or 9999
+			local dist = math.min(dist_center, dist_mob)
+
+			local complete = (session.pages_collected >= session.pages_total)
+			local max_r = complete and SESSION_COMPLETE_EXIT_RADIUS or SESSION_EXIT_RADIUS
+			local is_enrolled = (session.players and session.players[p_name] ~= nil)
+			local in_bounds = is_enrolled and (dist <= max_r)
+				or (dist <= (complete and (SESSION_RADIUS * 1.5) or SESSION_RADIUS))
+
+			if in_bounds and x_mob_core.is_player_alive(player) then
+				pale_watcher.ritual.update_session_players(session_id)
+				pale_watcher.fx.apply_claustrophobic_fog(player, true)
+				break
+			end
+		end
+	end)
+
+	-- Secondary backup at 1.5s to ensure slow-loading clients firmly receive fog & HUD
+	core.after(1.5, function()
+		if not player:is_player() or not player:is_valid() then return end
+		local p_name = player:get_player_name()
+		local p_pos = player:get_pos()
+		if not p_pos then return end
+
+		for _, session in pairs(active_sessions) do
+			if session.players and session.players[p_name] then
+				pale_watcher.fx.apply_claustrophobic_fog(player, true)
+				break
+			end
+		end
+	end)
 end)
 
 core.register_on_shutdown(function()

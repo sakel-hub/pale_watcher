@@ -86,7 +86,7 @@ core.register_node("pale_watcher:cursed_page", {
 			return false
 		end
 
-		-- Proximity audio whisper and ambient particles if any player is within 15 nodes
+		-- Proximity audio whisper and ambient particles if any player is within 24 nodes
 		local players = core.get_connected_players()
 		local has_nearby = false
 		for i = 1, #players do
@@ -95,7 +95,7 @@ core.register_node("pale_watcher:cursed_page", {
 				local dx = pos.x - p_pos.x
 				local dy = pos.y - p_pos.y
 				local dz = pos.z - p_pos.z
-				if (dx * dx + dy * dy + dz * dz) <= 225.0 then
+				if (dx * dx + dy * dy + dz * dz) <= 576.0 then -- 24 blocks
 					has_nearby = true
 					break
 				end
@@ -105,8 +105,8 @@ core.register_node("pale_watcher:cursed_page", {
 		if has_nearby then
 			core.sound_play("pale_watcher_page_whisper", {
 				pos = pos,
-				gain = 0.25,
-				max_hear_distance = 12,
+				gain = 0.55,
+				max_hear_distance = 24,
 			}, true)
 
 			-- Subtle black ink wisp particle spawner (preset)
@@ -186,6 +186,14 @@ core.register_node("pale_watcher:ritual_pyre", {
 		meta:set_string("infotext", "Ritual Pyre (Requires all Cursed Pages found in active encounter)")
 	end,
 
+	on_destruct = function(pos)
+		pale_watcher.particles.remove_pyre_flames(pos)
+	end,
+
+	after_destruct = function(pos, _oldnode)
+		pale_watcher.particles.remove_pyre_flames(pos)
+	end,
+
 	on_rightclick = function(pos, node, clicker, _itemstack)
 		if not clicker or not clicker:is_player() then return end
 		local name = clicker:get_player_name()
@@ -233,6 +241,7 @@ core.register_node("pale_watcher:ritual_pyre_burning", {
 	drawtype = "nodebox",
 	paramtype = "light",
 	light_source = 14,
+	drop = "",
 	tiles = {
 		{
 			name = "pale_watcher_ritual_pyre_flame.png",
@@ -254,19 +263,40 @@ core.register_node("pale_watcher:ritual_pyre_burning", {
 			{-0.25, 0.0, -0.25, 0.25, 0.6, 0.25}, -- Tower of flame
 		},
 	},
-	groups = {cracky = 2, not_in_creative_inventory = 1},
+	groups = {cracky = 2, oddly_breakable_by_hand = 1, not_in_creative_inventory = 1},
 	damage_per_second = 6,
 
 	on_timer = function(pos)
-		local node = core.get_node(pos)
-		core.swap_node(pos, {name = "pale_watcher:ritual_pyre", param2 = node.param2})
+		pale_watcher.particles.remove_pyre_flames(pos)
+		pale_watcher.particles.pyre_cold_rejection(pos)
+		core.sound_play("pale_watcher_paper_burn", {pos = pos, gain = 0.5, max_hear_distance = 15}, true)
+		core.remove_node(pos)
 		return false
 	end,
 
 	on_construct = function(pos)
-		core.get_node_timer(pos):start(45) -- Cleansing flame burns for 45s then returns to dormant stone pyre
+		core.get_node_timer(pos):start(45) -- Cleansing flame burns for 45s then burns out to ashes
 		-- Continuous roaring flame particles (preset with 45s lifespan)
 		pale_watcher.particles.pyre_roaring_flames(pos, 45)
+	end,
+
+	on_destruct = function(pos)
+		pale_watcher.particles.remove_pyre_flames(pos)
+	end,
+
+	after_destruct = function(pos, _oldnode)
+		pale_watcher.particles.remove_pyre_flames(pos)
+	end,
+
+	after_dig_node = function(pos, _oldnode, _oldmetadata, _digger)
+		pale_watcher.particles.remove_pyre_flames(pos)
+	end,
+
+	on_flood = function(pos, _oldnode, _newnode)
+		pale_watcher.particles.remove_pyre_flames(pos)
+		pale_watcher.particles.pyre_cold_rejection(pos)
+		core.sound_play("pale_watcher_paper_burn", {pos = pos, gain = 0.5, max_hear_distance = 15}, true)
+		return false
 	end,
 })
 

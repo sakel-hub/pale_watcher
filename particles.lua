@@ -104,13 +104,27 @@ function pale_watcher.particles.pyre_cold_rejection(pos)
 	})
 end
 
+-- Table mapping hashed node position -> spawner_id
+local active_pyre_spawners = {}
+
 ---Towering cleansing flame loop for burning ritual pyre.
 ---@param pos Vector Center position
 ---@param duration? number Duration in seconds (default: 45)
----@return integer|nil
+---@return integer|nil spawner_id
 function pale_watcher.particles.pyre_roaring_flames(pos, duration)
+	if not pos then return nil end
+	local rounded = vector.round(pos)
+	local pos_key = core.hash_node_position(rounded)
+
+	-- If there was an existing spawner at this exact node position, delete it first
+	local old_id = active_pyre_spawners[pos_key]
+	if old_id then
+		core.delete_particlespawner(old_id)
+		active_pyre_spawners[pos_key] = nil
+	end
+
 	local dur = duration or 45.0
-	return pale_watcher.particles.spawn({
+	local id = pale_watcher.particles.spawn({
 		amount = 40,
 		time = dur,
 		pos = {
@@ -136,6 +150,40 @@ function pale_watcher.particles.pyre_roaring_flames(pos, duration)
 		alpha_tween = {start = 1.0, finish = 0.0},
 		glow = 14,
 	})
+
+	if id then
+		active_pyre_spawners[pos_key] = id
+
+		local meta = core.get_meta(rounded)
+		if meta then
+			meta:set_int("pale_watcher:pyre_spawner_id", id)
+		end
+	end
+
+	return id
+end
+
+---Removes active pyre flame particle spawner at a given node position.
+---@param pos Vector Center position
+function pale_watcher.particles.remove_pyre_flames(pos)
+	if not pos then return end
+	local rounded = vector.round(pos)
+	local pos_key = core.hash_node_position(rounded)
+
+	local id = active_pyre_spawners[pos_key]
+	if id then
+		core.delete_particlespawner(id)
+		active_pyre_spawners[pos_key] = nil
+	end
+
+	local meta = core.get_meta(rounded)
+	if meta then
+		local meta_id = meta:get_int("pale_watcher:pyre_spawner_id")
+		if meta_id and meta_id > 0 then
+			core.delete_particlespawner(meta_id)
+			meta:set_int("pale_watcher:pyre_spawner_id", 0)
+		end
+	end
 end
 
 ---High-intensity xenon sparks and smoke bursting forward from vintage flash camera.
@@ -333,5 +381,12 @@ function pale_watcher.particles.teleport_rift(pos)
 		glow = 8,
 	})
 end
+
+core.register_on_shutdown(function()
+	for _, id in pairs(active_pyre_spawners) do
+		core.delete_particlespawner(id)
+	end
+	active_pyre_spawners = {}
+end)
 
 return pale_watcher.particles
