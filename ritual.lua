@@ -5,6 +5,7 @@
 ]]
 
 pale_watcher.ritual = pale_watcher.ritual or {}
+local S = pale_watcher.S
 
 local active_sessions = {}
 -- active_sessions[session_id] = {
@@ -21,9 +22,9 @@ local active_sessions = {}
 --     orphan_timer = number,
 -- }
 
-pale_watcher.ritual.SESSION_RADIUS = 85.0
-pale_watcher.ritual.SESSION_EXIT_RADIUS = 120.0
-pale_watcher.ritual.SESSION_COMPLETE_EXIT_RADIUS = 160.0
+pale_watcher.ritual.SESSION_RADIUS = math.max(60.0, (pale_watcher.TETHER_MAX or 100.0) - 15.0)
+pale_watcher.ritual.SESSION_EXIT_RADIUS = (pale_watcher.TETHER_MAX or 100.0) + 20.0
+pale_watcher.ritual.SESSION_COMPLETE_EXIT_RADIUS = (pale_watcher.TETHER_MAX or 100.0) + 60.0
 
 local SESSION_RADIUS = pale_watcher.ritual.SESSION_RADIUS
 local SESSION_EXIT_RADIUS = pale_watcher.ritual.SESSION_EXIT_RADIUS
@@ -253,8 +254,8 @@ local function update_player_hud(player, session)
 
 	local complete = session.pages_collected >= session.pages_total
 	local raw_text = complete and
-		string.format("PAGES: %d / %d — IGNITE RITUAL PYRE!", session.pages_collected, session.pages_total) or
-		string.format("CURSED PAGES: %d / %d", session.pages_collected, session.pages_total)
+		S("PAGES: @1 / @2 — IGNITE RITUAL PYRE!", session.pages_collected, session.pages_total) or
+		S("CURSED PAGES: @1 / @2", session.pages_collected, session.pages_total)
 
 	-- Direct string colorization guarantees vibrant visual formatting across all font backends
 	local display_text = complete and
@@ -351,6 +352,15 @@ local function get_active_player_count(session)
 	return count
 end
 
+---Counts active participating players in a session who are alive, connected, and not in grace period.
+---@param session_id string
+---@return integer count
+function pale_watcher.ritual.get_active_player_count(session_id)
+	local session = active_sessions[session_id]
+	if not session then return 0 end
+	return get_active_player_count(session)
+end
+
 ---Synchronizes participants within encounter radius (Dynamic Join & Leave with Grace Period).
 ---@param session_id string
 ---@param center_pos? Vector
@@ -402,7 +412,7 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 					session.departed_players[name] = nil
 					core.chat_send_player(name,
 						core.colorize(pale_watcher.colors.whisper,
-							"★ You step back into the cursed mist... The ritual claims you once more."))
+							S("★ You step back into the cursed mist... The ritual claims you once more.")))
 				end
 
 				local is_new = not is_enrolled
@@ -432,8 +442,8 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 								session.pages_total = session.pages_total + spawned_count
 								session.stalker_tier = calculate_stalker_tier(session)
 
-								local expand_msg = string.format(
-									"★ The anomaly expands... %d additional cursed pages manifest in the dark woods! (%d total) ★",
+								local expand_msg = S(
+									"★ The anomaly expands... @1 additional cursed pages manifest in the dark woods! (@2 total) ★",
 									spawned_count, session.pages_total)
 								for pname, _ in pairs(session.players) do
 									core.chat_send_player(pname, core.colorize(pale_watcher.colors.danger, expand_msg))
@@ -452,8 +462,8 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 					end
 
 					local join_msg = complete and
-						"The nightmare reaches its climax... Ignite the Ritual Pyre to banish him!" or
-						string.format("A chilling presence surrounds you... Find the %d Cursed Pages!", session.pages_total)
+						S("The nightmare reaches its climax... Ignite the Ritual Pyre to banish him!") or
+						S("A chilling presence surrounds you... Find the @1 Cursed Pages!", session.pages_total)
 					core.chat_send_player(name, core.colorize(pale_watcher.colors.void, join_msg))
 				end
 
@@ -471,7 +481,7 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 					session.departed_players[name] = 20.0
 					core.chat_send_player(name,
 						core.colorize(pale_watcher.colors.dimmed,
-							"★ You have retreated from the cursed mist. Return within 20s or your tether to the ritual will sever."))
+							S("★ You have retreated from the cursed mist. Return within 20s or your tether to the ritual will sever.")))
 				end
 			end
 		end
@@ -627,7 +637,7 @@ function pale_watcher.ritual.end_session(session_id, victory)
 			if victory then
 				core.chat_send_player(name,
 					core.colorize(pale_watcher.colors.victory,
-						"★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."))
+						S("★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished.")))
 			end
 		end
 	end
@@ -680,7 +690,7 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 		local p = core.get_player_by_name(name)
 		if p then
 			update_player_hud(p, session)
-			local msg = string.format("Cursed Page Collected: %d / %d (%s found one!)",
+			local msg = S("Cursed Page Collected: @1 / @2 (@3 found one!)",
 				session.pages_collected, session.pages_total, clicker_name)
 			core.chat_send_player(name, core.colorize(pale_watcher.colors.danger, msg))
 			pale_watcher.fx.update_player(p, 25, false, 0.3, session.stalker_tier)
@@ -689,16 +699,16 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 
 	-- Whispered Survival Tip for the collector (No inventory clutter)
 	local survival_tips = {
-		"Never run in a straight line... weaving through dense trees disrupts his intercept vector.",
-		"The glancing check... spin around every few seconds to freeze his silent advance.",
-		"Head for the torches... sanctuary light (14+) holds him at bay at the dark tree line.",
-		"He phase-teleports into cramped holes... never attempt to hide in a 3-block dirt bunker!",
-		"A camera's xenon flash can stun him for 3-5 seconds and force an evasive retreat.",
-		"Once all cursed pages are found, ignite a Ritual Pyre to summon and banish him in holy fire.",
+		S("Never run in a straight line... weaving through dense trees disrupts his intercept vector."),
+		S("The glancing check... spin around every few seconds to freeze his silent advance."),
+		S("Head for the torches... sanctuary light (14+) holds him at bay at the dark tree line."),
+		S("He phase-teleports into cramped holes... never attempt to hide in a 3-block dirt bunker!"),
+		S("A camera's xenon flash can stun him for 3-5 seconds and force an evasive retreat."),
+		S("Once all cursed pages are found, ignite a Ritual Pyre to summon and banish him in holy fire."),
 	}
 	local tip = survival_tips[((session.pages_collected - 1) % #survival_tips) + 1]
 	core.chat_send_player(clicker_name,
-		core.colorize(pale_watcher.colors.whisper, "★ As the cursed page burns, a whisper echoes: \"" .. tip .. "\""))
+		core.colorize(pale_watcher.colors.whisper, S("★ As the cursed page burns, a whisper echoes: \"@1\"", tip)))
 
 	-- Aggression Re-Targeting: Pale Watcher immediately prioritizes the collector!
 	if session.mob_ref and session.mob_ref:is_valid() then
@@ -719,7 +729,7 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 			if p then
 				core.chat_send_player(name,
 					core.colorize(pale_watcher.colors.warning,
-						string.format("★ ALL %d CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★",
+						S("★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★",
 							session.pages_total)))
 				core.sound_play("pale_watcher_bell", {to_player = name, gain = 1.0}, true)
 			end
@@ -759,7 +769,7 @@ function pale_watcher.ritual.trigger_pyre_banishment(pyre_pos, summoner, session
 	if not mob_obj or not mob_obj:is_valid() then
 		-- Fallback: If mob was despawned or unloaded during page collection, summon fresh entity at pyre
 		local static_str = core.serialize({pyre_banish = true, session_id = target_session_id})
-		mob_obj = core.add_entity(vector.add(pyre_pos, {x = 0, y = 0.5, z = 0}), "pale_watcher:pale_watcher", static_str)
+		mob_obj = x_mob_core.spawn_mob(vector.add(pyre_pos, {x = 0, y = 0.5, z = 0}), "pale_watcher:pale_watcher", static_str)
 		if mob_obj then
 			session.mob_ref = mob_obj
 			local ent = mob_obj:get_luaentity()
@@ -853,9 +863,9 @@ core.register_globalstep(function(dtime)
 							local p = core.get_player_by_name(pname)
 							if p then
 								update_player_hud(p, session)
-								local contract_msg = string.format(
-									"★ The presence contracts... You have gathered enough pages (%d/%d)!" ..
-									" Craft a Ritual Pyre and burn them to banish the nightmare! ★",
+								local contract_msg = S(
+									"★ The presence contracts... You have gathered enough pages (@1/@2)! " ..
+									"Craft a Ritual Pyre and burn them to banish the nightmare! ★",
 									session.pages_collected, session.pages_total)
 								core.chat_send_player(pname,
 									core.colorize(pale_watcher.colors.warning, contract_msg))
@@ -871,7 +881,8 @@ core.register_globalstep(function(dtime)
 								update_player_hud(p, session)
 								core.chat_send_player(pname,
 									core.colorize(pale_watcher.colors.whisper,
-										string.format("★ The presence contracts... The required cursed pages have reduced to %d (%d/%d collected). ★",
+										S("★ The presence contracts... " ..
+											"The required cursed pages have reduced to @1 (@2/@3 collected). ★",
 											session.pages_total, session.pages_collected, session.pages_total)))
 							end
 						end
