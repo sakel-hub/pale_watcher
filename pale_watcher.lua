@@ -22,13 +22,32 @@ local OBSERVATION_POINTS = {
 
 local EXTINGUISH_LIGHT_NODES = {
 	"group:torch",
+	"group:torches",
 	"group:candle",
+	"group:candles",
+	"group:lit_candles",
 	"group:lantern",
+	"group:lanterns",
+	"group:campfire",
 	"default:torch",
 	"default:torch_wall",
 	"default:torch_ceiling",
 	"default:meselamp",
 }
+
+---Checks if a node is an extinguishable flame light (torch, candle, lantern, campfire).
+---@param name string Node or item name
+---@return boolean is_flame
+local function is_extinguishable_light(name)
+	return (core.get_item_group(name, "torch") > 0)
+		or (core.get_item_group(name, "torches") > 0)
+		or (core.get_item_group(name, "candle") > 0)
+		or (core.get_item_group(name, "candles") > 0)
+		or (core.get_item_group(name, "lit_candles") > 0)
+		or (core.get_item_group(name, "lantern") > 0)
+		or (core.get_item_group(name, "lanterns") > 0)
+		or (core.get_item_group(name, "campfire") > 0)
+end
 
 local AIR_NODE_LIST = {"air"}
 local scratch_minp = {x = 0, y = 0, z = 0}
@@ -652,11 +671,14 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 			local def = core.registered_nodes[lnode.name]
 
 			if def and def.light_source and def.light_source > 0 then
-				-- Only true sanctuary structures (e.g. burning ritual pyre, or nodes with light_source >= 14) are immune
-				local is_sanctuary = (core.get_item_group(lnode.name, "sanctuary") > 0) or
-					(lnode.name == "pale_watcher:ritual_pyre_burning") or
-					(lnode.name == "pale_watcher:ritual_pyre") or
-					(def.light_source >= 14)
+				-- Only true sanctuary structures (e.g. burning ritual pyre, or nodes with group:sanctuary)
+				-- or non-flame high-tier illumination structures (e.g. beacons, meselamps) are immune.
+				-- Portable flame lights (torches, lanterns, candles) are extinguishable regardless of engine light value.
+				local is_flame = is_extinguishable_light(lnode.name)
+				local is_sanctuary = (core.get_item_group(lnode.name, "sanctuary") > 0)
+					or (lnode.name == "pale_watcher:ritual_pyre_burning")
+					or (lnode.name == "pale_watcher:ritual_pyre")
+					or ((def.light_source >= 14) and not is_flame)
 
 				if not is_sanctuary then
 					local has_los = has_visual_los(mob_eye, lpos) or has_visual_los(mob_chest, lpos)
@@ -696,10 +718,15 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 			local wield = self.target_player:get_wielded_item()
 			local wname = wield:get_name()
 			local wdef = core.registered_items[wname]
-			local is_light_item = (wdef and wdef.light_source and wdef.light_source > 0) or
-				string.find(wname, "torch") or string.find(wname, "lantern") or
-				string.find(wname, "lamp") or string.find(wname, "candle")
-			local item_is_sanctuary = wdef and wdef.light_source and wdef.light_source >= 14
+			local is_flame_wield = is_extinguishable_light(wname)
+				or string.find(wname, "torch")
+				or string.find(wname, "lantern")
+				or string.find(wname, "candle")
+			local is_light_item = (wdef and wdef.light_source and wdef.light_source > 0)
+				or is_flame_wield
+				or string.find(wname, "lamp")
+			local item_is_sanctuary = (core.get_item_group(wname, "sanctuary") > 0)
+				or (wdef and wdef.light_source and wdef.light_source >= 14 and not is_flame_wield)
 
 			if is_light_item and not item_is_sanctuary and not wield:is_empty() then
 				x_mob_core.drop_item(t_pos, wield, nil, {
