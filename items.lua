@@ -6,6 +6,7 @@
 pale_watcher.items = pale_watcher.items or {}
 
 local colors = pale_watcher.colors
+local S = pale_watcher.S
 
 ---Checks if pointed target (node or entity) handles right-click interactions.
 ---Allows players to open chests, collect cursed pages, or open doors while holding tools.
@@ -57,7 +58,7 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 	if camera_cooldowns[name] and now - camera_cooldowns[name] < CAMERA_COOLDOWN then
 		local remain = CAMERA_COOLDOWN - (now - camera_cooldowns[name])
 		core.chat_send_player(name, core.colorize(colors.recharge,
-			string.format("Camera capacitor charging... (%.1fs)", remain)))
+			S("Camera capacitor charging... (@1s)", string.format("%.1f", remain))))
 		return itemstack
 	end
 	camera_cooldowns[name] = now
@@ -111,7 +112,7 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 				if hit and luaent.on_stunned then
 					luaent:on_stunned(user, 0.6)
 					core.chat_send_player(name, core.colorize(colors.warning,
-						"★ The blinding xenon flash repels the Pale Watcher!"))
+						S("★ The blinding xenon flash repels the Pale Watcher!")))
 					break
 				end
 			end
@@ -119,18 +120,18 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 	end
 
 	-- Consume 1 charge of durability (3 uses total via add_wear_by_uses)
-	local is_creative = core.is_creative_enabled and core.is_creative_enabled(name)
+	local is_creative = core.is_creative_enabled(name)
 	if not is_creative then
 		itemstack:add_wear_by_uses(CAMERA_MAX_USES)
 		if itemstack:is_empty() then
 			core.sound_play("pale_watcher_paper_burn", {pos = p_pos, gain = 0.8, pitch = 1.2}, true)
 			core.chat_send_player(name, core.colorize(colors.warning,
-				"★ The Vintage Flash Camera capacitor burned out and the bulb shattered!"))
+				S("★ The Vintage Flash Camera capacitor burned out and the bulb shattered!")))
 		else
 			local wear = itemstack:get_wear()
 			local remaining_uses = math.max(0, math.ceil((65535 - wear) / (65535 / CAMERA_MAX_USES)))
 			core.chat_send_player(name, core.colorize(colors.dimmed,
-				string.format("Flash camera charges remaining: %d / %d", remaining_uses, CAMERA_MAX_USES)))
+				S("Flash camera charges remaining: @1 / @2", remaining_uses, CAMERA_MAX_USES)))
 		end
 	end
 
@@ -146,13 +147,13 @@ local function on_place_camera(itemstack, user, pointed_thing)
 end
 
 core.register_tool("pale_watcher:flash_camera", {
-	description = "Vintage Flash Camera\n" ..
-		core.colorize(colors.system, "Left-Click or Right-Click: Release high-intensity xenon flash.\n") ..
-		core.colorize(colors.warning, "• Blinds the Pale Watcher, forcing an evasive retreat.\n") ..
-		core.colorize("#e0e0e0", "• Illuminates deep darkness.\n") ..
-		core.colorize(colors.dimmed, "Durability: 3 flash charges.\n") ..
-		core.colorize(colors.system, "Cooldown: 10 seconds."),
-	short_description = "Flash Camera",
+	description = S("Vintage Flash Camera") .. "\n" ..
+		core.colorize(colors.system, S("Left-Click or Right-Click: Release high-intensity xenon flash.") .. "\n") ..
+		core.colorize(colors.warning, S("• Blinds the Pale Watcher, forcing an evasive retreat.") .. "\n") ..
+		core.colorize("#e0e0e0", S("• Illuminates deep darkness.") .. "\n") ..
+		core.colorize(colors.dimmed, S("Durability: 3 flash charges.") .. "\n") ..
+		core.colorize(colors.system, S("Cooldown: 10 seconds.")),
+	short_description = S("Flash Camera"),
 	inventory_image = "pale_watcher_flash_camera.png",
 	wield_image = "pale_watcher_flash_camera.png",
 	stack_max = 1,
@@ -164,9 +165,10 @@ core.register_tool("pale_watcher:flash_camera", {
 
 -- Dimensional Cloth Drop Item
 core.register_craftitem("pale_watcher:dimensional_cloth", {
-	description = "Dimensional Cloth\n" ..
-		core.colorize("#bbaaff", "A torn scrap of void fabric with crimson thread.\nUsed to craft the Shroud of Stalking."),
-	short_description = "Dimensional Cloth",
+	description = S("Dimensional Cloth") .. "\n" ..
+		core.colorize("#bbaaff",
+			S("A torn scrap of void fabric with crimson thread.\nUsed to craft the Shroud of Stalking.")),
+	short_description = S("Dimensional Cloth"),
 	inventory_image = "pale_watcher_dimensional_cloth.png",
 	wield_image = "pale_watcher_dimensional_cloth.png",
 	stack_max = 16,
@@ -181,7 +183,7 @@ local function trigger_blink(itemstack, user, _pointed_thing)
 	local controls = user:get_player_control()
 	if not controls.sneak then
 		core.chat_send_player(user:get_player_name(),
-			core.colorize("#aaaaff", "Hold Sneak and Click (LMB or RMB) to Blink."))
+			core.colorize("#aaaaff", S("Hold Sneak and Click (LMB or RMB) to Blink.")))
 		return itemstack
 	end
 
@@ -190,7 +192,7 @@ local function trigger_blink(itemstack, user, _pointed_thing)
 	if blink_cooldowns[name] and now - blink_cooldowns[name] < 4.0 then
 		local remain = 4.0 - (now - blink_cooldowns[name])
 		core.chat_send_player(name, core.colorize(colors.recharge,
-			string.format("Shroud shadow recharge... (%.1fs)", remain)))
+			S("Shroud shadow recharge... (@1s)", string.format("%.1f", remain))))
 		return itemstack
 	end
 	blink_cooldowns[name] = now
@@ -241,10 +243,10 @@ local function on_place_shroud(itemstack, user, pointed_thing)
 end
 
 core.register_tool("pale_watcher:shroud_of_stalking", {
-	description = "Shroud of Stalking\n" ..
-		core.colorize("#c0b0ff", "Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m).\n") ..
-		core.colorize(colors.dimmed, "Cooldown: 4 seconds."),
-	short_description = "Shroud of Stalking",
+	description = S("Shroud of Stalking") .. "\n" ..
+		core.colorize("#c0b0ff", S("Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m).") .. "\n") ..
+		core.colorize(colors.dimmed, S("Cooldown: 4 seconds.")),
+	short_description = S("Shroud of Stalking"),
 	inventory_image = "pale_watcher_shroud_of_stalking.png",
 	wield_image = "pale_watcher_shroud_of_stalking.png",
 	stack_max = 1,
@@ -343,12 +345,12 @@ local function trigger_static_core(itemstack, user, _pointed_thing)
 		if s1 then handles[#handles + 1] = s1 end
 		if s2 then handles[#handles + 1] = s2 end
 		core.chat_send_player(name, core.colorize(colors.warning,
-			"★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!"))
+			S("★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!")))
 	else
 		local s1 = core.sound_play("pale_watcher_static", {to_player = name, gain = 0.2, pitch = 0.8}, false)
 		if s1 then handles[#handles + 1] = s1 end
 		core.chat_send_player(name, core.colorize(colors.dimmed,
-			"The Static Core hums softly... No cursed anomalies detected in this direction."))
+			S("The Static Core hums softly... No cursed anomalies detected in this direction.")))
 	end
 	static_core_sounds[name] = handles
 
@@ -371,10 +373,10 @@ local function on_place_static_core(itemstack, user, pointed_thing)
 end
 
 core.register_craftitem("pale_watcher:static_core", {
-	description = "Static Core\n" ..
-		core.colorize(colors.system, "A condensed sphere of quantum radio noise.\n") ..
-		core.colorize(colors.whisper, "Click to detect lingering cursed anomalies in your line of sight."),
-	short_description = "Static Core",
+	description = S("Static Core") .. "\n" ..
+		core.colorize(colors.system, S("A condensed sphere of quantum radio noise.") .. "\n") ..
+		core.colorize(colors.whisper, S("Click to detect lingering cursed anomalies in your line of sight.")),
+	short_description = S("Static Core"),
 	inventory_image = "pale_watcher_hud_static_1.png",
 	stack_max = 16,
 	groups = {rare = 1},

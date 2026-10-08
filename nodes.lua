@@ -6,9 +6,11 @@
 pale_watcher.nodes = pale_watcher.nodes or {}
 
 local colors = pale_watcher.colors
+local S = pale_watcher.S
 
 -- Transient invisible light node created during camera flash
 core.register_node("pale_watcher:flash_light", {
+	description = S("Flash Light"),
 	drawtype = "airlike",
 	paramtype = "light",
 	light_source = 14,
@@ -45,8 +47,8 @@ local function collect_page(pos, player)
 end
 
 core.register_node("pale_watcher:cursed_page", {
-	description = "Cursed Page",
-	short_description = "Cursed Page",
+	description = S("Cursed Page"),
+	short_description = S("Cursed Page"),
 	drawtype = "signlike",
 	tiles = {"pale_watcher_cursed_page.png"},
 	inventory_image = "pale_watcher_cursed_page_item.png",
@@ -132,8 +134,9 @@ core.register_node("pale_watcher:cursed_page", {
 
 -- Cursed Page Drop Craftitem (fallback if dug with tools)
 core.register_craftitem("pale_watcher:cursed_page_item", {
-	description = "Cursed Page\n" .. core.colorize(colors.whisper, "A torn parchment inscribed with eldritch scrawls."),
-	short_description = "Cursed Page",
+	description = S("Cursed Page") .. "\n" ..
+		core.colorize(colors.whisper, S("A torn parchment inscribed with eldritch scrawls.")),
+	short_description = S("Cursed Page"),
 	inventory_image = "pale_watcher_cursed_page_item.png",
 	wield_image = "pale_watcher_cursed_page_item.png",
 	stack_max = 16,
@@ -148,10 +151,10 @@ core.register_craftitem("pale_watcher:cursed_page_item", {
 			itemstack:take_item(1)
 			core.sound_play("pale_watcher_paper_burn", {to_player = name}, true)
 			core.chat_send_player(name,
-				core.colorize(colors.pyre, "★ You burn the cursed page in your hands, adding its soul to the ritual!"))
+				core.colorize(colors.pyre, S("★ You burn the cursed page in your hands, adding its soul to the ritual!")))
 		else
 			core.chat_send_player(name,
-				core.colorize(colors.dimmed, "The cursed ink hums weakly... There is no active ritual session nearby."))
+				core.colorize(colors.dimmed, S("The cursed ink hums weakly... There is no active ritual session nearby.")))
 		end
 		return itemstack
 	end,
@@ -160,10 +163,10 @@ core.register_craftitem("pale_watcher:cursed_page_item", {
 -- Ritual Pyre (Unlit Altar)
 -- Attuned directly to the active Pale Watcher encounter session: no page items in inventory required
 core.register_node("pale_watcher:ritual_pyre", {
-	description = "Ritual Pyre\n" ..
-		core.colorize(colors.pyre, "Attuned to the Cursed Pages in the active encounter.\n") ..
-		core.colorize(colors.warning, "Right-Click when all cursed pages are found to ignite the Cleansing Flame."),
-	short_description = "Ritual Pyre",
+	description = S("Ritual Pyre") .. "\n" ..
+		core.colorize(colors.pyre, S("Attuned to the Cursed Pages in the active encounter.") .. "\n") ..
+		core.colorize(colors.warning, S("Right-Click when all cursed pages are found to ignite the Cleansing Flame.")),
+	short_description = S("Ritual Pyre"),
 	drawtype = "nodebox",
 	paramtype = "light",
 	tiles = {
@@ -183,7 +186,7 @@ core.register_node("pale_watcher:ritual_pyre", {
 
 	on_construct = function(pos)
 		local meta = core.get_meta(pos)
-		meta:set_string("infotext", "Ritual Pyre (Requires all Cursed Pages found in active encounter)")
+		meta:set_string("infotext", S("Ritual Pyre (Requires all Cursed Pages found in active encounter)"))
 	end,
 
 	on_destruct = function(pos)
@@ -202,12 +205,12 @@ core.register_node("pale_watcher:ritual_pyre", {
 		local session, sid = pale_watcher.ritual.get_player_session(name, pos)
 		if not session then
 			core.chat_send_player(name,
-				core.colorize(colors.dimmed, "The Pyre remains cold. No dark presence is tethered here."))
+				core.colorize(colors.dimmed, S("The Pyre remains cold. No dark presence is tethered here.")))
 			return
 		end
 
 		if session.pages_collected < session.pages_total then
-			local msg = string.format("The Pyre refuses to ignite... All Cursed Pages must be found! (%d/%d Collected)",
+			local msg = S("The Pyre refuses to ignite... All Cursed Pages must be found! (@1/@2 Collected)",
 				session.pages_collected, session.pages_total)
 			core.chat_send_player(name, core.colorize(colors.danger, msg))
 
@@ -220,8 +223,8 @@ core.register_node("pale_watcher:ritual_pyre", {
 		-- All required pages collected: Ignite the Cleansing Flame directly from session progress!
 		core.swap_node(pos, {name = "pale_watcher:ritual_pyre_burning", param2 = node.param2})
 		core.sound_play("pale_watcher_paper_burn", {pos = pos, gain = 1.0, max_hear_distance = 40})
-		local ignite_msg = string.format(
-			"★ The %d bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!",
+		local ignite_msg = S(
+			"★ The @1 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!",
 			session.pages_total)
 		core.chat_send_all(core.colorize(colors.pyre, ignite_msg))
 
@@ -236,8 +239,8 @@ core.register_node("pale_watcher:ritual_pyre", {
 
 -- Ritual Pyre (Burning Cleansing Flame)
 core.register_node("pale_watcher:ritual_pyre_burning", {
-	description = "Cleansing Flame Pyre",
-	short_description = "Cleansing Flame Pyre",
+	description = S("Cleansing Flame Pyre"),
+	short_description = S("Cleansing Flame Pyre"),
 	drawtype = "nodebox",
 	paramtype = "light",
 	light_source = 14,

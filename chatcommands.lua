@@ -3,39 +3,39 @@
 	In-game commands for player effect recovery and horror state management.
 ]]
 
+local S = pale_watcher.S
+
 core.register_chatcommand("pw_clear", {
 	params = "[<player>]",
-	description = "Clears all active Pale Watcher horror HUD overlays, audio, FOV changes, and domain fog",
+	description = S("Clears all active Pale Watcher horror HUD overlays, audio, FOV changes, and domain fog"),
 	privs = {},
 	func = function(name, param)
 		local target_name = name
 		if param and param:trim() ~= "" then
 			if not core.check_player_privs(name, {server = true}) then
-				return false, "Clearing effects for other players requires 'server' privilege."
+				return false, S("Clearing effects for other players requires 'server' privilege.")
 			end
 			target_name = param:trim()
 		end
 
 		local player = core.get_player_by_name(target_name)
 		if not player then
-			return false, "Player '" .. target_name .. "' not found."
+			return false, S("Player '@1' not found.", target_name)
 		end
 
 		pale_watcher.fx.clear_player(player)
 		player:set_fov(0)
 		pale_watcher.fx.clear_claustrophobic_fog(player, true)
 		pale_watcher.physics.clear_all(player)
-		if pale_watcher.items and pale_watcher.items.clear_player then
-			pale_watcher.items.clear_player(player)
-		end
+		pale_watcher.items.clear_player(player)
 
-		return true, "All Pale Watcher visual and audio effects cleared for " .. target_name .. "."
+		return true, S("All Pale Watcher visual and audio effects cleared for @1.", target_name)
 	end,
 })
 
 core.register_chatcommand("pw_locate", {
 	params = "",
-	description = "Locates remaining uncollected Cursed Pages in the active encounter",
+	description = S("Locates remaining uncollected Cursed Pages in the active encounter"),
 	privs = {},
 	func = function(name, _param)
 		local player = core.get_player_by_name(name)
@@ -45,7 +45,7 @@ core.register_chatcommand("pw_locate", {
 		local p_pos = player:get_pos()
 		local session, sid = pale_watcher.ritual.get_player_session(name, p_pos)
 		if not session then
-			return false, "No active Pale Watcher encounter found near you."
+			return false, S("No active Pale Watcher encounter found near you.")
 		end
 
 		local remaining = {}
@@ -67,14 +67,14 @@ core.register_chatcommand("pw_locate", {
 		end
 
 		if #remaining == 0 then
-			return true, string.format("All %d pages collected! Craft a Ritual Pyre to banish him!", session.pages_total)
+			return true, S("All @1 pages collected! Craft a Ritual Pyre to banish him!", session.pages_total)
 		end
 
 		table.sort(remaining, function(a, b) return a.dist < b.dist end)
 
 		local needed = math.max(0, session.pages_total - session.pages_collected)
 		local lines = {
-			string.format("Cursed Pages remaining to collect: %d / %d (Manifested in woods: %d)",
+			S("Cursed Pages remaining to collect: @1 / @2 (Manifested in woods: @3)",
 				needed, session.pages_total, #remaining)
 		}
 		for i, page in ipairs(remaining) do
@@ -83,17 +83,17 @@ core.register_chatcommand("pw_locate", {
 			local dz = p.z - p_pos.z
 			local cardinal = ""
 			if math.abs(dz) >= math.abs(dx) * 0.4 then
-				cardinal = cardinal .. (dz > 0 and "North" or "South")
+				cardinal = cardinal .. (dz > 0 and S("North") or S("South"))
 			end
 			if math.abs(dx) >= math.abs(dz) * 0.4 then
-				cardinal = cardinal .. (dx > 0 and "East" or "West")
+				cardinal = cardinal .. (dx > 0 and S("East") or S("West"))
 			end
-			if cardinal == "" then cardinal = "Nearby" end
+			if cardinal == "" then cardinal = S("Nearby") end
 
 			local info = string.format("  [%d] %dm away (%s) at (X: %d, Y: %d, Z: %d)",
 				i, page.dist, cardinal, math.floor(p.x + 0.5), math.floor(p.y + 0.5), math.floor(p.z + 0.5))
 			if page.restored then
-				info = info .. " [Restored]"
+				info = info .. " [" .. S("Restored") .. "]"
 			end
 			table.insert(lines, info)
 		end
@@ -104,12 +104,12 @@ core.register_chatcommand("pw_locate", {
 
 core.register_chatcommand("pw_test_hud", {
 	params = "[<pages>]",
-	description = "Tests the cursed pages HUD overlay (default: all pages for completion highlight)",
+	description = S("Tests the cursed pages HUD overlay (default: all pages for completion highlight)"),
 	privs = {server = true},
 	func = function(name, param)
 		local player = core.get_player_by_name(name)
 		if not player then
-			return false, "Player '" .. name .. "' not found."
+			return false, S("Player '@1' not found.", name)
 		end
 		local p_pos = player:get_pos()
 
@@ -119,7 +119,7 @@ core.register_chatcommand("pw_test_hud", {
 			count = math.max(0, math.min(session.pages_total, count))
 			session.pages_collected = count
 			pale_watcher.ritual.update_session_players(session.session_id, p_pos)
-			return true, string.format("Set active encounter HUD progress to %d / %d pages.", count, session.pages_total)
+			return true, S("Set active encounter HUD progress to @1 / @2 pages.", count, session.pages_total)
 		end
 
 		local obj = pale_watcher.spawn(p_pos)
@@ -132,10 +132,10 @@ core.register_chatcommand("pw_test_hud", {
 					count = math.max(0, math.min(s.pages_total, count))
 					s.pages_collected = count
 					pale_watcher.ritual.update_session_players(ent.session_id, p_pos)
-					return true, string.format("Started test encounter with %d / %d pages.", count, s.pages_total)
+					return true, S("Started test encounter with @1 / @2 pages.", count, s.pages_total)
 				end
 			end
 		end
-		return false, "Failed to initialize test encounter HUD."
+		return false, S("Failed to initialize test encounter HUD.")
 	end,
 })

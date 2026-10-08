@@ -1,0 +1,257 @@
+# Translation catalog for pale_watcher into fr.
+# Copyright (C) 2026 SaKeL
+# This file is distributed under the same license as the pale_watcher package.
+# SaKeL <sakel@users.noreply.github.com>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pale_watcher\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 16:30+0000\n"
+"PO-Revision-Date: 2026-10-08 16:30+0000\n"
+"Last-Translator: SaKeL <sakel@users.noreply.github.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "A camera's xenon flash can stun him for 3-5 seconds and force an evasive retreat."
+msgstr "Le flash au xénon d'un appareil photo peut l'étourdir pendant 3 à 5 secondes et le forcer à battre en retraite."
+
+msgid "A chilling presence surrounds you... Find the @1 Cursed Pages!"
+msgstr "Une présence glaciale vous entoure... Trouvez les @1 pages maudites !"
+
+msgid "A condensed sphere of quantum radio noise."
+msgstr "Une sphère condensée de bruit radio quantique."
+
+msgid "A torn parchment inscribed with eldritch scrawls."
+msgstr "Un parchemin déchiré couvert de gribouillis mystiques."
+
+msgid ""
+"A torn scrap of void fabric with crimson thread.\n"
+"Used to craft the Shroud of Stalking."
+msgstr ""
+"Un lambeau déchiré d'étoffe du néant au fil pourpre.\n"
+"Utilisé pour fabriquer le Linceul de Traque."
+
+msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
+msgstr "Toutes les @1 pages sont rassemblées ! Fabriquez un Bûcher Rituel pour le bannir !"
+
+msgid "All Pale Watcher visual and audio effects cleared for @1."
+msgstr "Tous les effets visuels et sonores du Rôdeur Pâle ont été effacés pour @1."
+
+msgid "Attuned to the Cursed Pages in the active encounter."
+msgstr "Harmonisé avec les pages maudites lors de la rencontre en cours."
+
+msgid "CURSED PAGES: @1 / @2"
+msgstr "PAGES MAUDITES : @1 / @2"
+
+msgid "Camera capacitor charging... (@1s)"
+msgstr "Condensateur de l'appareil en charge... (@1s)"
+
+msgid "Cleansing Flame Pyre"
+msgstr "Bûcher de Flamme Purificatrice"
+
+msgid "Clearing effects for other players requires 'server' privilege."
+msgstr "Effacer les effets pour d'autres joueurs nécessite le privilège 'server'."
+
+msgid "Clears all active Pale Watcher horror HUD overlays, audio, FOV changes, and domain fog"
+msgstr "Efface tous les affichages d'horreur, sons, modifications de champ de vision et brouillard de domaine du Rôdeur Pâle"
+
+msgid "Click to detect lingering cursed anomalies in your line of sight."
+msgstr "Cliquez pour détecter les anomalies maudites dans votre champ de vision."
+
+msgid "Cooldown: 10 seconds."
+msgstr "Temps de recharge : 10 secondes."
+
+msgid "Cooldown: 4 seconds."
+msgstr "Temps de recharge : 4 secondes."
+
+msgid "Cursed Page"
+msgstr "Page maudite"
+
+msgid "Cursed Page Collected: @1 / @2 (@3 found one!)"
+msgstr "Page maudite collectée : @1 / @2 (@3 en a trouvé une !)"
+
+msgid "Cursed Pages remaining to collect: @1 / @2 (Manifested in woods: @3)"
+msgstr "Pages maudites restantes à collecter : @1 / @2 (Manifestées dans les bois : @3)"
+
+msgid "Dimensional Cloth"
+msgstr "Étoffe Dimensionnelle"
+
+msgid "Durability: 3 flash charges."
+msgstr "Durabilité : 3 charges de flash."
+
+msgid "East"
+msgstr "Est"
+
+msgid "Failed to initialize test encounter HUD."
+msgstr "Échec de l'initialisation de l'affichage de test de rencontre."
+
+msgid "Flash Camera"
+msgstr "Appareil photo à flash"
+
+msgid "Flash Light"
+msgstr "Lumière de flash"
+
+msgid "Flash camera charges remaining: @1 / @2"
+msgstr "Charges de flash restantes : @1 / @2"
+
+msgid "He phase-teleports into cramped holes... never attempt to hide in a 3-block dirt bunker!"
+msgstr "Il se téléporte à travers les cavités exiguës... ne tentez jamais de vous cacher dans un trou de terre !"
+
+msgid "Head for the torches... sanctuary light (14+) holds him at bay at the dark tree line."
+msgstr "Foncez vers les torches... la lumière d'un sanctuaire (14+) le repousse à la lisière des arbres."
+
+msgid "Hold Sneak and Click (LMB or RMB) to Blink."
+msgstr "Maintenez la touche accroupie et cliquez pour cligner dans l'ombre."
+
+msgid "Left-Click or Right-Click: Release high-intensity xenon flash."
+msgstr "Clic gauche ou clic droit : déclenche un éclair de flash au xénon à haute intensité."
+
+msgid "Locates remaining uncollected Cursed Pages in the active encounter"
+msgstr "Localise les pages maudites non collectées dans la rencontre en cours"
+
+msgid "Nearby"
+msgstr "À proximité"
+
+msgid "Never run in a straight line... weaving through dense trees disrupts his intercept vector."
+msgstr "Ne courez jamais en ligne droite... zigzaguer entre les arbres denses perturbe sa trajectoire d'interception."
+
+msgid "No active Pale Watcher encounter found near you."
+msgstr "Aucune rencontre active avec le Rôdeur Pâle trouvée près de vous."
+
+msgid "North"
+msgstr "Nord"
+
+msgid "Once all cursed pages are found, ignite a Ritual Pyre to summon and banish him in holy fire."
+msgstr "Une fois toutes les pages trouvées, allumez un Bûcher Rituel pour le bannir dans le feu sacré."
+
+msgid "PAGES: @1 / @2 — IGNITE RITUAL PYRE!"
+msgstr "PAGES : @1 / @2 — ALLUMEZ LE BÛCHER RITUEL !"
+
+msgid "Player '@1' not found."
+msgstr "Joueur '@1' introuvable."
+
+msgid "Restored"
+msgstr "Restauré"
+
+msgid "Right-Click when all cursed pages are found to ignite the Cleansing Flame."
+msgstr "Faites un clic droit lorsque toutes les pages sont trouvées pour allumer la Flamme Purificatrice."
+
+msgid "Ritual Pyre"
+msgstr "Bûcher Rituel"
+
+msgid "Ritual Pyre (Requires all Cursed Pages found in active encounter)"
+msgstr "Bûcher Rituel (Nécessite toutes les pages maudites de la rencontre active)"
+
+msgid "Set active encounter HUD progress to @1 / @2 pages."
+msgstr "Progression HUD de la rencontre définie sur @1 / @2 pages."
+
+msgid "Shroud of Stalking"
+msgstr "Linceul de Traque"
+
+msgid "Shroud shadow recharge... (@1s)"
+msgstr "Recharge de l'ombre du linceul... (@1s)"
+
+msgid "Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m)."
+msgstr "Accroupi + Clic (gauche ou droit) pour bondir en avant dans les ombres (14m)."
+
+msgid "South"
+msgstr "Sud"
+
+msgid "Started test encounter with @1 / @2 pages."
+msgstr "Rencontre de test démarrée avec @1 / @2 pages."
+
+msgid "Static Core"
+msgstr "Noyau Statique"
+
+msgid "Tests the cursed pages HUD overlay (default: all pages for completion highlight)"
+msgstr "Teste l'affichage tête haute des pages maudites"
+
+msgid "The Pyre refuses to ignite... All Cursed Pages must be found! (@1/@2 Collected)"
+msgstr "Le bûcher refuse de s'enflammer... Toutes les pages doivent être trouvées ! (@1/@2 collectées)"
+
+msgid "The Pyre remains cold. No dark presence is tethered here."
+msgstr "Le bûcher reste froid. Aucune présence sombre n'est liée en ces lieux."
+
+msgid "The Static Core hums softly... No cursed anomalies detected in this direction."
+msgstr "Le Noyau Statique bourdonne doucement... Aucune anomalie détectée dans cette direction."
+
+msgid "The cursed ink hums weakly... There is no active ritual session nearby."
+msgstr "L'encre maudite bourdonne faiblement... Aucun rituel actif à proximité."
+
+msgid "The glancing check... spin around every few seconds to freeze his silent advance."
+msgstr "Le coup d'œil rapide... retournez-vous régulièrement pour figer son avancée silencieuse."
+
+msgid "The nightmare reaches its climax... Ignite the Ritual Pyre to banish him!"
+msgstr "Le cauchemar atteint son apogée... Allumez le Bûcher Rituel pour le bannir !"
+
+msgid "The sanctuary light holds... The Pale Watcher dissolves into the dark tree line."
+msgstr "La lumière du sanctuaire tient bon... Le Rôdeur Pâle se dissout dans la lisière sombre des arbres."
+
+msgid "Vintage Flash Camera"
+msgstr "Appareil photo d'époque à flash"
+
+msgid "West"
+msgstr "Ouest"
+
+msgid "You cannot hide from the void..."
+msgstr "Vous ne pouvez pas vous cacher du néant..."
+
+msgid "Your trembling hands drop your light source into the darkness!"
+msgstr "Vos mains tremblantes laissent tomber votre source de lumière dans l'obscurité !"
+
+msgid "• Blinds the Pale Watcher, forcing an evasive retreat."
+msgstr "• Aveugle le Rôdeur Pâle, le forçant à fuir."
+
+msgid "• Illuminates deep darkness."
+msgstr "• Illumine les ténèbres profondes."
+
+msgid "★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ TOUTES LES @1 PAGES MAUDITES SONT RASSEMBLÉES ! Fabriquez un Bûcher Rituel pour bannir le cauchemar ! ★"
+
+msgid "★ An eldritch shockwave repels your strike! Physical weapons cannot harm the void!"
+msgstr "★ Une onde de choc venue d'ailleurs repousse votre coup ! Les armes physiques ne peuvent blesser le néant !"
+
+msgid "★ As the cursed page burns, a whisper echoes: \"@1\""
+msgstr "★ Alors que la page maudite brûle, un murmure résonne : « @1 »"
+
+msgid "★ The @1 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!"
+msgstr "★ Les @1 malédictions embrasent la Flamme Purificatrice ! Le Rôdeur Pâle est aspiré dans le bûcher !"
+
+msgid "★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."
+msgstr "★ La Flamme Purificatrice a consumé les pages maudites ! Le Rôdeur Pâle est banni."
+
+msgid "★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!"
+msgstr "★ Le Noyau Statique crépite violemment ! Une page maudite est directement dans votre champ de vision !"
+
+msgid "★ The Vintage Flash Camera capacitor burned out and the bulb shattered!"
+msgstr "★ Le condensateur de l'appareil photo a grillé et l'ampoule a volé en éclats !"
+
+msgid "★ The anomaly expands... @1 additional cursed pages manifest in the dark woods! (@2 total) ★"
+msgstr "★ L'anomalie s'étend... @1 pages maudites supplémentaires apparaissent dans les bois ! (@2 au total) ★"
+
+msgid "★ The blinding xenon flash repels the Pale Watcher!"
+msgstr "★ L'éclair aveuglant de xénon repousse le Rôdeur Pâle !"
+
+msgid "★ The presence contracts... The required cursed pages have reduced to @1 (@2/@3 collected). ★"
+msgstr "★ La présence se contracte... Les pages requises ont été réduites à @1 (@2/@3 collectées). ★"
+
+msgid "★ The presence contracts... You have gathered enough pages (@1/@2)! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ La présence se contracte... Vous avez rassemblé assez de pages (@1/@2) ! Allumez un Bûcher Rituel pour bannir le cauchemar ! ★"
+
+msgid "★ You burn the cursed page in your hands, adding its soul to the ritual!"
+msgstr "★ Vous brûlez la page maudite entre vos mains, ajoutant son âme au rituel !"
+
+msgid "★ You have broken through the @1-node domain tether and escaped the nightmare!"
+msgstr "★ Vous avez brisé la frontière des @1 nœuds et échappé au cauchemar !"
+
+msgid "★ You have retreated from the cursed mist. Return within 20s or your tether to the ritual will sever."
+msgstr "★ Vous vous êtes éloigné de la brume maudite. Revenez sous 20s ou votre lien au rituel sera rompu."
+
+msgid "★ You step back into the cursed mist... The ritual claims you once more."
+msgstr "★ Vous pénétrez à nouveau dans la brume maudite... Le rituel vous réclame une fois de plus."
+

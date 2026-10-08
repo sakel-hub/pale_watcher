@@ -1,0 +1,255 @@
+# Translation template for pale_watcher.
+# Copyright (C) 2026 SaKeL
+# This file is distributed under the same license as the pale_watcher package.
+# SaKeL <sakel@users.noreply.github.com>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: pale_watcher\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 16:30+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "A camera's xenon flash can stun him for 3-5 seconds and force an evasive retreat."
+msgstr ""
+
+msgid "A chilling presence surrounds you... Find the @1 Cursed Pages!"
+msgstr ""
+
+msgid "A condensed sphere of quantum radio noise."
+msgstr ""
+
+msgid "A torn parchment inscribed with eldritch scrawls."
+msgstr ""
+
+msgid ""
+"A torn scrap of void fabric with crimson thread.\n"
+"Used to craft the Shroud of Stalking."
+msgstr ""
+
+msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
+msgstr ""
+
+msgid "All Pale Watcher visual and audio effects cleared for @1."
+msgstr ""
+
+msgid "Attuned to the Cursed Pages in the active encounter."
+msgstr ""
+
+msgid "CURSED PAGES: @1 / @2"
+msgstr ""
+
+msgid "Camera capacitor charging... (@1s)"
+msgstr ""
+
+msgid "Cleansing Flame Pyre"
+msgstr ""
+
+msgid "Clearing effects for other players requires 'server' privilege."
+msgstr ""
+
+msgid "Clears all active Pale Watcher horror HUD overlays, audio, FOV changes, and domain fog"
+msgstr ""
+
+msgid "Click to detect lingering cursed anomalies in your line of sight."
+msgstr ""
+
+msgid "Cooldown: 10 seconds."
+msgstr ""
+
+msgid "Cooldown: 4 seconds."
+msgstr ""
+
+msgid "Cursed Page"
+msgstr ""
+
+msgid "Cursed Page Collected: @1 / @2 (@3 found one!)"
+msgstr ""
+
+msgid "Cursed Pages remaining to collect: @1 / @2 (Manifested in woods: @3)"
+msgstr ""
+
+msgid "Dimensional Cloth"
+msgstr ""
+
+msgid "Durability: 3 flash charges."
+msgstr ""
+
+msgid "East"
+msgstr ""
+
+msgid "Failed to initialize test encounter HUD."
+msgstr ""
+
+msgid "Flash Camera"
+msgstr ""
+
+msgid "Flash Light"
+msgstr ""
+
+msgid "Flash camera charges remaining: @1 / @2"
+msgstr ""
+
+msgid "He phase-teleports into cramped holes... never attempt to hide in a 3-block dirt bunker!"
+msgstr ""
+
+msgid "Head for the torches... sanctuary light (14+) holds him at bay at the dark tree line."
+msgstr ""
+
+msgid "Hold Sneak and Click (LMB or RMB) to Blink."
+msgstr ""
+
+msgid "Left-Click or Right-Click: Release high-intensity xenon flash."
+msgstr ""
+
+msgid "Locates remaining uncollected Cursed Pages in the active encounter"
+msgstr ""
+
+msgid "Nearby"
+msgstr ""
+
+msgid "Never run in a straight line... weaving through dense trees disrupts his intercept vector."
+msgstr ""
+
+msgid "No active Pale Watcher encounter found near you."
+msgstr ""
+
+msgid "North"
+msgstr ""
+
+msgid "Once all cursed pages are found, ignite a Ritual Pyre to summon and banish him in holy fire."
+msgstr ""
+
+msgid "PAGES: @1 / @2 — IGNITE RITUAL PYRE!"
+msgstr ""
+
+msgid "Player '@1' not found."
+msgstr ""
+
+msgid "Restored"
+msgstr ""
+
+msgid "Right-Click when all cursed pages are found to ignite the Cleansing Flame."
+msgstr ""
+
+msgid "Ritual Pyre"
+msgstr ""
+
+msgid "Ritual Pyre (Requires all Cursed Pages found in active encounter)"
+msgstr ""
+
+msgid "Set active encounter HUD progress to @1 / @2 pages."
+msgstr ""
+
+msgid "Shroud of Stalking"
+msgstr ""
+
+msgid "Shroud shadow recharge... (@1s)"
+msgstr ""
+
+msgid "Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m)."
+msgstr ""
+
+msgid "South"
+msgstr ""
+
+msgid "Started test encounter with @1 / @2 pages."
+msgstr ""
+
+msgid "Static Core"
+msgstr ""
+
+msgid "Tests the cursed pages HUD overlay (default: all pages for completion highlight)"
+msgstr ""
+
+msgid "The Pyre refuses to ignite... All Cursed Pages must be found! (@1/@2 Collected)"
+msgstr ""
+
+msgid "The Pyre remains cold. No dark presence is tethered here."
+msgstr ""
+
+msgid "The Static Core hums softly... No cursed anomalies detected in this direction."
+msgstr ""
+
+msgid "The cursed ink hums weakly... There is no active ritual session nearby."
+msgstr ""
+
+msgid "The glancing check... spin around every few seconds to freeze his silent advance."
+msgstr ""
+
+msgid "The nightmare reaches its climax... Ignite the Ritual Pyre to banish him!"
+msgstr ""
+
+msgid "The sanctuary light holds... The Pale Watcher dissolves into the dark tree line."
+msgstr ""
+
+msgid "Vintage Flash Camera"
+msgstr ""
+
+msgid "West"
+msgstr ""
+
+msgid "You cannot hide from the void..."
+msgstr ""
+
+msgid "Your trembling hands drop your light source into the darkness!"
+msgstr ""
+
+msgid "• Blinds the Pale Watcher, forcing an evasive retreat."
+msgstr ""
+
+msgid "• Illuminates deep darkness."
+msgstr ""
+
+msgid "★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr ""
+
+msgid "★ An eldritch shockwave repels your strike! Physical weapons cannot harm the void!"
+msgstr ""
+
+msgid "★ As the cursed page burns, a whisper echoes: \"@1\""
+msgstr ""
+
+msgid "★ The @1 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!"
+msgstr ""
+
+msgid "★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."
+msgstr ""
+
+msgid "★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!"
+msgstr ""
+
+msgid "★ The Vintage Flash Camera capacitor burned out and the bulb shattered!"
+msgstr ""
+
+msgid "★ The anomaly expands... @1 additional cursed pages manifest in the dark woods! (@2 total) ★"
+msgstr ""
+
+msgid "★ The blinding xenon flash repels the Pale Watcher!"
+msgstr ""
+
+msgid "★ The presence contracts... The required cursed pages have reduced to @1 (@2/@3 collected). ★"
+msgstr ""
+
+msgid "★ The presence contracts... You have gathered enough pages (@1/@2)! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr ""
+
+msgid "★ You burn the cursed page in your hands, adding its soul to the ritual!"
+msgstr ""
+
+msgid "★ You have broken through the @1-node domain tether and escaped the nightmare!"
+msgstr ""
+
+msgid "★ You have retreated from the cursed mist. Return within 20s or your tether to the ritual will sever."
+msgstr ""
+
+msgid "★ You step back into the cursed mist... The ritual claims you once more."
+msgstr ""
+

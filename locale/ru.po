@@ -1,0 +1,257 @@
+# Translation catalog for pale_watcher into ru.
+# Copyright (C) 2026 SaKeL
+# This file is distributed under the same license as the pale_watcher package.
+# SaKeL <sakel@users.noreply.github.com>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pale_watcher\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 16:30+0000\n"
+"PO-Revision-Date: 2026-10-08 16:30+0000\n"
+"Last-Translator: SaKeL <sakel@users.noreply.github.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "A camera's xenon flash can stun him for 3-5 seconds and force an evasive retreat."
+msgstr "Ксеноновая вспышка камеры может оглушить его на 3-5 секунд и заставить отступить."
+
+msgid "A chilling presence surrounds you... Find the @1 Cursed Pages!"
+msgstr "Леденящее присутствие окружает вас... Найдите @1 проклятых страниц!"
+
+msgid "A condensed sphere of quantum radio noise."
+msgstr "Сжатая сфера квантового радиошума."
+
+msgid "A torn parchment inscribed with eldritch scrawls."
+msgstr "Разорванный пергамент, покрытый потусторонними письменами."
+
+msgid ""
+"A torn scrap of void fabric with crimson thread.\n"
+"Used to craft the Shroud of Stalking."
+msgstr ""
+"Отрезок ткани пустоты с алой нитью.\n"
+"Используется для создания Савана выслеживания."
+
+msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
+msgstr "Все @1 страниц собраны! Создайте ритуальный костёр, чтобы изгнать его!"
+
+msgid "All Pale Watcher visual and audio effects cleared for @1."
+msgstr "Все визуальные и звуковые эффекты Бледного наблюдателя для @1 сняты."
+
+msgid "Attuned to the Cursed Pages in the active encounter."
+msgstr "Настроено на проклятые страницы в текущем ритуале."
+
+msgid "CURSED PAGES: @1 / @2"
+msgstr "ПРОКЛЯТЫЕ СТРАНИЦЫ: @1 / @2"
+
+msgid "Camera capacitor charging... (@1s)"
+msgstr "Зарядка конденсатора камеры... (@1с)"
+
+msgid "Cleansing Flame Pyre"
+msgstr "Костёр очищающего пламени"
+
+msgid "Clearing effects for other players requires 'server' privilege."
+msgstr "Снятие эффектов с других игроков требует привилегии 'server'."
+
+msgid "Clears all active Pale Watcher horror HUD overlays, audio, FOV changes, and domain fog"
+msgstr "Снимает все визуальные и звуковые эффекты, изменение угла обзора и туман Бледного наблюдателя"
+
+msgid "Click to detect lingering cursed anomalies in your line of sight."
+msgstr "Нажмите, чтобы обнаружить проклятые аномалии в поле зрения."
+
+msgid "Cooldown: 10 seconds."
+msgstr "Перезарядка: 10 секунд."
+
+msgid "Cooldown: 4 seconds."
+msgstr "Перезарядка: 4 секунды."
+
+msgid "Cursed Page"
+msgstr "Проклятая страница"
+
+msgid "Cursed Page Collected: @1 / @2 (@3 found one!)"
+msgstr "Проклятая страница найдена: @1 / @2 (@3 находит страницу!)"
+
+msgid "Cursed Pages remaining to collect: @1 / @2 (Manifested in woods: @3)"
+msgstr "Осталось собрать страниц: @1 / @2 (В лесу проявилось: @3)"
+
+msgid "Dimensional Cloth"
+msgstr "Пространственная ткань"
+
+msgid "Durability: 3 flash charges."
+msgstr "Прочность: 3 заряда вспышки."
+
+msgid "East"
+msgstr "Восток"
+
+msgid "Failed to initialize test encounter HUD."
+msgstr "Не удалось инициализировать тестовый HUD ритуала."
+
+msgid "Flash Camera"
+msgstr "Камера со вспышкой"
+
+msgid "Flash Light"
+msgstr "Свет вспышки"
+
+msgid "Flash camera charges remaining: @1 / @2"
+msgstr "Осталось зарядов вспышки: @1 / @2"
+
+msgid "He phase-teleports into cramped holes... never attempt to hide in a 3-block dirt bunker!"
+msgstr "Он телепортируется в узкие норы... никогда не пытайтесь спрятаться в землянке!"
+
+msgid "Head for the torches... sanctuary light (14+) holds him at bay at the dark tree line."
+msgstr "Бегите к факелам... свет убежища (14+) сдерживает его на границе темного леса."
+
+msgid "Hold Sneak and Click (LMB or RMB) to Blink."
+msgstr "Зажмите скрытность и нажмите ЛКМ или ПКМ для скачка в тень."
+
+msgid "Left-Click or Right-Click: Release high-intensity xenon flash."
+msgstr "ЛКМ или ПКМ: испустить мощную ксеноновую вспышку."
+
+msgid "Locates remaining uncollected Cursed Pages in the active encounter"
+msgstr "Находит оставшиеся несобранные проклятые страницы в текущем ритуале"
+
+msgid "Nearby"
+msgstr "Рядом"
+
+msgid "Never run in a straight line... weaving through dense trees disrupts his intercept vector."
+msgstr "Никогда не бегите по прямой... маневрирование среди деревьев сбивает его курс."
+
+msgid "No active Pale Watcher encounter found near you."
+msgstr "Рядом не найдено активного ритуала Бледного наблюдателя."
+
+msgid "North"
+msgstr "Север"
+
+msgid "Once all cursed pages are found, ignite a Ritual Pyre to summon and banish him in holy fire."
+msgstr "Собрав все страницы, зажгите ритуальный костёр, чтобы изгнать его в священном огне."
+
+msgid "PAGES: @1 / @2 — IGNITE RITUAL PYRE!"
+msgstr "СТРАНИЦЫ: @1 / @2 — ЗАЖГИТЕ РИТУАЛЬНЫЙ КОСТЁР!"
+
+msgid "Player '@1' not found."
+msgstr "Игрок '@1' не найден."
+
+msgid "Restored"
+msgstr "Восстановлено"
+
+msgid "Right-Click when all cursed pages are found to ignite the Cleansing Flame."
+msgstr "ПКМ, когда все страницы собраны, чтобы зажечь Очищающее пламя."
+
+msgid "Ritual Pyre"
+msgstr "Ритуальный костёр"
+
+msgid "Ritual Pyre (Requires all Cursed Pages found in active encounter)"
+msgstr "Ритуальный костёр (требуются все проклятые страницы)"
+
+msgid "Set active encounter HUD progress to @1 / @2 pages."
+msgstr "Прогресс HUD установлен на @1 / @2 страниц."
+
+msgid "Shroud of Stalking"
+msgstr "Саван выслеживания"
+
+msgid "Shroud shadow recharge... (@1s)"
+msgstr "Перезарядка тени савана... (@1с)"
+
+msgid "Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m)."
+msgstr "Скрытность + клик для скачка вперёд сквозь тени (14м)."
+
+msgid "South"
+msgstr "Юг"
+
+msgid "Started test encounter with @1 / @2 pages."
+msgstr "Запущен тестовый ритуал с @1 / @2 страницами."
+
+msgid "Static Core"
+msgstr "Статическое ядро"
+
+msgid "Tests the cursed pages HUD overlay (default: all pages for completion highlight)"
+msgstr "Тестирует HUD страниц"
+
+msgid "The Pyre refuses to ignite... All Cursed Pages must be found! (@1/@2 Collected)"
+msgstr "Костёр не разгорается... Соберите все страницы! (@1/@2 собрано)"
+
+msgid "The Pyre remains cold. No dark presence is tethered here."
+msgstr "Костёр остаётся холодным. Здесь нет тёмного присутствия."
+
+msgid "The Static Core hums softly... No cursed anomalies detected in this direction."
+msgstr "Статическое ядро тихо гудит... В этом направлении аномалий нет."
+
+msgid "The cursed ink hums weakly... There is no active ritual session nearby."
+msgstr "Проклятые чернила слабо гудят... Поблизости нет активного ритуала."
+
+msgid "The glancing check... spin around every few seconds to freeze his silent advance."
+msgstr "Оглядывайтесь назад каждые несколько секунд, чтобы остановить его бесшумное приближение."
+
+msgid "The nightmare reaches its climax... Ignite the Ritual Pyre to banish him!"
+msgstr "Кошмар достигает апогея... Зажгите костёр, чтобы изгнать его!"
+
+msgid "The sanctuary light holds... The Pale Watcher dissolves into the dark tree line."
+msgstr "Свет убежища сдерживает тьму... Бледный наблюдатель растворяется в лесу."
+
+msgid "Vintage Flash Camera"
+msgstr "Винтажная камера со вспышкой"
+
+msgid "West"
+msgstr "Запад"
+
+msgid "You cannot hide from the void..."
+msgstr "От пустоты не скрыться..."
+
+msgid "Your trembling hands drop your light source into the darkness!"
+msgstr "Ваши дрожащие руки роняют источник света в темноту!"
+
+msgid "• Blinds the Pale Watcher, forcing an evasive retreat."
+msgstr "• Ослепляет Бледного наблюдателя, заставляя его отступить."
+
+msgid "• Illuminates deep darkness."
+msgstr "• Освещает непроглядную тьму."
+
+msgid "★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ ВСЕ @1 ПРОКЛЯТЫХ СТРАНИЦ СОБРАНЫ! Создайте ритуальный костёр и сожгите их, чтобы изгнать кошмар! ★"
+
+msgid "★ An eldritch shockwave repels your strike! Physical weapons cannot harm the void!"
+msgstr "★ Потусторонняя волна отражает ваш удар! Обычное оружие бессильно против пустоты!"
+
+msgid "★ As the cursed page burns, a whisper echoes: \"@1\""
+msgstr "★ Пока горит проклятая страница, шепот вторит: «@1»"
+
+msgid "★ The @1 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!"
+msgstr "★ @1 проклятий зажигают Очищающее пламя! Бледного наблюдателя затягивает в костёр!"
+
+msgid "★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."
+msgstr "★ Очищающее пламя поглотило проклятые страницы! Бледный наблюдатель изгнан."
+
+msgid "★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!"
+msgstr "★ Статическое ядро бешено трещит! Проклятая страница прямо в вашем поле зрения!"
+
+msgid "★ The Vintage Flash Camera capacitor burned out and the bulb shattered!"
+msgstr "★ Конденсатор камеры сгорел, а лампа разлетелась вдребезги!"
+
+msgid "★ The anomaly expands... @1 additional cursed pages manifest in the dark woods! (@2 total) ★"
+msgstr "★ Аномалия ширится... ещё @1 проклятых страниц появились в темном лесу! (Всего @2) ★"
+
+msgid "★ The blinding xenon flash repels the Pale Watcher!"
+msgstr "★ Ослепительная ксеноновая вспышка отгоняет Бледного наблюдателя!"
+
+msgid "★ The presence contracts... The required cursed pages have reduced to @1 (@2/@3 collected). ★"
+msgstr "★ Присутствие сжимается... Требуемое число страниц снижено до @1 (@2/@3 собрано). ★"
+
+msgid "★ The presence contracts... You have gathered enough pages (@1/@2)! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ Присутствие сжимается... Вы собрали достаточно страниц (@1/@2)! Зажгите ритуальный костёр! ★"
+
+msgid "★ You burn the cursed page in your hands, adding its soul to the ritual!"
+msgstr "★ Вы сжигаете проклятую страницу в руках, отдавая её душу ритуалу!"
+
+msgid "★ You have broken through the @1-node domain tether and escaped the nightmare!"
+msgstr "★ Вы вырвались за пределы @1 блоков и сбежали из кошмара!"
+
+msgid "★ You have retreated from the cursed mist. Return within 20s or your tether to the ritual will sever."
+msgstr "★ Вы покинули проклятый туман. Вернитесь в течение 20 секунд, иначе связь с ритуалом разорвётся."
+
+msgid "★ You step back into the cursed mist... The ritual claims you once more."
+msgstr "★ Вы возвращаетесь в проклятый туман... Ритуал снова захватывает вас."
+

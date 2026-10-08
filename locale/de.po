@@ -1,0 +1,257 @@
+# Translation catalog for pale_watcher into de.
+# Copyright (C) 2026 SaKeL
+# This file is distributed under the same license as the pale_watcher package.
+# SaKeL <sakel@users.noreply.github.com>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pale_watcher\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 16:30+0000\n"
+"PO-Revision-Date: 2026-10-08 16:30+0000\n"
+"Last-Translator: SaKeL <sakel@users.noreply.github.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "A camera's xenon flash can stun him for 3-5 seconds and force an evasive retreat."
+msgstr "Ein Xenon-Blitz der Kamera kann ihn für 3-5 Sekunden betäuben und zum Rückzug zwingen."
+
+msgid "A chilling presence surrounds you... Find the @1 Cursed Pages!"
+msgstr "Eine eisige Präsenz umgibt dich... Finde die @1 verfluchten Seiten!"
+
+msgid "A condensed sphere of quantum radio noise."
+msgstr "Eine verdichtete Kugel aus Quanten-Funkrauschen."
+
+msgid "A torn parchment inscribed with eldritch scrawls."
+msgstr "Ein zerrissenes Pergament, beschrieben mit unheimlichen Kritzeleien."
+
+msgid ""
+"A torn scrap of void fabric with crimson thread.\n"
+"Used to craft the Shroud of Stalking."
+msgstr ""
+"Ein zerrissener Fetzen Leerenstoff mit karmesinrotem Faden.\n"
+"Wird zur Herstellung des Schleiers des Pirschens verwendet."
+
+msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
+msgstr "Alle @1 Seiten gesammelt! Baue einen Ritual-Scheiterhaufen, um ihn zu verbannen!"
+
+msgid "All Pale Watcher visual and audio effects cleared for @1."
+msgstr "Alle visuellen und akustischen Effekte des Blassen Wächters für @1 gelöscht."
+
+msgid "Attuned to the Cursed Pages in the active encounter."
+msgstr "Eingestimmt auf die verfluchten Seiten der aktiven Begegnung."
+
+msgid "CURSED PAGES: @1 / @2"
+msgstr "VERFLUCHTE SEITEN: @1 / @2"
+
+msgid "Camera capacitor charging... (@1s)"
+msgstr "Kamerakondensator lädt... (@1s)"
+
+msgid "Cleansing Flame Pyre"
+msgstr "Läuternder Scheiterhaufen"
+
+msgid "Clearing effects for other players requires 'server' privilege."
+msgstr "Das Löschen von Effekten für andere Spieler erfordert das 'server'-Privileg."
+
+msgid "Clears all active Pale Watcher horror HUD overlays, audio, FOV changes, and domain fog"
+msgstr "Löscht alle aktiven Horror-HUD-Overlays, Töne, FOV-Änderungen und Domänennebel des Blassen Wächters"
+
+msgid "Click to detect lingering cursed anomalies in your line of sight."
+msgstr "Klicken, um verbleibende verfluchte Anomalien im Sichtfeld aufzuspüren."
+
+msgid "Cooldown: 10 seconds."
+msgstr "Abklingzeit: 10 Sekunden."
+
+msgid "Cooldown: 4 seconds."
+msgstr "Abklingzeit: 4 Sekunden."
+
+msgid "Cursed Page"
+msgstr "Verfluchte Seite"
+
+msgid "Cursed Page Collected: @1 / @2 (@3 found one!)"
+msgstr "Verfluchte Seite gesammelt: @1 / @2 (@3 hat eine gefunden!)"
+
+msgid "Cursed Pages remaining to collect: @1 / @2 (Manifested in woods: @3)"
+msgstr "Verbleibende verfluchte Seiten: @1 / @2 (Im Wald manifestiert: @3)"
+
+msgid "Dimensional Cloth"
+msgstr "Dimensionsstoff"
+
+msgid "Durability: 3 flash charges."
+msgstr "Haltbarkeit: 3 Blitzladungen."
+
+msgid "East"
+msgstr "Osten"
+
+msgid "Failed to initialize test encounter HUD."
+msgstr "Test-Begegnungs-HUD konnte nicht initialisiert werden."
+
+msgid "Flash Camera"
+msgstr "Blitzkamera"
+
+msgid "Flash Light"
+msgstr "Blitzlicht"
+
+msgid "Flash camera charges remaining: @1 / @2"
+msgstr "Verbleibende Blitzladungen: @1 / @2"
+
+msgid "He phase-teleports into cramped holes... never attempt to hide in a 3-block dirt bunker!"
+msgstr "Er phasen-teleportiert sich in enge Löcher... versuche niemals, dich in einem Erdbunker zu verstecken!"
+
+msgid "Head for the torches... sanctuary light (14+) holds him at bay at the dark tree line."
+msgstr "Laufe zu den Fackeln... Zufluchtslicht (14+) hält ihn an der dunklen Baumgrenze fern."
+
+msgid "Hold Sneak and Click (LMB or RMB) to Blink."
+msgstr "Schleichen halten und Klicken (LMT oder RMT) zum Teleportieren."
+
+msgid "Left-Click or Right-Click: Release high-intensity xenon flash."
+msgstr "Linksklick oder Rechtsklick: Hochenergetischen Xenon-Blitz auslösen."
+
+msgid "Locates remaining uncollected Cursed Pages in the active encounter"
+msgstr "Lokalisiert verbleibende ungesammelte verfluchte Seiten in der aktiven Begegnung"
+
+msgid "Nearby"
+msgstr "In der Nähe"
+
+msgid "Never run in a straight line... weaving through dense trees disrupts his intercept vector."
+msgstr "Laufe niemals geradlinig... Zickzack durch dichte Bäume bricht seinen Abfangvektor."
+
+msgid "No active Pale Watcher encounter found near you."
+msgstr "Keine aktive Begegnung mit dem Blassen Wächter in deiner Nähe gefunden."
+
+msgid "North"
+msgstr "Norden"
+
+msgid "Once all cursed pages are found, ignite a Ritual Pyre to summon and banish him in holy fire."
+msgstr "Sobald alle verfluchten Seiten gefunden sind, entzünde einen Scheiterhaufen, um ihn im heiligen Feuer zu verbannen."
+
+msgid "PAGES: @1 / @2 — IGNITE RITUAL PYRE!"
+msgstr "SEITEN: @1 / @2 — RITUAL-SCHEITERHAUFEN ENTZÜNDEN!"
+
+msgid "Player '@1' not found."
+msgstr "Spieler '@1' nicht gefunden."
+
+msgid "Restored"
+msgstr "Wiederhergestellt"
+
+msgid "Right-Click when all cursed pages are found to ignite the Cleansing Flame."
+msgstr "Rechtsklick, wenn alle Seiten gefunden sind, um die Läuternde Flamme zu entzünden."
+
+msgid "Ritual Pyre"
+msgstr "Ritual-Scheiterhaufen"
+
+msgid "Ritual Pyre (Requires all Cursed Pages found in active encounter)"
+msgstr "Ritual-Scheiterhaufen (Erfordert alle verfluchten Seiten der aktiven Begegnung)"
+
+msgid "Set active encounter HUD progress to @1 / @2 pages."
+msgstr "Setze HUD-Fortschritt der aktiven Begegnung auf @1 / @2 Seiten."
+
+msgid "Shroud of Stalking"
+msgstr "Schleier des Pirschens"
+
+msgid "Shroud shadow recharge... (@1s)"
+msgstr "Schattenschleier lädt auf... (@1s)"
+
+msgid "Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m)."
+msgstr "Schleichen + Klick (LMT oder RMT), um 14 m vorwärts in die Schatten zu springen."
+
+msgid "South"
+msgstr "Süden"
+
+msgid "Started test encounter with @1 / @2 pages."
+msgstr "Testbegegnung mit @1 / @2 Seiten gestartet."
+
+msgid "Static Core"
+msgstr "Statischer Kern"
+
+msgid "Tests the cursed pages HUD overlay (default: all pages for completion highlight)"
+msgstr "Testet das Cursed-Pages-HUD-Overlay"
+
+msgid "The Pyre refuses to ignite... All Cursed Pages must be found! (@1/@2 Collected)"
+msgstr "Der Scheiterhaufen entzündet sich nicht... Alle Seiten müssen gefunden werden! (@1/@2 gesammelt)"
+
+msgid "The Pyre remains cold. No dark presence is tethered here."
+msgstr "Der Scheiterhaufen bleibt kalt. Keine dunkle Präsenz ist hier gebunden."
+
+msgid "The Static Core hums softly... No cursed anomalies detected in this direction."
+msgstr "Der Statische Kern summt leise... Keine verfluchten Anomalien in dieser Richtung erkannt."
+
+msgid "The cursed ink hums weakly... There is no active ritual session nearby."
+msgstr "Die verfluchte Tinte summt schwach... Keine aktive Ritual-Sitzung in der Nähe."
+
+msgid "The glancing check... spin around every few seconds to freeze his silent advance."
+msgstr "Der flüchtige Blick... drehe dich alle paar Sekunden um, um sein lautloses Vorrücken einzufrieren."
+
+msgid "The nightmare reaches its climax... Ignite the Ritual Pyre to banish him!"
+msgstr "Der Albtraum erreicht seinen Höhepunkt... Entzünde den Ritual-Scheiterhaufen, um ihn zu verbannen!"
+
+msgid "The sanctuary light holds... The Pale Watcher dissolves into the dark tree line."
+msgstr "Das Zufluchtslicht hält stand... Der Blasse Wächter löst sich in der dunklen Baumgrenze auf."
+
+msgid "Vintage Flash Camera"
+msgstr "Klassische Blitzkamera"
+
+msgid "West"
+msgstr "Westen"
+
+msgid "You cannot hide from the void..."
+msgstr "Du kannst dich nicht vor der Leere verstecken..."
+
+msgid "Your trembling hands drop your light source into the darkness!"
+msgstr "Deine zitternden Hände lassen deine Lichtquelle in die Dunkelheit fallen!"
+
+msgid "• Blinds the Pale Watcher, forcing an evasive retreat."
+msgstr "• Blendet den Blassen Wächter und zwingt ihn zum Rückzug."
+
+msgid "• Illuminates deep darkness."
+msgstr "• Erhellt tiefe Dunkelheit."
+
+msgid "★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ ALLE @1 VERFLUCHTEN SEITEN GESAMMELT! Baue einen Scheiterhaufen und verbrenne sie, um den Albtraum zu verbannen! ★"
+
+msgid "★ An eldritch shockwave repels your strike! Physical weapons cannot harm the void!"
+msgstr "★ Eine unheimliche Schockwelle wehrt deinen Schlag ab! Physische Waffen können der Leere nichts anhaben!"
+
+msgid "★ As the cursed page burns, a whisper echoes: \"@1\""
+msgstr "★ Während die verfluchte Seite brennt, hallt ein Flüstern wider: „@1“"
+
+msgid "★ The @1 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!"
+msgstr "★ Die @1 gebundenen Flüche entzünden die Läuternde Flamme! Der Blasse Wächter wird in das Feuer gerissen!"
+
+msgid "★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."
+msgstr "★ Die Läuternde Flamme hat die verfluchten Seiten verzehrt! Der Blasse Wächter ist verbannt."
+
+msgid "★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!"
+msgstr "★ Der Statische Kern knistert heftig! Eine verfluchte Seite liegt direkt in deiner Sichtlinie!"
+
+msgid "★ The Vintage Flash Camera capacitor burned out and the bulb shattered!"
+msgstr "★ Der Kondensator der Blitzkamera brannte durch und die Birne zersprang!"
+
+msgid "★ The anomaly expands... @1 additional cursed pages manifest in the dark woods! (@2 total) ★"
+msgstr "★ Die Anomalie breitet sich aus... @1 weitere verfluchte Seiten manifestieren sich im dunklen Wald! (@2 insgesamt) ★"
+
+msgid "★ The blinding xenon flash repels the Pale Watcher!"
+msgstr "★ Der blendende Xenon-Blitz schlägt den Blassen Wächter in die Flucht!"
+
+msgid "★ The presence contracts... The required cursed pages have reduced to @1 (@2/@3 collected). ★"
+msgstr "★ Die Präsenz zieht sich zusammen... Die benötigten Seiten wurden auf @1 reduziert (@2/@3 gesammelt). ★"
+
+msgid "★ The presence contracts... You have gathered enough pages (@1/@2)! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ Die Präsenz zieht sich zusammen... Du hast genug Seiten gesammelt (@1/@2)! Baue einen Scheiterhaufen und verbrenne sie! ★"
+
+msgid "★ You burn the cursed page in your hands, adding its soul to the ritual!"
+msgstr "★ Du verbrennst die verfluchte Seite in deinen Händen und fügst ihre Seele dem Ritual hinzu!"
+
+msgid "★ You have broken through the @1-node domain tether and escaped the nightmare!"
+msgstr "★ Du hast die @1-Knoten-Grenze durchbrochen und bist dem Albtraum entkommen!"
+
+msgid "★ You have retreated from the cursed mist. Return within 20s or your tether to the ritual will sever."
+msgstr "★ Du hast dich aus dem verfluchten Nebel zurückgezogen. Kehre innerhalb von 20s zurück, sonst reißt dein Band zum Ritual ab."
+
+msgid "★ You step back into the cursed mist... The ritual claims you once more."
+msgstr "★ Du trittst wieder in den verfluchten Nebel... Das Ritual fordert dich erneut."
+

@@ -1,0 +1,257 @@
+# Translation catalog for pale_watcher into sk.
+# Copyright (C) 2026 SaKeL
+# This file is distributed under the same license as the pale_watcher package.
+# SaKeL <sakel@users.noreply.github.com>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pale_watcher\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-08 16:30+0000\n"
+"PO-Revision-Date: 2026-10-08 16:30+0000\n"
+"Last-Translator: SaKeL <sakel@users.noreply.github.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: sk\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+msgid "A camera's xenon flash can stun him for 3-5 seconds and force an evasive retreat."
+msgstr "Xenónový blesk fotoaparátu ho dokáže omráčiť na 3-5 sekúnd a prinútiť k ústupu."
+
+msgid "A chilling presence surrounds you... Find the @1 Cursed Pages!"
+msgstr "Mrazivá prítomnosť ťa obklopuje... Nájdi @1 prekliatych strán!"
+
+msgid "A condensed sphere of quantum radio noise."
+msgstr "Skondenzovaná guľa kvantového rádiového šumu."
+
+msgid "A torn parchment inscribed with eldritch scrawls."
+msgstr "Roztrhaný pergamen popísaný tajomnými čmáranicami."
+
+msgid ""
+"A torn scrap of void fabric with crimson thread.\n"
+"Used to craft the Shroud of Stalking."
+msgstr ""
+"Roztrhaný kus látky prázdnoty s karmínovou niťou.\n"
+"Používa sa na výrobu Plášťa zakrádania."
+
+msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
+msgstr "Všetkých @1 strán zozbieraných! Vyrob Rituálnu hranicu a zažeň ho!"
+
+msgid "All Pale Watcher visual and audio effects cleared for @1."
+msgstr "Všetky vizuálne a zvukové efekty Bledého pozorovateľa boli pre @1 odstránené."
+
+msgid "Attuned to the Cursed Pages in the active encounter."
+msgstr "Naladené na Prekliate strany v aktívnom stretnutí."
+
+msgid "CURSED PAGES: @1 / @2"
+msgstr "PREKLIATE STRANY: @1 / @2"
+
+msgid "Camera capacitor charging... (@1s)"
+msgstr "Kondenzátor fotoaparátu sa nabíja... (@1s)"
+
+msgid "Cleansing Flame Pyre"
+msgstr "Hranica očistného plameňa"
+
+msgid "Clearing effects for other players requires 'server' privilege."
+msgstr "Čistenie efektov pre iných hráčov vyžaduje oprávnenie 'server'."
+
+msgid "Clears all active Pale Watcher horror HUD overlays, audio, FOV changes, and domain fog"
+msgstr "Odstráni všetky aktívne hororové prekrytia HUD, zvuky, zmeny FOV a hmlu Bledého pozorovateľa"
+
+msgid "Click to detect lingering cursed anomalies in your line of sight."
+msgstr "Kliknutím zistíš prítomnosť prekliatych anomálií vo svojom zornom poli."
+
+msgid "Cooldown: 10 seconds."
+msgstr "Obnovenie: 10 sekúnd."
+
+msgid "Cooldown: 4 seconds."
+msgstr "Obnovenie: 4 sekundy."
+
+msgid "Cursed Page"
+msgstr "Prekliata strana"
+
+msgid "Cursed Page Collected: @1 / @2 (@3 found one!)"
+msgstr "Prekliata strana zozbieraná: @1 / @2 (@3 našiel jednu!)"
+
+msgid "Cursed Pages remaining to collect: @1 / @2 (Manifested in woods: @3)"
+msgstr "Zostávajúce prekliate strany na zozbieranie: @1 / @2 (V lesoch: @3)"
+
+msgid "Dimensional Cloth"
+msgstr "Dimenzionálna látka"
+
+msgid "Durability: 3 flash charges."
+msgstr "Výdrž: 3 záblesky."
+
+msgid "East"
+msgstr "Východ"
+
+msgid "Failed to initialize test encounter HUD."
+msgstr "Nepodarilo sa inicializovať testovacie HUD stretnutia."
+
+msgid "Flash Camera"
+msgstr "Bleskový fotoaparát"
+
+msgid "Flash Light"
+msgstr "Svetlo blesku"
+
+msgid "Flash camera charges remaining: @1 / @2"
+msgstr "Zostávajúce záblesky fotoaparátu: @1 / @2"
+
+msgid "He phase-teleports into cramped holes... never attempt to hide in a 3-block dirt bunker!"
+msgstr "Teleportuje sa cez tesné škáry... nikdy sa neskúšaj ukryť v hlinenom bunkri!"
+
+msgid "Head for the torches... sanctuary light (14+) holds him at bay at the dark tree line."
+msgstr "Utekaj k fakliam... svetlo svätyne (14+) ho drží v šachu na okraji tmavého lesa."
+
+msgid "Hold Sneak and Click (LMB or RMB) to Blink."
+msgstr "Podrž zakrádanie a klikni pre premiestnenie vpred."
+
+msgid "Left-Click or Right-Click: Release high-intensity xenon flash."
+msgstr "Ľavé alebo pravé tlačidlo: Vypustí vysoko intenzívny xenónový záblesk."
+
+msgid "Locates remaining uncollected Cursed Pages in the active encounter"
+msgstr "Lokalizuje zostávajúce nezozbierané prekliate strany v aktívnom stretnutí"
+
+msgid "Nearby"
+msgstr "Nablízku"
+
+msgid "Never run in a straight line... weaving through dense trees disrupts his intercept vector."
+msgstr "Nikdy neutekaj v priamej línii... kľučkovanie medzi stromami naruší jeho trasu."
+
+msgid "No active Pale Watcher encounter found near you."
+msgstr "V tvojej blízkosti sa nenašlo žiadne aktívne stretnutie s Bledým pozorovacím."
+
+msgid "North"
+msgstr "Sever"
+
+msgid "Once all cursed pages are found, ignite a Ritual Pyre to summon and banish him in holy fire."
+msgstr "Keď nájdeš všetky prekliate strany, zapáľ Rituálnu hranicu a zažeň ho v posvätnom ohni."
+
+msgid "PAGES: @1 / @2 — IGNITE RITUAL PYRE!"
+msgstr "STRANY: @1 / @2 — ZAPÁĽ RITUÁLNU HRANICU!"
+
+msgid "Player '@1' not found."
+msgstr "Hráč '@1' sa nenašiel."
+
+msgid "Restored"
+msgstr "Obnovené"
+
+msgid "Right-Click when all cursed pages are found to ignite the Cleansing Flame."
+msgstr "Klikni pravým tlačidlom, keď nájdeš všetky prekliate strany, aby si zapálil Očistný plameň."
+
+msgid "Ritual Pyre"
+msgstr "Rituálna hranica"
+
+msgid "Ritual Pyre (Requires all Cursed Pages found in active encounter)"
+msgstr "Rituálna hranica (Vyžaduje všetky prekliate strany v aktívnom stretnutí)"
+
+msgid "Set active encounter HUD progress to @1 / @2 pages."
+msgstr "Nastavený postup HUD na @1 / @2 strán."
+
+msgid "Shroud of Stalking"
+msgstr "Plášť zakrádania"
+
+msgid "Shroud shadow recharge... (@1s)"
+msgstr "Dobíjanie tieňa plášťa... (@1s)"
+
+msgid "Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m)."
+msgstr "Zakrádanie + Kliknutie na premiestnenie vpred do tieňov (14m)."
+
+msgid "South"
+msgstr "Juh"
+
+msgid "Started test encounter with @1 / @2 pages."
+msgstr "Spustené testovacie stretnutie s @1 / @2 stranami."
+
+msgid "Static Core"
+msgstr "Statické jadro"
+
+msgid "Tests the cursed pages HUD overlay (default: all pages for completion highlight)"
+msgstr "Otestuje prekrytie HUD prekliatych strán"
+
+msgid "The Pyre refuses to ignite... All Cursed Pages must be found! (@1/@2 Collected)"
+msgstr "Hranica sa odmieta zapáliť... Musíš nájsť všetky prekliate strany! (@1/@2 zozbieraných)"
+
+msgid "The Pyre remains cold. No dark presence is tethered here."
+msgstr "Hranica zostáva chladná. Nie je tu pripútaná žiadna temná bytosť."
+
+msgid "The Static Core hums softly... No cursed anomalies detected in this direction."
+msgstr "Statické jadro ticho hučí... V tomto smere neboli zistené žiadne anomálie."
+
+msgid "The cursed ink hums weakly... There is no active ritual session nearby."
+msgstr "Prekliaty atrament slabo bzučí... V blízkosti nie je žiadny aktívny rituál."
+
+msgid "The glancing check... spin around every few seconds to freeze his silent advance."
+msgstr "Rýchla kontrola... každých pár sekúnd sa otoč, aby si zmrazil jeho tichý postup."
+
+msgid "The nightmare reaches its climax... Ignite the Ritual Pyre to banish him!"
+msgstr "Nočná mora vrcholí... Zapáľ Rituálnu hranicu a zažeň ho!"
+
+msgid "The sanctuary light holds... The Pale Watcher dissolves into the dark tree line."
+msgstr "Svetlo svätyne chráni... Bledý pozorovateľ sa rozpúšťa v tmavom lese."
+
+msgid "Vintage Flash Camera"
+msgstr "Historický bleskový fotoaparát"
+
+msgid "West"
+msgstr "Západ"
+
+msgid "You cannot hide from the void..."
+msgstr "Pred prázdnotou sa neskryješ..."
+
+msgid "Your trembling hands drop your light source into the darkness!"
+msgstr "Tvoje trasúce sa ruky upustili zdroj svetla do tmy!"
+
+msgid "• Blinds the Pale Watcher, forcing an evasive retreat."
+msgstr "• Oslepí Bledého pozorovateľa a prinúti ho k ústupu."
+
+msgid "• Illuminates deep darkness."
+msgstr "• Osvetľuje hlbokú temnotu."
+
+msgid "★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ VŠETKÝCH @1 PREKLIATYCH STRÁN ZOZBIERANÝCH! Vyrob Rituálnu hranicu a spáľ ich, aby si zahnal nočnú moru! ★"
+
+msgid "★ An eldritch shockwave repels your strike! Physical weapons cannot harm the void!"
+msgstr "★ Tajomná rázová vlna odrazila tvoj úder! Fyzické zbrane nemôžu prázdnote ublížiť!"
+
+msgid "★ As the cursed page burns, a whisper echoes: \"@1\""
+msgstr "★ Keď prekliata strana horí, ozýva sa šepot: „@1“"
+
+msgid "★ The @1 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!"
+msgstr "★ @1 spútaných kliatieb zapálilo Očistný plameň! Bledý pozorovateľ je vtiahnutý do hranice!"
+
+msgid "★ The Cleansing Flame has consumed the Cursed Pages! The Pale Watcher is banished."
+msgstr "★ Očistný plameň pohltil prekliate strany! Bledý pozorovateľ je zahnaný."
+
+msgid "★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!"
+msgstr "★ Statické jadro divoko praská! Prekliata strana je priamo v tvojom zornom poli!"
+
+msgid "★ The Vintage Flash Camera capacitor burned out and the bulb shattered!"
+msgstr "★ Kondenzátor fotoaparátu vyhorel a žiarovka sa roztrieštila!"
+
+msgid "★ The anomaly expands... @1 additional cursed pages manifest in the dark woods! (@2 total) ★"
+msgstr "★ Anomália sa rozrastá... v temných lesoch sa zjavilo @1 ďalších prekliatych strán! (spolu @2) ★"
+
+msgid "★ The blinding xenon flash repels the Pale Watcher!"
+msgstr "★ Oslepujúci xenónový záblesk odohnal Bledého pozorovateľa!"
+
+msgid "★ The presence contracts... The required cursed pages have reduced to @1 (@2/@3 collected). ★"
+msgstr "★ Prítomnosť ustupuje... Požadované strany klesli na @1 (@2/@3 zozbieraných). ★"
+
+msgid "★ The presence contracts... You have gathered enough pages (@1/@2)! Craft a Ritual Pyre and burn them to banish the nightmare! ★"
+msgstr "★ Prítomnosť ustupuje... Zozbieral si dosť strán (@1/@2)! Vyrob Rituálnu hranicu a zažeň nočnú moru! ★"
+
+msgid "★ You burn the cursed page in your hands, adding its soul to the ritual!"
+msgstr "★ Pálíš prekliatu stranu vo svojich rukách a pridávaš jej dušu k rituálu!"
+
+msgid "★ You have broken through the @1-node domain tether and escaped the nightmare!"
+msgstr "★ Prerazil si hranicu @1 blokov a unikol si nočnej more!"
+
+msgid "★ You have retreated from the cursed mist. Return within 20s or your tether to the ritual will sever."
+msgstr "★ Ustúpil si z prekliatej hmly. Vráť sa do 20 sekúnd, inak sa tvoje puto s rituálom pretrhne."
+
+msgid "★ You step back into the cursed mist... The ritual claims you once more."
+msgstr "★ Vstupuješ späť do prekliatej hmly... Rituál si ťa opäť nárokuje."
+
