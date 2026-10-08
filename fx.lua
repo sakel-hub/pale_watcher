@@ -208,8 +208,10 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 				alignment = {x = 0, y = 0},
 				z_index = -2, -- Above static noise (-3) so dark border frames the view
 			})
-		else
+			state.last_vig_tex = vig_tex
+		elseif state.last_vig_tex ~= vig_tex then
 			player:hud_change(state.hud_vignette_id, "text", vig_tex)
+			state.last_vig_tex = vig_tex
 		end
 
 		-- Static Noise Overlay
@@ -224,8 +226,10 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 				alignment = {x = 0, y = 0},
 				z_index = -3, -- Below vignette (-2)
 			})
-		else
+			state.last_static_tex = static_tex
+		elseif state.last_static_tex ~= static_tex then
 			player:hud_change(state.hud_static_id, "text", static_tex)
+			state.last_static_tex = static_tex
 		end
 
 		-- Looping Static Audio
@@ -242,10 +246,12 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 			player:hud_remove(state.hud_vignette_id)
 			state.hud_vignette_id = nil
 		end
+		state.last_vig_tex = nil
 		if state.hud_static_id then
 			player:hud_remove(state.hud_static_id)
 			state.hud_static_id = nil
 		end
+		state.last_static_tex = nil
 		if state.sound_handle then
 			core.sound_stop(state.sound_handle)
 			state.sound_handle = nil
@@ -393,10 +399,12 @@ function pale_watcher.fx.clear_player(player, clear_fog)
 			player:hud_remove(state.hud_vignette_id)
 			state.hud_vignette_id = nil
 		end
+		state.last_vig_tex = nil
 		if state.hud_static_id then
 			player:hud_remove(state.hud_static_id)
 			state.hud_static_id = nil
 		end
+		state.last_static_tex = nil
 		if state.sound_handle then
 			core.sound_stop(state.sound_handle)
 			state.sound_handle = nil
@@ -515,12 +523,14 @@ core.register_globalstep(function(dtime)
 					local max_vig = get_max_vignette_alpha(player)
 					local vig_alpha = math.min(max_vig, math.floor(state.intensity * max_vig))
 					local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vig_alpha)
-					if state.hud_vignette_id then
+					if state.hud_vignette_id and state.last_vig_tex ~= vig_tex then
 						player:hud_change(state.hud_vignette_id, "text", vig_tex)
+						state.last_vig_tex = vig_tex
 					end
 					local static_tex = get_static_texture(state.intensity, state.time + dtime, player)
-					if state.hud_static_id then
+					if state.hud_static_id and state.last_static_tex ~= static_tex then
 						player:hud_change(state.hud_static_id, "text", static_tex)
+						state.last_static_tex = static_tex
 					end
 				else
 					state.intensity = 0
@@ -537,6 +547,8 @@ core.register_globalstep(function(dtime)
 						state.hud_vignette_id = nil
 						state.hud_static_id = nil
 					end
+					state.last_vig_tex = nil
+					state.last_static_tex = nil
 					if state.sound_handle then
 						core.sound_stop(state.sound_handle)
 						state.sound_handle = nil
@@ -575,13 +587,8 @@ core.register_on_joinplayer(function(player)
 	-- If the joining player is inside an active encounter session,
 	-- avoid wiping their sky/fog and instead immediately re-assert domain fog.
 	local name = player:get_player_name()
-	local in_session = false
-	if pale_watcher.ritual and pale_watcher.ritual.get_player_session then
-		local s = pale_watcher.ritual.get_player_session(name, player:get_pos())
-		if s then
-			in_session = true
-		end
-	end
+	local s = pale_watcher.ritual.get_player_session(name, player:get_pos())
+	local in_session = (s ~= nil)
 
 	pale_watcher.fx.clear_player(player, not in_session)
 
