@@ -4,6 +4,7 @@
 ]]
 
 ---@class PaleWatcher
+---@field S fun(str: string, ...): string Gettext localization function
 ---@field physics table Universal multi-mod physics abstraction
 ---@field fx table HUD static interference, responsive vignette, and audio feedback
 ---@field particles table Universal particle factory & visual presets
@@ -11,13 +12,20 @@
 ---@field items table Wieldable tools and artifact materials
 ---@field ritual table Dynamically scaling cursed page ritual session manager
 ---@field colors table Semantic chat & HUD color palette
+---@field TETHER_MAX number Domain gauntlet tether radius in nodes
+---@field AMBUSH_DIST number Forward intercept ambush trigger distance in nodes
 pale_watcher = rawget(_G, "pale_watcher") or {}
+pale_watcher.S = core.get_translator(core.get_current_modname())
 pale_watcher.physics = pale_watcher.physics or {}
 pale_watcher.fx = pale_watcher.fx or {}
 pale_watcher.particles = pale_watcher.particles or {}
 pale_watcher.nodes = pale_watcher.nodes or {}
 pale_watcher.items = pale_watcher.items or {}
 pale_watcher.ritual = pale_watcher.ritual or {}
+
+-- Domain tether radius and intercept threshold configured from settingtypes
+pale_watcher.TETHER_MAX = tonumber(core.settings:get("pale_watcher_tether_radius")) or 100.0
+pale_watcher.AMBUSH_DIST = math.max(20.0, pale_watcher.TETHER_MAX - 15.0)
 
 ---Semantic UI & chat feedback color palette for high legibility
 pale_watcher.colors = {
@@ -70,7 +78,7 @@ pale_watcher.palette_keys = {
 }
 
 -- Seed pseudo-random generator with high-resolution clock entropy to ensure varied palette selection
-local random_seed = (core and core.get_us_time and core.get_us_time()) or os.time()
+local random_seed = core.get_us_time() or os.time()
 math.randomseed(tonumber(tostring(random_seed):reverse():sub(1, 9)) or random_seed)
 for _ = 1, 3 do math.random() end
 
@@ -105,7 +113,7 @@ function pale_watcher.spawn(pos, palette_key)
 		chosen_key = pale_watcher.palette_keys[math.random(#pale_watcher.palette_keys)]
 	end
 	local staticdata = core.serialize({palette_name = chosen_key})
-	return core.add_entity(pos, "pale_watcher:pale_watcher", staticdata)
+	return x_mob_core.spawn_mob(pos, "pale_watcher:pale_watcher", staticdata)
 end
 
 ---Checks whether a target point is visually unobstructed by opaque solid terrain.
