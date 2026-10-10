@@ -8,6 +8,33 @@ pale_watcher.nodes = pale_watcher.nodes or {}
 local colors = pale_watcher.colors
 local S = pale_watcher.S
 
+-- Loading Block Modifier: Automatically invoked whenever a mapblock containing
+-- a cursed page is loaded into memory. Guarantees orphan pages from previous crashes,
+-- ended sessions, or unloaded chunks are instantly purged without delay.
+core.register_lbm({
+	label = "Pale Watcher Cursed Page Cleanup",
+	name = "pale_watcher:cursed_page_cleanup",
+	nodenames = {"pale_watcher:cursed_page"},
+	run_at_every_load = true,
+	action = function(pos, _node)
+		local meta = core.get_meta(pos)
+		local sid = meta:get_string("session_id")
+
+		-- If no session or session is not active, purge immediately
+		if sid == "" or not pale_watcher.ritual.is_session_active(sid) then
+			core.remove_node(pos)
+			pale_watcher.ritual.untrack_page(pos)
+			return
+		end
+
+		-- Active session: ensure node timer is ticking
+		local timer = core.get_node_timer(pos)
+		if not timer:is_started() then
+			timer:start(4.0)
+		end
+	end,
+})
+
 -- Transient invisible light node created during camera flash
 core.register_node("pale_watcher:flash_light", {
 	description = S("Flash Light"),
@@ -70,21 +97,28 @@ core.register_node("pale_watcher:cursed_page", {
 		core.get_node_timer(pos):start(4.0)
 	end,
 
+	on_destruct = function(pos)
+		pale_watcher.ritual.untrack_page(pos)
+	end,
+
 	on_timer = function(pos, elapsed)
 		local meta = core.get_meta(pos)
-		local age = meta:get_int("age") + math.floor(elapsed)
-		meta:set_int("age", age)
+		local sid = meta:get_string("session_id")
 
 		-- Orphan check: if session ended or server rebooted without active session, purge immediately
-		local sid = meta:get_string("session_id")
-		if sid ~= "" and not pale_watcher.ritual.is_session_active(sid) then
+		if sid == "" or not pale_watcher.ritual.is_session_active(sid) then
 			core.remove_node(pos)
+			pale_watcher.ritual.untrack_page(pos)
 			return false
 		end
 
+		local age = meta:get_int("age") + math.floor(elapsed)
+		meta:set_int("age", age)
+
 		-- Clean up inactive pages after 600s TTL strictly if not attached to an active session
-		if age > 600 and (sid == "" or not pale_watcher.ritual.is_session_active(sid)) then
+		if age > 600 then
 			core.remove_node(pos)
+			pale_watcher.ritual.untrack_page(pos)
 			return false
 		end
 

@@ -3,6 +3,17 @@
 	Public API Namespace & Horror Subsystem Delegation
 ]]
 
+---@class PaleWatcherRitual
+---@field track_page fun(pos: Vector, session_id?: string)
+---@field untrack_page fun(pos: Vector)
+---@field remove_page_at fun(pos: Vector): boolean
+---@field purge_all_orphans fun(force_load?: boolean): integer
+---@field is_session_active fun(session_id: string): boolean
+---@field start_session fun(mob_ref: ObjectRef, center_pos: Vector): string
+---@field end_session fun(session_id: string, victory: boolean)
+---@field get_player_session fun(player_name: string, pos?: Vector): table|nil, string|nil
+---@field on_page_collected fun(pos: Vector, clicker: ObjectRef)
+
 ---@class PaleWatcher
 ---@field S fun(str: string, ...): string Gettext localization function
 ---@field physics table Universal multi-mod physics abstraction
@@ -10,7 +21,7 @@
 ---@field particles table Universal particle factory & visual presets
 ---@field nodes table Cursed Page and Ritual Pyre world structures
 ---@field items table Wieldable tools and artifact materials
----@field ritual table Dynamically scaling cursed page ritual session manager
+---@field ritual PaleWatcherRitual Dynamically scaling cursed page ritual session manager
 ---@field colors table Semantic chat & HUD color palette
 ---@field TETHER_MAX number Domain gauntlet tether radius in nodes
 ---@field AMBUSH_DIST number Forward intercept ambush trigger distance in nodes

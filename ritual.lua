@@ -33,6 +33,108 @@ local SPAWN_RADIUS_MIN = 15.0
 local SPAWN_RADIUS_MAX = 45.0
 local MIN_PAGE_DISTANCE = 8.0 -- Primary spacing between pages
 
+local storage = core.get_mod_storage()
+local PENDING_PAGES_KEY = "pending_pages"
+
+---Loads pending pages map from persistent mod storage.
+---@return table<string, {pos: Vector, session_id: string, time: integer}>
+local function load_stored_pages()
+	local raw = storage:get_string(PENDING_PAGES_KEY)
+	if raw and raw ~= "" then
+		local data = core.deserialize(raw)
+		if type(data) == "table" then
+			return data
+		end
+	end
+	return {}
+end
+
+---Persists pending pages map to mod storage.
+---@param pages table<string, table>
+local function save_stored_pages(pages)
+	storage:set_string(PENDING_PAGES_KEY, core.serialize(pages or {}))
+end
+
+local stored_pages = load_stored_pages()
+
+---Tracks a placed cursed page in persistent storage.
+---@param pos Vector
+---@param session_id? string
+function pale_watcher.ritual.track_page(pos, session_id)
+	local hash = core.pos_to_string(pos)
+	stored_pages[hash] = {
+		pos = {x = pos.x, y = pos.y, z = pos.z},
+		session_id = session_id or "",
+		time = os.time(),
+	}
+	save_stored_pages(stored_pages)
+end
+
+---Untracks a cursed page from persistent storage.
+---@param pos Vector
+function pale_watcher.ritual.untrack_page(pos)
+	local hash = core.pos_to_string(pos)
+	if stored_pages[hash] then
+		stored_pages[hash] = nil
+		save_stored_pages(stored_pages)
+	end
+end
+
+---Safely removes a cursed page at pos, loading the mapblock from disk if unloaded.
+---@param pos Vector
+---@return boolean removed True if successfully removed or already air
+function pale_watcher.ritual.remove_page_at(pos)
+	local node = core.get_node(pos)
+	if node.name == "ignore" then
+		core.load_area(pos)
+		node = core.get_node(pos)
+	end
+	if node.name == "pale_watcher:cursed_page" then
+		core.remove_node(pos)
+	end
+	pale_watcher.ritual.untrack_page(pos)
+	return node.name ~= "ignore"
+end
+
+---Scans and purges all residual orphan cursed pages recorded in storage.
+---@param force_load? boolean
+---@return integer count Number of purged pages
+function pale_watcher.ritual.purge_all_orphans(force_load)
+	local purged = 0
+	local remaining = {}
+	local dirty = false
+
+	for hash, data in pairs(stored_pages) do
+		local pos = data.pos
+		if pos then
+			local node = core.get_node(pos)
+			if node.name == "ignore" and (force_load or true) then
+				core.load_area(pos)
+				node = core.get_node(pos)
+			end
+
+			if node.name == "pale_watcher:cursed_page" then
+				core.remove_node(pos)
+				purged = purged + 1
+				dirty = true
+			elseif node.name ~= "ignore" then
+				-- Node was already dug or replaced with air/another block
+				dirty = true
+			else
+				-- Mapblock could not be loaded; retain in pending list for LBM
+				remaining[hash] = data
+			end
+		end
+	end
+
+	if dirty then
+		stored_pages = remaining
+		save_stored_pages(stored_pages)
+	end
+
+	return purged
+end
+
 ---Calculates target cursed page count dynamically scaled by active player count.
 ---Solo = 5, Duo = 8, Trio = 11, Squad (4+) = 14.
 ---@param player_count integer Number of active participating players
@@ -151,6 +253,8 @@ local function spawn_pages_dynamically(center, count, session_id, existing_place
 										meta:set_string("session_id", session_id)
 									end
 									meta:set_int("age", 0)
+									core.get_node_timer(air_pos):start(4.0)
+									pale_watcher.ritual.track_page(air_pos, session_id)
 
 									local hash = core.pos_to_string(air_pos)
 									placed[hash] = air_pos
@@ -219,6 +323,8 @@ local function spawn_pages_dynamically(center, count, session_id, existing_place
 											meta:set_string("session_id", session_id)
 										end
 										meta:set_int("age", 0)
+										core.get_node_timer(air_pos):start(4.0)
+										pale_watcher.ritual.track_page(air_pos, session_id)
 
 										local hash = core.pos_to_string(air_pos)
 										placed[hash] = air_pos
@@ -324,14 +430,12 @@ local function remove_player_hud(player, session)
 end
 
 ---Instant Cleanup Purge: Reverts all remaining uncollected cursed pages back to air.
+---Ensures mapblocks are loaded synchronously so pages in unloaded chunks are completely erased.
 ---@param session table
 local function purge_session_pages(session)
 	if not session or not session.placed_pages then return end
 	for _, pos in pairs(session.placed_pages) do
-		local node = core.get_node(pos)
-		if node.name == "pale_watcher:cursed_page" then
-			core.remove_node(pos)
-		end
+		pale_watcher.ritual.remove_page_at(pos)
 	end
 	session.placed_pages = {}
 end
@@ -435,6 +539,7 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 							local spawned_count = 0
 							for hash, p in pairs(newly_placed) do
 								session.placed_pages[hash] = p
+								pale_watcher.ritual.track_page(p, session_id)
 								spawned_count = spawned_count + 1
 							end
 
@@ -666,6 +771,7 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 	-- Remove from placed_pages map
 	local pos_hash = core.pos_to_string(pos)
 	session.placed_pages[pos_hash] = nil
+	pale_watcher.ritual.untrack_page(pos)
 
 	session.pages_collected = session.pages_collected + 1
 	if session.pages_collected > session.pages_total then
@@ -996,6 +1102,11 @@ core.register_on_shutdown(function()
 	for session_id, _ in pairs(active_sessions) do
 		pale_watcher.ritual.end_session(session_id, false)
 	end
+	pale_watcher.ritual.purge_all_orphans(true)
+end)
+
+core.register_on_mods_loaded(function()
+	pale_watcher.ritual.purge_all_orphans(true)
 end)
 
 return pale_watcher.ritual
