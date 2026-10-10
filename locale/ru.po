@@ -255,3 +255,9 @@ msgstr "★ Вы покинули проклятый туман. Верните�
 msgid "★ You step back into the cursed mist... The ritual claims you once more."
 msgstr "★ Вы возвращаетесь в проклятый туман... Ритуал снова захватывает вас."
 
+msgid "Purges all orphan or lingering cursed pages from the world"
+msgstr "Удаляет все потерянные или оставшиеся проклятые страницы из мира"
+
+msgid "Purged @1 orphan cursed pages from world records."
+msgstr "Удалено @1 потерянных проклятых страниц из записей мира."
+

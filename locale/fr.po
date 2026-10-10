@@ -255,3 +255,9 @@ msgstr "★ Vous vous êtes éloigné de la brume maudite. Revenez sous 20s ou v
 msgid "★ You step back into the cursed mist... The ritual claims you once more."
 msgstr "★ Vous pénétrez à nouveau dans la brume maudite... Le rituel vous réclame une fois de plus."
 
+msgid "Purges all orphan or lingering cursed pages from the world"
+msgstr "Purge toutes les pages maudites orphelines ou persistantes du monde"
+
+msgid "Purged @1 orphan cursed pages from world records."
+msgstr "@1 pages maudites orphelines purgées des registres du monde."
+

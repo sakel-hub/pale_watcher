@@ -255,3 +255,9 @@ msgstr "★ Ustúpil si z prekliatej hmly. Vráť sa do 20 sekúnd, inak sa tvoj
 msgid "★ You step back into the cursed mist... The ritual claims you once more."
 msgstr "★ Vstupuješ späť do prekliatej hmly... Rituál si ťa opäť nárokuje."
 
+msgid "Purges all orphan or lingering cursed pages from the world"
+msgstr "Vyčistí všetky opustené alebo pretrvávajúce prekliate strany zo sveta"
+
+msgid "Purged @1 orphan cursed pages from world records."
+msgstr "Vyčistených @1 opustených prekliatych strán zo záznamov sveta."
+

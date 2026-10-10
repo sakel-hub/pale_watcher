@@ -52,6 +52,10 @@ core.register_chatcommand("pw_locate", {
 		if session.placed_pages then
 			for _, pos in pairs(session.placed_pages) do
 				local node = core.get_node(pos)
+				if node.name == "ignore" then
+					core.load_area(pos)
+					node = core.get_node(pos)
+				end
 				local restored = false
 				if node.name ~= "pale_watcher:cursed_page" then
 					core.set_node(pos, {name = "pale_watcher:cursed_page"})
@@ -59,6 +63,7 @@ core.register_chatcommand("pw_locate", {
 					if sid then meta:set_string("session_id", sid) end
 					meta:set_int("age", 0)
 					core.get_node_timer(pos):start(4.0)
+					pale_watcher.ritual.track_page(pos, sid)
 					restored = true
 				end
 				local d = math.floor(vector.distance(p_pos, pos) + 0.5)
@@ -137,5 +142,15 @@ core.register_chatcommand("pw_test_hud", {
 			end
 		end
 		return false, S("Failed to initialize test encounter HUD.")
+	end,
+})
+
+core.register_chatcommand("pw_purge_pages", {
+	params = "",
+	description = S("Purges all orphan or lingering cursed pages from the world"),
+	privs = {server = true},
+	func = function(_name, _param)
+		local count = pale_watcher.ritual.purge_all_orphans(true)
+		return true, S("Purged @1 orphan cursed pages from world records.", count)
 	end,
 })

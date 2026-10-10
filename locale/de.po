@@ -255,3 +255,9 @@ msgstr "★ Du hast dich aus dem verfluchten Nebel zurückgezogen. Kehre innerha
 msgid "★ You step back into the cursed mist... The ritual claims you once more."
 msgstr "★ Du trittst wieder in den verfluchten Nebel... Das Ritual fordert dich erneut."
 
+msgid "Purges all orphan or lingering cursed pages from the world"
+msgstr "Bereinigt alle verwaisten oder verbleibenden verfluchten Seiten aus der Welt"
+
+msgid "Purged @1 orphan cursed pages from world records."
+msgstr "@1 verwaiste verfluchte Seiten aus den Weltaufzeichnungen bereinigt."
+

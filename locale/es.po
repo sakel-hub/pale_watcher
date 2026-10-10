@@ -255,3 +255,9 @@ msgstr "★ Te has alejado de la niebla maldita. Regresa en 20s o tu vínculo co
 msgid "★ You step back into the cursed mist... The ritual claims you once more."
 msgstr "★ Vuelves a pisar la niebla maldita... El ritual te reclama una vez más."
 
+msgid "Purges all orphan or lingering cursed pages from the world"
+msgstr "Purga todas las páginas malditas huérfanas o persistentes del mundo"
+
+msgid "Purged @1 orphan cursed pages from world records."
+msgstr "Se purgaron @1 páginas malditas huérfanas de los registros del mundo."
+

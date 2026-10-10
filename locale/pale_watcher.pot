@@ -253,3 +253,9 @@ msgstr ""
 msgid "★ You step back into the cursed mist... The ritual claims you once more."
 msgstr ""
 
+msgid "Purges all orphan or lingering cursed pages from the world"
+msgstr ""
+
+msgid "Purged @1 orphan cursed pages from world records."
+msgstr ""
+
