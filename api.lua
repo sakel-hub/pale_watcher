@@ -88,6 +88,14 @@ pale_watcher.palette_keys = {
 	"monochrome_noir",
 }
 
+---Map of palette identifier to 1-based texture variation index for x_mob_core.
+pale_watcher.palette_indices = {
+	abyssal_void = 1,
+	forest_wraith = 2,
+	quantum_slate = 3,
+	monochrome_noir = 4,
+}
+
 -- Seed pseudo-random generator with high-resolution clock entropy to ensure varied palette selection
 local random_seed = core.get_us_time() or os.time()
 math.randomseed(tonumber(tostring(random_seed):reverse():sub(1, 9)) or random_seed)
@@ -106,12 +114,22 @@ function pale_watcher.get_textures(suit_mod, tie_mod, palette_key, body_mod)
 	if not p_key or not pale_watcher.palettes[p_key] then
 		p_key = pale_watcher.palette_keys[math.random(#pale_watcher.palette_keys)]
 	end
-	local p = pale_watcher.palettes[p_key] or pale_watcher.palettes.abyssal_void
+	local p = pale_watcher.palettes[p_key]
 	return {
-		body_mod or p.body or "pale_watcher_body.png",
+		body_mod or p.body,
 		suit_mod or p.suit,
 		tie_mod or p.tie,
 	}, p_key
+end
+
+---Builds the ordered list of all palette texture variations for x_mob_core registration.
+---@return string[][] variations
+function pale_watcher.get_texture_variations()
+	local variations = {}
+	for i = 1, #pale_watcher.palette_keys do
+		variations[i] = (pale_watcher.get_textures(nil, nil, pale_watcher.palette_keys[i]))
+	end
+	return variations
 end
 
 ---Spawns a Pale Watcher entity at the specified world coordinate.
@@ -123,7 +141,10 @@ function pale_watcher.spawn(pos, palette_key)
 	if not chosen_key or not pale_watcher.palettes[chosen_key] then
 		chosen_key = pale_watcher.palette_keys[math.random(#pale_watcher.palette_keys)]
 	end
-	local staticdata = core.serialize({palette_name = chosen_key})
+	local staticdata = core.serialize({
+		palette_name = chosen_key,
+		texture_no = pale_watcher.palette_indices[chosen_key],
+	})
 	return x_mob_core.spawn_mob(pos, "pale_watcher:pale_watcher", staticdata)
 end
 
@@ -164,10 +185,7 @@ function pale_watcher.is_walkable_ground(node_name)
 	if node_name == "air" or node_name == "ignore" then
 		return false
 	end
-	if core.get_item_group(node_name, "leaves") > 0 then
-		return false
-	end
-	if core.get_item_group(node_name, "flora") > 0 then
+	if core.get_item_group(node_name, "leaves") > 0 or core.get_item_group(node_name, "flora") > 0 then
 		return false
 	end
 	local def = core.registered_nodes[node_name]
@@ -194,13 +212,14 @@ end
 ---@return boolean
 function pale_watcher.has_clear_headroom(pos, height)
 	for y_off = 1, height do
-		local check_pos = {x = pos.x, y = pos.y + y_off, z = pos.z}
-		if not pale_watcher.is_passable_node(core.get_node(check_pos).name) then
+		if not x_mob_core.utils.is_passable_node(pos.x, pos.y + y_off, pos.z, false) then
 			return false
 		end
 	end
 	return true
 end
+
+local ground_probe = {x = 0, y = 0, z = 0}
 
 ---Scans vertically at (x, z) around y_center to find a solid walkable ground node with clear headroom.
 ---Searches downwards from near player elevation first to prioritize real terrain over elevated structures.
@@ -215,29 +234,25 @@ function pale_watcher.find_ground_node(x, y_center, z, search_up, search_down, r
 	local cx = math.floor(x + 0.5)
 	local cz = math.floor(z + 0.5)
 	local headroom = required_headroom or 3
+	ground_probe.x = cx
+	ground_probe.z = cz
 
 	-- Search downwards from near player eye/head level (+2 down to -search_down) first
 	local initial_up = math.min(search_up, 2)
 	for dy = initial_up, -search_down, -1 do
-		local gy = math.floor(y_center + dy + 0.5)
-		local g_pos = {x = cx, y = gy, z = cz}
-		if pale_watcher.is_walkable_ground(core.get_node(g_pos).name) then
-			if pale_watcher.has_clear_headroom(g_pos, headroom) then
-				return g_pos
-			end
+		ground_probe.y = math.floor(y_center + dy + 0.5)
+		if pale_watcher.is_walkable_ground(core.get_node(ground_probe).name) and
+			pale_watcher.has_clear_headroom(ground_probe, headroom) then
+			return {x = cx, y = ground_probe.y, z = cz}
 		end
 	end
 
 	-- If no ground found downwards (e.g. uphill slope), search upwards from lowest to highest
-	if search_up > initial_up then
-		for dy = initial_up + 1, search_up do
-			local gy = math.floor(y_center + dy + 0.5)
-			local g_pos = {x = cx, y = gy, z = cz}
-			if pale_watcher.is_walkable_ground(core.get_node(g_pos).name) then
-				if pale_watcher.has_clear_headroom(g_pos, headroom) then
-					return g_pos
-				end
-			end
+	for dy = initial_up + 1, search_up do
+		ground_probe.y = math.floor(y_center + dy + 0.5)
+		if pale_watcher.is_walkable_ground(core.get_node(ground_probe).name) and
+			pale_watcher.has_clear_headroom(ground_probe, headroom) then
+			return {x = cx, y = ground_probe.y, z = cz}
 		end
 	end
 
@@ -245,4 +260,5 @@ function pale_watcher.find_ground_node(x, y_center, z, search_up, search_down, r
 end
 
 return pale_watcher
+
 

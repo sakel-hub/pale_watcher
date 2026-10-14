@@ -1,39 +1,12 @@
 --[[
-	pale_watcher - Universal Particle Engine & Visual Presets
-	Modern Luanti particle spawner factory with automatic legacy fallback population
-	and atmospheric horror visual presets.
+	pale_watcher - Particle Engine & Visual Presets
+	Modern Luanti particle spawner factory and atmospheric horror visual presets.
 ]]
 
-pale_watcher.particles = pale_watcher.particles or {}
-
----Spawns a particle spawner with automatic population of legacy engine fallback keys.
----Ensures 100% compatibility across all Luanti engine versions while keeping code DRY.
----@param def table Modern structured particle definition
+---Spawns a modern Luanti particle spawner.
+---@param def table Structured particle spawner definition
 ---@return integer|nil spawner_id ID of registered particlespawner or nil
 function pale_watcher.particles.spawn(def)
-	if def.pos then
-		def.minpos = def.minpos or def.pos.min
-		def.maxpos = def.maxpos or def.pos.max
-	end
-	if def.vel then
-		def.minvel = def.minvel or def.vel.min
-		def.maxvel = def.maxvel or def.vel.max
-	end
-	if def.acc then
-		def.minacc = def.minacc or def.acc.min
-		def.maxacc = def.maxacc or def.acc.max
-	end
-	if def.exptime then
-		def.minexptime = def.minexptime or def.exptime.min
-		def.maxexptime = def.maxexptime or def.exptime.max
-	end
-	if def.size then
-		def.minsize = def.minsize or def.size.min
-		def.maxsize = def.maxsize or def.size.max
-	end
-	if def.texpool and #def.texpool > 0 and not def.texture then
-		def.texture = def.texpool[1].name
-	end
 	return core.add_particlespawner(def)
 end
 
@@ -153,11 +126,7 @@ function pale_watcher.particles.pyre_roaring_flames(pos, duration)
 
 	if id then
 		active_pyre_spawners[pos_key] = id
-
-		local meta = core.get_meta(rounded)
-		if meta then
-			meta:set_int("pale_watcher:pyre_spawner_id", id)
-		end
+		core.get_meta(rounded):set_int("pale_watcher:pyre_spawner_id", id)
 	end
 
 	return id
@@ -177,12 +146,10 @@ function pale_watcher.particles.remove_pyre_flames(pos)
 	end
 
 	local meta = core.get_meta(rounded)
-	if meta then
-		local meta_id = meta:get_int("pale_watcher:pyre_spawner_id")
-		if meta_id and meta_id > 0 then
-			core.delete_particlespawner(meta_id)
-			meta:set_int("pale_watcher:pyre_spawner_id", 0)
-		end
+	local meta_id = meta:get_int("pale_watcher:pyre_spawner_id")
+	if meta_id > 0 then
+		core.delete_particlespawner(meta_id)
+		meta:set_int("pale_watcher:pyre_spawner_id", 0)
 	end
 end
 
