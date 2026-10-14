@@ -9,9 +9,8 @@ local S = pale_watcher.S
 local colors = pale_watcher.colors
 
 local WATCHER_FOV_DOT = 0.55
-local WATCHER_TETHER_MAX = pale_watcher.TETHER_MAX or
-	(tonumber(core.settings:get("pale_watcher_tether_radius")) or 100.0)
-local WATCHER_AMBUSH_DIST = pale_watcher.AMBUSH_DIST or math.max(20.0, WATCHER_TETHER_MAX - 15.0)
+local WATCHER_TETHER_MAX = pale_watcher.TETHER_MAX
+local WATCHER_AMBUSH_DIST = pale_watcher.AMBUSH_DIST
 local MAX_OBSERVE_DIST_SQ = (WATCHER_TETHER_MAX + 15.0) * (WATCHER_TETHER_MAX + 15.0)
 
 local OBSERVATION_POINTS = {
@@ -54,11 +53,6 @@ local scratch_minp = {x = 0, y = 0, z = 0}
 local scratch_maxp = {x = 0, y = 0, z = 0}
 local scratch_light_minp = {x = 0, y = 0, z = 0}
 local scratch_light_maxp = {x = 0, y = 0, z = 0}
-
----Checks whether a target point is visually unobstructed by opaque solid terrain.
----Foliage (leaves, flora) and transparent blocks (glass) do not block line of sight for horror mob detection.
-local has_visual_los = pale_watcher.has_visual_los
-
 local scratch_eye = {x = 0, y = 0, z = 0}
 local scratch_sample = {x = 0, y = 0, z = 0}
 
@@ -112,7 +106,7 @@ local function is_observed(pos, players)
 								scratch_sample.x = sx
 								scratch_sample.y = sy
 								scratch_sample.z = sz
-								if has_visual_los(scratch_eye, scratch_sample) then
+								if pale_watcher.has_visual_los(scratch_eye, scratch_sample) then
 									return true, player
 								end
 							end
@@ -172,7 +166,7 @@ local function find_blind_spot_node(target_player, _current_mob_pos, step_min_di
 
 			-- Verify blind spot: either outside player's forward view cone OR occluded by terrain
 			local is_in_blind_spot = (vector.dot(look_dir, to_dest) < WATCHER_FOV_DOT) or
-				not has_visual_los(p_eye, dest_eye)
+				not pale_watcher.has_visual_los(p_eye, dest_eye)
 
 			if is_in_blind_spot then
 				return dest
@@ -366,7 +360,7 @@ local function execute_watcher_attack(self, target, pos, opts)
 		pale_watcher.physics.apply_terror(target)
 	end
 	if opts.scare_sound then
-		core.sound_play("pale_watcher_scare", {pos = pos, gain = 1.0, max_hear_distance = 35}, true)
+		x_mob_core.play_sound("pale_watcher_scare", {pos = pos, gain = 1.0, distance = 35, ephemeral = true})
 	end
 	if opts.particles then
 		pale_watcher.particles.void_mist(pos, 2.0, 20)
@@ -375,17 +369,18 @@ local function execute_watcher_attack(self, target, pos, opts)
 	x_mob_core.play_sound(self, "attack", {to_player = target:get_player_name()})
 end
 
----Centralized session cleanup for mob removal, death, or deactivation.
+---Centralized session cleanup for mob removal or death.
 ---@param self table Entity table
----@param removal? boolean True if permanently removed, false if mapblock unloaded
-local function cleanup_entity_session(self, removal)
-	if removal == false then
+---@param removal_or_reason? boolean|string False or "unloaded" when mapblock unloads
+local function cleanup_entity_session(self, removal_or_reason)
+	if removal_or_reason == false or removal_or_reason == "unloaded" then
 		-- Mapblock unloaded; preserve session for when player approaches again
 		return
 	end
 	if self.session_id then
-		pale_watcher.ritual.end_session(self.session_id, false)
+		local sid = self.session_id
 		self.session_id = nil
+		pale_watcher.ritual.end_session(sid, false)
 	end
 end
 
@@ -405,12 +400,12 @@ local function step_stun_window(self, dtime, players, pos)
 
 	if self.stun_timer <= 0 then
 		-- Stun expired: Immediate guaranteed evasive phase retreat into distance
-		local target = self.target_player or players[1]
+		local target = self.target or players[1]
 		local escape_pos = find_guaranteed_retreat_pos(target, pos)
 
 		-- Dramatic departure visual & audio at current position BEFORE teleporting
 		pale_watcher.particles.teleport_rift(pos)
-		core.sound_play("pale_watcher_scare", {pos = pos, gain = 0.8, max_hear_distance = 35}, true)
+		x_mob_core.play_sound("pale_watcher_scare", {pos = pos, gain = 0.8, distance = 35, ephemeral = true})
 
 		self.object:set_velocity({x = 0, y = 0, z = 0})
 		self.object:set_acceleration({x = 0, y = -9.81, z = 0})
@@ -422,9 +417,12 @@ local function step_stun_window(self, dtime, players, pos)
 
 		-- Arrival puff & distant audio
 		pale_watcher.particles.void_mist(escape_pos, 2.5, 25)
-		core.sound_play("pale_watcher_static", {pos = escape_pos, gain = 0.6, max_hear_distance = 25}, true)
+		x_mob_core.play_sound("pale_watcher_static", {pos = escape_pos, gain = 0.6, distance = 25, ephemeral = true})
 		x_mob_core.emit("pale_watcher:teleport_escaped", self, pos, escape_pos)
 
+		-- Grant a 3-5 second breathing window before the next blind-spot teleport step
+		self.stalk_timer = -3.0
+		self.attack_cooldown = math.max(self.attack_cooldown or 0, 2.5)
 		self.state = "stalking"
 	end
 
@@ -465,7 +463,7 @@ end
 ---@return Vector|nil target_pos
 ---@return number|nil distance
 local function step_acquire_target(self, pos, players)
-	local current_target = self.target or self.target_player
+	local current_target = self.target
 	if not current_target or not x_mob_core.is_player_alive(current_target) then
 		local closest = nil
 		local min_d_sq = WATCHER_TETHER_MAX * WATCHER_TETHER_MAX
@@ -488,16 +486,14 @@ local function step_acquire_target(self, pos, players)
 				end
 			end
 		end
-		self.target_player = closest
 		x_mob_core.set_target(self, closest)
 		current_target = closest
 	end
 
 	if not current_target or not x_mob_core.is_player_alive(current_target) then
-		self.target_player = nil
 		x_mob_core.set_target(self, nil)
 		x_mob_core.halt_horizontal_velocity(self)
-		x_mob_core.play_animation(self.object, "stand", {speed = 1.0, loop = true})
+		x_mob_core.play_animation(self.object, "idle", {speed = 1.0, loop = true})
 		return nil, nil, nil
 	end
 
@@ -521,14 +517,15 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 	end
 	if not self.origin_pos then return false end
 	local dist_from_origin = vector.distance(t_pos, self.origin_pos)
+	local target = self.target
 
 	-- Crossing the domain perimeter: Escaped the domain gauntlet!
 	if dist_from_origin >= WATCHER_TETHER_MAX then
-		local p_name = self.target_player and self.target_player:is_player() and self.target_player:get_player_name()
+		local p_name = target and target:is_player() and target:get_player_name()
 		local is_enrolled = p_name and self.session_id and pale_watcher.ritual.is_player_enrolled(self.session_id, p_name)
 
 		if is_enrolled and p_name then
-			core.sound_play("pale_watcher_drone", {pos = t_pos, max_hear_distance = 50})
+			x_mob_core.play_sound("pale_watcher_drone", {pos = t_pos, distance = 50, ephemeral = true})
 			local escape_msg = S(
 				"★ You have broken through the @1-node domain tether and escaped the nightmare!",
 				math.floor(WATCHER_TETHER_MAX + 0.5)
@@ -538,15 +535,15 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 
 		local active_count = self.session_id and pale_watcher.ritual.get_active_player_count(self.session_id) or 0
 		if active_count > 1 then
-			self.target_player = nil
 			x_mob_core.set_target(self, nil)
 			self.ambush_charging = false
 			return false
 		end
 
 		if self.session_id then
-			pale_watcher.ritual.end_session(self.session_id, false)
+			local sid = self.session_id
 			self.session_id = nil
+			pale_watcher.ritual.end_session(sid, false)
 		end
 		self.object:remove()
 		return true
@@ -568,9 +565,9 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 	if dist_from_origin >= WATCHER_AMBUSH_DIST and
 	   (self.ambush_cooldown or 0) <= 0 and
 	   not self.ambush_charging then
-		local ambush_pos = find_intercept_ambush_pos(self.target_player, 8.0)
+		local ambush_pos = find_intercept_ambush_pos(target, 8.0)
 		if not ambush_pos then
-			ambush_pos = find_blind_spot_node(self.target_player, t_pos, 7, 11)
+			ambush_pos = find_blind_spot_node(target, t_pos, 7, 11)
 		end
 		if ambush_pos then
 			self.ambush_charging = true
@@ -582,9 +579,9 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 			self.object:set_pos(ambush_pos)
 			local to_player = vector.direction(ambush_pos, t_pos)
 			self.object:set_yaw(core.dir_to_yaw(to_player))
-			x_mob_core.play_animation(self.object, "stalk_glide", {speed = 1.8, loop = true})
+			x_mob_core.play_animation(self.object, "walk", {speed = 1.8, loop = true})
 			pale_watcher.particles.teleport_rift(ambush_pos)
-			core.sound_play("pale_watcher_scare", {pos = ambush_pos, max_hear_distance = 30}, true)
+			x_mob_core.play_sound("pale_watcher_scare", {pos = ambush_pos, distance = 30, ephemeral = true})
 			return true
 		end
 	end
@@ -607,7 +604,7 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 			knockback_dir.y = 0.45
 			local kb_vel = vector.multiply(vector.normalize(knockback_dir), 24.0)
 
-			execute_watcher_attack(self, self.target_player, pos, {
+			execute_watcher_attack(self, target, pos, {
 				multiplier = 2.0,
 				anim_speed = 1.3,
 				armor_div = 4,
@@ -626,7 +623,7 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 			self.object:set_yaw(charge_yaw)
 			local charge_speed = math.max(6.5, (self.pursuit_speed or 4.2) * 1.6)
 			x_mob_core.set_horizontal_velocity(self, charge_speed, charge_yaw)
-			x_mob_core.play_animation(self.object, "stalk_glide", {speed = 1.8, loop = true})
+			x_mob_core.play_animation(self.object, "walk", {speed = 1.8, loop = true})
 			return true
 		else
 			-- Charge duration expired without contact (e.g. player successfully juked or bypassed)
@@ -681,7 +678,7 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 					or ((def.light_source >= 14) and not is_flame)
 
 				if not is_sanctuary then
-					local has_los = has_visual_los(mob_eye, lpos) or has_visual_los(mob_chest, lpos)
+					local has_los = pale_watcher.has_visual_los(mob_eye, lpos) or pale_watcher.has_visual_los(mob_chest, lpos)
 					if has_los then
 						local drops = core.get_node_drops(lnode, "")
 						if not drops or #drops == 0 then
@@ -702,7 +699,7 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 							end
 						end
 						pale_watcher.particles.void_mist(lpos, 0.8, 12)
-						core.sound_play("pale_watcher_paper_burn", {pos = lpos, gain = 0.5, max_hear_distance = 18}, true)
+						x_mob_core.play_sound("pale_watcher_paper_burn", {pos = lpos, gain = 0.5, distance = 18, ephemeral = true})
 						break -- 1 per pulse to create flickering dread
 					end
 				end
@@ -711,11 +708,12 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 	end
 
 	-- Frightened player drops wielded light source only within reach & line of sight (not through walls).
-	if dist <= reach then
+	local target = self.target
+	if dist <= reach and target then
 		local p_eye = vector.add(t_pos, {x = 0, y = 1.5, z = 0})
-		local has_los = has_visual_los(mob_eye, p_eye) or has_visual_los(mob_chest, p_eye)
+		local has_los = pale_watcher.has_visual_los(mob_eye, p_eye) or pale_watcher.has_visual_los(mob_chest, p_eye)
 		if has_los then
-			local wield = self.target_player:get_wielded_item()
+			local wield = target:get_wielded_item()
 			local wname = wield:get_name()
 			local wdef = core.registered_items[wname]
 			local is_flame_wield = is_extinguishable_light(wname)
@@ -737,9 +735,10 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 					particles = true,
 					trails = true,
 				})
-				self.target_player:set_wielded_item(ItemStack(""))
-				core.sound_play("pale_watcher_static", {to_player = self.target_player:get_player_name(), gain = 0.8}, true)
-				core.chat_send_player(self.target_player:get_player_name(),
+				target:set_wielded_item(ItemStack(""))
+				local t_name = target:get_player_name()
+				x_mob_core.play_sound("pale_watcher_static", {to_player = t_name, gain = 0.8, ephemeral = true})
+				core.chat_send_player(t_name,
 					core.colorize(colors.danger, S("Your trembling hands drop your light source into the darkness!")))
 			end
 		end
@@ -759,22 +758,24 @@ local function step_anti_bunker(self, t_pos, dist, dtime)
 	if self.bunker_check_timer < 1.0 then return false end
 	self.bunker_check_timer = 0
 
+	local target = self.target
 	local air_around_player = count_surrounding_air(t_pos)
-	if air_around_player <= 3 then
+	if target and air_around_player <= 3 then
 		-- Player has sealed themselves in a cramped bunker!
 		local choke_pos = vector.add(t_pos, {x = 0.5, y = 0.05, z = 0.5})
 		self.object:set_velocity({x = 0, y = 0, z = 0})
 		self.object:set_pos(choke_pos)
 		pale_watcher.particles.psychic_choke(t_pos)
-		core.sound_play("pale_watcher_scare", {to_player = self.target_player:get_player_name()}, true)
-		local punch_fleshy = calculate_armor_scaled_punch(self.target_player, 6, 0.33, 2)
-		self.target_player:punch(self.object, 1.0, {
+		local t_name = target:get_player_name()
+		x_mob_core.play_sound("pale_watcher_scare", {to_player = t_name, ephemeral = true})
+		local punch_fleshy = calculate_armor_scaled_punch(target, 6, 0.33, 2)
+		target:punch(self.object, 1.0, {
 			full_punch_interval = 1.0,
 			damage_groups = {fleshy = punch_fleshy}
 		})
-		core.chat_send_player(self.target_player:get_player_name(),
+		core.chat_send_player(t_name,
 			core.colorize(colors.void, S("You cannot hide from the void...")))
-		x_mob_core.emit("pale_watcher:bunker_choked", self, self.target_player, t_pos)
+		x_mob_core.emit("pale_watcher:bunker_choked", self, target, t_pos)
 		return true
 	end
 	return false
@@ -798,19 +799,22 @@ local function step_sanctuary(self, pos, t_pos, dist, dtime)
 		x_mob_core.halt_horizontal_velocity(self)
 		local to_t = vector.direction(pos, t_pos)
 		self.object:set_yaw(core.dir_to_yaw(to_t))
-		x_mob_core.play_animation(self.object, "stand", {speed = 1.0, loop = true})
+		x_mob_core.play_animation(self.object, "idle", {speed = 1.0, loop = true})
 
 		self.sanctuary_stare_timer = self.sanctuary_stare_timer + dtime
 		if self.sanctuary_stare_timer >= 5.0 then
 			self.sanctuary_stare_timer = 0
 			-- Dissolves into mist after staring silently for 5 seconds and retreats into the tree line
-			core.sound_play("pale_watcher_static", {pos = pos, max_hear_distance = 25}, true)
+			x_mob_core.play_sound("pale_watcher_static", {pos = pos, distance = 25, ephemeral = true})
 			pale_watcher.particles.sanctuary_dissolve(pos)
-			core.chat_send_player(self.target_player:get_player_name(),
-				core.colorize(colors.victory,
-					S("The sanctuary light holds... The Pale Watcher dissolves into the dark tree line.")))
+			local target = self.target
+			if target then
+				core.chat_send_player(target:get_player_name(),
+					core.colorize(colors.victory,
+						S("The sanctuary light holds... The Pale Watcher dissolves into the dark tree line.")))
+			end
 
-			local escape_pos = find_guaranteed_retreat_pos(self.target_player, pos)
+			local escape_pos = find_guaranteed_retreat_pos(target, pos)
 			self.object:set_velocity({x = 0, y = 0, z = 0})
 			self.object:set_acceleration({x = 0, y = -9.81, z = 0})
 			self.object:set_pos(escape_pos)
@@ -849,7 +853,7 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		-- Quantum Freeze: Motionless stare
 		local to_obs = vector.direction(pos, observer:get_pos())
 		self.object:set_yaw(core.dir_to_yaw(to_obs))
-		x_mob_core.play_animation(self.object, "stand", {speed = 1.0, loop = true})
+		x_mob_core.play_animation(self.object, "idle", {speed = 1.0, loop = true})
 
 		-- Gaze dilemma: drain sanity, slow speed, narrow FOV
 		if observer and x_mob_core.is_player_alive(observer) then
@@ -862,11 +866,7 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 			local o_light = core.get_node_light(o_pos, 0)
 			local in_sanctuary = o_light and o_light >= 14
 			if obs_dist <= (self.attack_range or 2.6) and not in_sanctuary then
-				local attack_cd = (self.cooldowns and self.cooldowns.attack) or self.attack_cooldown or 0
-				if attack_cd <= 0 then
-					if self.cooldowns then
-						self.cooldowns.attack = self.attack_interval or 1.0
-					end
+				if (self.attack_cooldown or 0) <= 0 then
 					self.attack_cooldown = self.attack_interval or 1.0
 					local knockback_dir = vector.direction(pos, o_pos)
 					knockback_dir.y = 0.45
@@ -891,6 +891,9 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		self.object:set_acceleration({x = 0, y = -9.81, z = 0})
 	end
 
+	local target = self.target
+	if not target then return end
+
 	-- Unobserved: Blind-Spot Step Teleportation
 	local teleport_cooldown = math.max(1.8, 9.0 - (tier * 1.6))
 	self.stalk_timer = self.stalk_timer + dtime
@@ -899,7 +902,7 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		self.stalk_timer = 0
 		local step_min = math.max(8.0, 14.0 - tier * 1.4)
 		local step_max = math.max(14.0, 22.0 - tier * 1.8)
-		local next_spot = find_blind_spot_node(self.target_player, pos, step_min, step_max)
+		local next_spot = find_blind_spot_node(target, pos, step_min, step_max)
 
 		if next_spot then
 			self.object:set_velocity({x = 0, y = 0, z = 0})
@@ -907,16 +910,16 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 			self.object:set_pos(next_spot)
 			local new_yaw = core.dir_to_yaw(vector.direction(next_spot, t_pos))
 			self.object:set_yaw(new_yaw)
-			core.sound_play("pale_watcher_static", {pos = next_spot, gain = 0.45, max_hear_distance = 25}, true)
+			x_mob_core.play_sound("pale_watcher_static", {pos = next_spot, gain = 0.45, distance = 25, ephemeral = true})
 			return
 		end
 	end
 
 	-- Obstacle 1: Intercept Teleport on Sprinting Away
-	local controls = self.target_player:get_player_control()
+	local controls = target:get_player_control()
 	if controls.up and controls.aux1 and dist > 10.0 then
-		pale_watcher.physics.apply_terror(self.target_player)
-		local p_look = self.target_player:get_look_dir()
+		pale_watcher.physics.apply_terror(target)
+		local p_look = target:get_look_dir()
 		local to_watcher = vector.direction(t_pos, pos)
 
 		-- Player's back is turned while sprinting
@@ -924,16 +927,16 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 			local intercept_chance = 0.35 + (tier * 0.15)
 			if math.random() < intercept_chance * dtime * 0.4 then
 				local intercept_dist = math.random(13, 18)
-				local ground_dest = find_intercept_ambush_pos(self.target_player, intercept_dist)
+				local ground_dest = find_intercept_ambush_pos(target, intercept_dist)
 				if not ground_dest then
-					ground_dest = find_blind_spot_node(self.target_player, pos, 12, 18)
+					ground_dest = find_blind_spot_node(target, pos, 12, 18)
 				end
 				if ground_dest then
 					self.object:set_velocity({x = 0, y = 0, z = 0})
 					self.object:set_acceleration({x = 0, y = -9.81, z = 0})
 					self.object:set_pos(ground_dest)
 					self.object:set_yaw(core.dir_to_yaw(vector.direction(ground_dest, t_pos)))
-					core.sound_play("pale_watcher_scare", {pos = ground_dest, max_hear_distance = 25}, true)
+					x_mob_core.play_sound("pale_watcher_scare", {pos = ground_dest, distance = 25, ephemeral = true})
 					return
 				end
 			end
@@ -941,7 +944,7 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 	end
 
 	-- Normal Stalk Glide Movement & Attack
-	pale_watcher.fx.update_player(self.target_player, dist, false, dtime, tier)
+	pale_watcher.fx.update_player(target, dist, false, dtime, tier)
 
 	local hx = pos.x - t_pos.x
 	local hz = pos.z - t_pos.z
@@ -957,19 +960,15 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		local to_t = vector.direction(pos, t_pos)
 		self.object:set_yaw(core.dir_to_yaw(to_t))
 
-		local attack_cd = (self.cooldowns and self.cooldowns.attack) or self.attack_cooldown or 0
-		if attack_cd <= 0 then
-			if self.cooldowns then
-				self.cooldowns.attack = self.attack_interval or 1.0
-			end
+		if (self.attack_cooldown or 0) <= 0 then
 			self.attack_cooldown = self.attack_interval or 1.0
-			execute_watcher_attack(self, self.target_player, pos, {
+			execute_watcher_attack(self, target, pos, {
 				multiplier = 1.0,
 				anim_speed = 1.0,
 				armor_div = 2,
 			})
 		else
-			x_mob_core.play_animation(self.object, "stand", {speed = 1.0, loop = true})
+			x_mob_core.play_animation(self.object, "idle", {speed = 1.0, loop = true})
 		end
 	else
 		-- Stalk glide horizontally towards target
@@ -977,12 +976,12 @@ local function step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, 
 		local yaw = core.dir_to_yaw(to_target)
 		self.object:set_yaw(yaw)
 		x_mob_core.set_horizontal_velocity(self, self.walk_speed, yaw)
-		x_mob_core.play_animation(self.object, "stalk_glide", {speed = 1.0, loop = true})
+		x_mob_core.play_animation(self.object, "walk", {speed = 1.0, loop = true})
 	end
 end
 
 ---Cinematic step routine for Cleansing Flame Pyre banishment.
----Locks the Pale Watcher in holy fire, facing the summoner, plays stagger into death_implode,
+---Locks the Pale Watcher in holy fire, facing the summoner, plays stun into death,
 ---levitates him upward into the vortex, detonates in a supernova burst, and awards rare dimensional loot.
 ---@param self table Entity table
 ---@param dtime number Delta time in seconds
@@ -1019,15 +1018,15 @@ local function step_pyre_banishment(self, dtime)
 	-- Cleansing fire implosion transition
 	if t >= 1.2 and not self._implode_started then
 		self._implode_started = true
-		x_mob_core.play_animation(self.object, "death_implode", {
+		x_mob_core.play_animation(self.object, "death", {
 			speed = 0.8,
 			loop = false,
 			force = true,
 			priority = 35,
 		})
 
-		core.sound_play("pale_watcher_paper_burn", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
-		core.sound_play("pale_watcher_death", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
+		x_mob_core.play_sound("pale_watcher_paper_burn", {pos = cur_pos, gain = 1.0, distance = 50, ephemeral = true})
+		x_mob_core.play_sound("pale_watcher_death", {pos = cur_pos, gain = 1.0, distance = 50, ephemeral = true})
 		pale_watcher.particles.pyre_implosion(cur_pos, 2.4)
 	end
 
@@ -1049,8 +1048,8 @@ local function step_pyre_banishment(self, dtime)
 
 		-- Supernova explosion particles
 		pale_watcher.particles.pyre_supernova(cur_pos)
-		core.sound_play("pale_watcher_bell", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
-		core.sound_play("pale_watcher_death", {pos = cur_pos, gain = 1.0, max_hear_distance = 50})
+		x_mob_core.play_sound("pale_watcher_bell", {pos = cur_pos, gain = 1.0, distance = 50, ephemeral = true})
+		x_mob_core.play_sound("pale_watcher_death", {pos = cur_pos, gain = 1.0, distance = 50, ephemeral = true})
 
 		-- Screen flash on summoner and nearby players
 		local players = core.get_connected_players()
@@ -1074,8 +1073,9 @@ local function step_pyre_banishment(self, dtime)
 
 		-- End ritual session with victory
 		if self.session_id then
-			pale_watcher.ritual.end_session(self.session_id, true)
+			local sid = self.session_id
 			self.session_id = nil
+			pale_watcher.ritual.end_session(sid, true)
 		end
 
 		-- Cleanly remove mob
@@ -1085,7 +1085,7 @@ end
 
 x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	mesh = "pale_watcher_mob.glb",
-	textures = pale_watcher.get_textures(),
+	textures = pale_watcher.get_texture_variations(),
 	hp_max = 500,
 	glow = 3,
 	collisionbox = {-0.4, 0.0, -0.4, 0.4, 3.2, 0.4},
@@ -1095,19 +1095,6 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	makes_footstep_sound = false,
 	backface_culling = false,
 	use_texture_alpha = false,
-
-	initial_properties = {
-		hp_max = 500,
-		mesh = "pale_watcher_mob.glb",
-		visual = "mesh",
-		visual_size = {x = 10, y = 10},
-		collisionbox = {-0.4, 0.0, -0.4, 0.4, 3.2, 0.4},
-		selectionbox = {-0.45, 0.0, -0.45, 0.45, 3.25, 0.45},
-		makes_footstep_sound = false,
-		backface_culling = false,
-		use_texture_alpha = false,
-		glow = 3,
-	},
 
 	mob_height = 3.2,
 	eye_offset = 2.8,
@@ -1120,6 +1107,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	damage = 8,
 	attack_interval = 1.0,
 	death_duration = 2.5,
+	despawn = false,
 	is_floating = false,
 	can_swim = true,
 	can_climb = false,
@@ -1132,16 +1120,13 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	can_flinch = false,
 	friendly_fire = false,
 	immunities = {
+		environment = true,
 		drown = true,
 		suffocation = true,
 	},
 	factions = {
 		void = true,
 		eldritch = true,
-	},
-
-	cooldowns = {
-		attack = 0.0,
 	},
 
 	damage_effect = {
@@ -1172,15 +1157,10 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 
 	animations = {
 		idle = {track = "idle", x = 1, y = 40, speed = 15, loop = true},
-		stand = {track = "stand", x = 1, y = 40, speed = 15, loop = true},
 		walk = {track = "walk", x = 1, y = 40, speed = 20, loop = true},
-		stalk_glide = {track = "stalk_glide", x = 1, y = 40, speed = 20, loop = true},
 		attack = {track = "attack", x = 1, y = 30, speed = 25, loop = false},
-		punch = {track = "punch", x = 1, y = 30, speed = 25, loop = false},
 		stun = {track = "stun", x = 1, y = 55, speed = 20, loop = false},
-		stagger = {track = "stagger", x = 1, y = 55, speed = 20, loop = false},
 		death = {track = "death", x = 1, y = 40, speed = 15, loop = false},
-		death_implode = {track = "death_implode", x = 1, y = 40, speed = 15, loop = false},
 	},
 
 	drops = {
@@ -1199,29 +1179,18 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 			return
 		end
 
-		local data = {}
-		if type(data_or_str) == "table" then
-			data = data_or_str
-		elseif type(data_or_str) == "string" and data_or_str ~= "" then
-			data = core.deserialize(data_or_str) or {}
-		end
-
+		local data = type(data_or_str) == "table" and data_or_str or {}
 		local saved_palette = data.palette_name or self.palette_name
-		local textures, chosen_palette = pale_watcher.get_textures(nil, nil, saved_palette)
+		local tex_idx = saved_palette and pale_watcher.palette_indices[saved_palette] or self.texture_no or 1
+		local chosen_palette = pale_watcher.palette_names[tex_idx] or "classic"
+		if self.texture_no ~= tex_idx then
+			self:set_texture(tex_idx)
+		end
 		self.palette_name = chosen_palette
-		self.saved_data = self.saved_data or {}
 		self.saved_data.palette_name = chosen_palette
 
-		if self.object then
-			self.object:set_properties({
-				glow = 3,
-				mesh = "pale_watcher_mob.glb",
-				textures = textures,
-			})
-		end
 		self.state = "stalking"
 		self.quantum_locked = false
-		self.target_player = nil
 		self.stalk_timer = 0
 		self.light_check_timer = 0
 		self.ambush_cooldown = 0
@@ -1231,7 +1200,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		self._hud_timer = 0.5
 		self.aggro_radius = WATCHER_AMBUSH_DIST
 
-		local pos = self.object and self.object:get_pos()
+		local pos = self.object:get_pos()
 		if pos then
 			local saved_sid = data.session_id or self.session_id
 			if saved_sid and pale_watcher.ritual.is_session_active(saved_sid) then
@@ -1251,7 +1220,11 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 				else
 					self.session_id = pale_watcher.ritual.start_session(self.object, pos)
 					self.origin_pos = pos
-					core.sound_play("pale_watcher_bell", {pos = pos, max_hear_distance = math.max(60, WATCHER_AMBUSH_DIST)}, true)
+					x_mob_core.play_sound("pale_watcher_bell", {
+						pos = pos,
+						distance = math.max(60, WATCHER_AMBUSH_DIST),
+						ephemeral = true,
+					})
 				end
 			end
 			self.saved_data.session_id = self.session_id
@@ -1260,49 +1233,51 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 
 	on_despawn = cleanup_entity_session,
 	on_death = cleanup_entity_session,
-	on_deactivate = cleanup_entity_session,
 
-	on_step = function(self, dtime, _moveresult)
+	custom_step = function(self, dtime, _moveresult)
 		if self.state == "banishing" then
 			step_pyre_banishment(self, dtime)
-			return
+			return true
 		end
-		if self.is_dead or self.state == "dead" or self.state == "dying" then return end
+		if self.is_dead or self.state == "dead" or self.state == "dying" then
+			return true
+		end
 
 		local pos = self.object:get_pos()
-		if not pos then return end
+		if not pos then return true end
 
 		local players = core.get_connected_players()
-		if #players == 0 then return end
+		if #players == 0 then return true end
 
 		-- Stun Window: Flash Camera blinding stagger
-		if step_stun_window(self, dtime, players, pos) then return end
+		if step_stun_window(self, dtime, players, pos) then return true end
 
 		-- Synchronize ritual session HUD with nearby players
 		step_sync_hud(self, pos, dtime)
 
 		-- Target Acquisition
 		local target, t_pos, dist = step_acquire_target(self, pos, players)
-		if not target then return end
+		if not target then return true end
 
 		-- Tether Gauntlet Checks and Intercept Ambush
-		if step_tether_gauntlet(self, pos, t_pos, dtime) then return end
+		if step_tether_gauntlet(self, pos, t_pos, dtime) then return true end
 
 		-- Light Source Extinguishing and Item Dropping
 		step_extinguish_lights(self, pos, t_pos, dist, dtime)
 
 		-- Anti-Bunker Detection and Psychic Choke
-		if step_anti_bunker(self, t_pos, dist, dtime) then return end
+		if step_anti_bunker(self, t_pos, dist, dtime) then return true end
 
 		-- Sanctuary Border Check
-		if step_sanctuary(self, pos, t_pos, dist, dtime) then return end
+		if step_sanctuary(self, pos, t_pos, dist, dtime) then return true end
 
 		-- True Quantum Stalking, Glide Movement, and Melee Attack
 		local tier = self.session_id and pale_watcher.ritual.get_stalker_tier(self.session_id) or 0
 		step_stalking_and_combat(self, pos, t_pos, dist, players, dtime, tier)
+		return true
 	end,
 
-	on_punch = function(self, puncher, _tflp, _tool_capabilities, _dir, _damage)
+	on_punch = function(self, puncher, _tflp, _tool_capabilities, dir, _damage)
 		if self.state == "banishing" or self.is_dead then
 			return true
 		end
@@ -1310,25 +1285,27 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		-- Combat Resilience: Immune to physical weapons
 		-- Triggers immediate violent Psychic Backlash & dimensional slip retreat
 		if puncher and puncher:is_player() then
-			x_mob_core.indicate_damage(self.object)
 			local cur_pos = self.object:get_pos()
 			local p_pos = puncher:get_pos()
 			local name = puncher:get_player_name()
+			local backlash_dmg = 8
+
+			x_mob_core.indicate_damage(self.object)
+			x_mob_core.spawn_damage_particles(self.object, puncher, dir, backlash_dmg, self._def)
 
 			-- Scare sting
-			core.sound_play("pale_watcher_scare", {pos = cur_pos, gain = 1.0, max_hear_distance = 40}, true)
+			x_mob_core.play_sound("pale_watcher_scare", {pos = cur_pos, gain = 1.0, distance = 40, ephemeral = true})
 
 			-- Kinetic Shockwave: Blast attacker violently backward away from the entity (doubled knockback)
-			if p_pos then
+			if p_pos and cur_pos then
 				local blast_dir = vector.direction(cur_pos, p_pos)
 				blast_dir.y = 0.45
 				local blast_vel = vector.multiply(vector.normalize(blast_dir), 22.0)
 				puncher:add_velocity(blast_vel)
 			end
 
-			-- Psychic Backlash Damage: Direct HP damage bypassing armor mitigation (doubled)
+			-- Psychic Backlash Damage: Direct HP damage bypassing armor mitigation
 			local cur_hp = puncher:get_hp()
-			local backlash_dmg = 8
 			if cur_hp > backlash_dmg then
 				puncher:set_hp(cur_hp - backlash_dmg, "pale_watcher:psychic_backlash")
 			else
@@ -1338,18 +1315,25 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 			-- Disorienting static shock on attacker's HUD
 			pale_watcher.fx.trigger_flash(puncher)
 
+			-- Combat Dimensional Slip: Phase into a blind spot behind/around the attacker
+			if cur_pos and p_pos then
+				local slip_pos = find_blind_spot_node(puncher, cur_pos, 10, 18)
+				if slip_pos then
+					pale_watcher.particles.teleport_rift(cur_pos)
+					self.object:set_velocity({x = 0, y = 0, z = 0})
+					self.object:set_acceleration({x = 0, y = -9.81, z = 0})
+					self.object:set_pos(slip_pos)
+					self.object:set_yaw(core.dir_to_yaw(vector.direction(slip_pos, p_pos)))
+					pale_watcher.particles.void_mist(slip_pos, 2.0, 18)
+					self.stalk_timer = 0
+				end
+			end
+
 			-- Chat warning explaining why physical combat failed
 			core.chat_send_player(name, core.colorize(colors.void,
 				S("★ An eldritch shockwave repels your strike! Physical weapons cannot harm the void!")))
 		end
 		return true -- Immune to standard weapon damage
-	end,
-
-	get_staticdata = function(self)
-		self.saved_data = self.saved_data or {}
-		self.saved_data.session_id = self.session_id
-		self.saved_data.palette_name = self.palette_name
-		return core.serialize(self.saved_data)
 	end,
 
 	---Called when hit by high-intensity Flash Camera.
@@ -1365,6 +1349,8 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 
 		self.state = "stunned"
 		self.stun_timer = duration or 0.6
+		self.stalk_timer = -3.0
+		self.attack_cooldown = math.max(self.attack_cooldown or 0, 2.5)
 		self.ambush_charging = false
 		self.ambush_cooldown = math.max(self.ambush_cooldown or 0, 5.0)
 		x_mob_core.halt_horizontal_velocity(self)
@@ -1383,7 +1369,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		})
 
 		local pos = self.object:get_pos()
-		core.sound_play("pale_watcher_stun", {pos = pos, max_hear_distance = 35}, true)
+		x_mob_core.play_sound("pale_watcher_stun", {pos = pos, distance = 35, ephemeral = true})
 
 		-- Glitch/spark particles on Pale Watcher's face
 		pale_watcher.particles.spawn({
@@ -1414,7 +1400,6 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	on_page_collected = function(self, collector)
 		if self.state == "banishing" or self.is_dead then return end
 		if not collector or not collector:is_player() then return end
-		self.target_player = collector
 		x_mob_core.set_target(self, collector)
 
 		local p_pos = collector:get_pos()
@@ -1439,7 +1424,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		self.object:set_acceleration({x = 0, y = -9.81, z = 0})
 		self.object:set_pos(behind_pos)
 		self.object:set_yaw(core.dir_to_yaw(vector.direction(behind_pos, p_pos)))
-		core.sound_play("pale_watcher_scare", {to_player = collector:get_player_name()}, true)
+		x_mob_core.play_sound("pale_watcher_scare", {to_player = collector:get_player_name(), ephemeral = true})
 	end,
 
 	---The Cleansing Flame Banishment Sequence.
@@ -1447,6 +1432,9 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	---@param pyre_pos Vector
 	---@param summoner? ObjectRef
 	on_pyre_banished = function(self, pyre_pos, summoner)
+		x_mob_core.set_target(self, nil)
+		self._has_sounds = false
+		self._anim_initialized = true
 		self.state = "banishing"
 		self.is_dead = false
 		self.banish_timer = 0.0
@@ -1460,7 +1448,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		local old_pos = self.object:get_pos()
 		if old_pos and vector.distance(old_pos, snap_pos) > 2.0 then
 			pale_watcher.particles.teleport_rift(old_pos)
-			core.sound_play("pale_watcher_scare", {pos = old_pos, gain = 1.0, max_hear_distance = 40})
+			x_mob_core.play_sound("pale_watcher_scare", {pos = old_pos, gain = 1.0, distance = 40, ephemeral = true})
 		end
 
 		-- Snap directly into the pyre flames and lock physics
@@ -1485,7 +1473,7 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		end
 
 		-- Stagger in sacred fire
-		x_mob_core.play_animation(self.object, "stagger", {
+		x_mob_core.play_animation(self.object, "stun", {
 			speed = 1.0,
 			loop = true,
 			force = true,
@@ -1495,8 +1483,8 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		-- Arrival dimensional burst & sound
 		pale_watcher.particles.teleport_rift(snap_pos)
 		pale_watcher.particles.pyre_roaring_flames(pyre_pos)
-		core.sound_play("pale_watcher_bell", {pos = snap_pos, gain = 1.0, max_hear_distance = 50})
-		core.sound_play("pale_watcher_scare", {pos = snap_pos, gain = 1.0, max_hear_distance = 50})
+		x_mob_core.play_sound("pale_watcher_bell", {pos = snap_pos, gain = 1.0, distance = 50, ephemeral = true})
+		x_mob_core.play_sound("pale_watcher_scare", {pos = snap_pos, gain = 1.0, distance = 50, ephemeral = true})
 
 		-- Screen static flash on summoner
 		if summoner and summoner:is_valid() then
