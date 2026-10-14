@@ -4,8 +4,6 @@
 	and audio whispering / Geiger compass effects.
 ]]
 
-pale_watcher.fx = pale_watcher.fx or {}
-
 ---@class PaleWatcherPlayerFXState
 ---@field hud_static_id? integer
 ---@field hud_vignette_id? integer
@@ -15,6 +13,9 @@ pale_watcher.fx = pale_watcher.fx or {}
 ---@field is_gazing boolean
 ---@field fog_active boolean
 ---@field _refreshed_this_tick boolean
+---@field _drain_acc? number
+---@field last_vig_tex? string
+---@field last_static_tex? string
 
 ---@type table<string, PaleWatcherPlayerFXState>
 local active_fx = {}
@@ -22,6 +23,7 @@ local active_fx = {}
 ---@class PaleWatcherFlashState
 ---@field id integer HUD element ID
 ---@field timer number Remaining flash duration in seconds
+---@field max_duration number Initial flash duration in seconds
 
 ---@type table<string, PaleWatcherFlashState>
 local active_flashes = {}
@@ -34,6 +36,51 @@ local NIGHT_MAX_STATIC_ALPHA = 22   -- ~8.6% max opacity: gentle film noise for 
 local DAY_MAX_STATIC_ALPHA = 130    -- ~51.0% max opacity: high-contrast snow cutting through daylight
 local NIGHT_MAX_VIGNETTE_ALPHA = 100 -- ~39% max opacity: soft dark framing at night
 local DAY_MAX_VIGNETTE_ALPHA = 150  -- ~58.8% max opacity: deep cinematic gloom contrasting with bright day
+
+local DOMAIN_FOG_DISTANCE = 18 -- Upper bound viewing distance in blocks during domain fog
+local DOMAIN_FOG_START = 0.25  -- Mist begins ramping at ~4.5 blocks, thick by 18 blocks
+
+---@param name string
+---@return PaleWatcherPlayerFXState
+local function get_or_create_state(name)
+	local state = active_fx[name]
+	if not state then
+		state = {
+			time = 0,
+			intensity = 0,
+			hud_static_id = nil,
+			hud_vignette_id = nil,
+			sound_handle = nil,
+			is_gazing = false,
+			fog_active = false,
+			_refreshed_this_tick = false,
+		}
+		active_fx[name] = state
+	end
+	return state
+end
+
+---Removes static and vignette HUD overlays and stops static audio loop for a player state.
+---@param player ObjectRef?
+---@param state PaleWatcherPlayerFXState
+local function clear_overlays_and_sound(player, state)
+	if player then
+		if state.hud_vignette_id then
+			player:hud_remove(state.hud_vignette_id)
+		end
+		if state.hud_static_id then
+			player:hud_remove(state.hud_static_id)
+		end
+	end
+	state.hud_vignette_id = nil
+	state.hud_static_id = nil
+	state.last_vig_tex = nil
+	state.last_static_tex = nil
+	if state.sound_handle then
+		x_mob_core.stop_sound(state.sound_handle)
+		state.sound_handle = nil
+	end
+end
 
 ---Calculates daylight / ambient luminance factor for a player.
 ---Returns 0.0 for deep night or unlit dark caves, scaling up to 1.0 for bright sunlit daytime.
@@ -92,6 +139,48 @@ local function get_static_texture(intensity, time, player)
 	return string.format("pale_watcher_hud_static_%d.png^[opacity:%d", frame, alpha)
 end
 
+---Updates responsive vignette and static HUD elements for the current state intensity.
+---@param player ObjectRef
+---@param state PaleWatcherPlayerFXState
+---@param sample_time number
+local function update_overlay_huds(player, state, sample_time)
+	local max_vig = get_max_vignette_alpha(player)
+	local vignette_alpha = math.min(max_vig, math.floor(state.intensity * max_vig))
+	local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vignette_alpha)
+	if not state.hud_vignette_id then
+		state.hud_vignette_id = player:hud_add({
+			type = "image",
+			position = {x = 0.5, y = 0.5},
+			name = "pale_watcher_vignette",
+			scale = {x = -100, y = -100}, -- Responsively spans 100% of viewport
+			text = vig_tex,
+			alignment = {x = 0, y = 0},
+			z_index = -2, -- Above static noise (-3) so dark border frames the view
+		})
+		state.last_vig_tex = vig_tex
+	elseif state.last_vig_tex ~= vig_tex then
+		player:hud_change(state.hud_vignette_id, "text", vig_tex)
+		state.last_vig_tex = vig_tex
+	end
+
+	local static_tex = get_static_texture(state.intensity, sample_time, player)
+	if not state.hud_static_id then
+		state.hud_static_id = player:hud_add({
+			type = "image",
+			position = {x = 0.5, y = 0.5},
+			name = "pale_watcher_static",
+			scale = {x = -100, y = -100},
+			text = static_tex,
+			alignment = {x = 0, y = 0},
+			z_index = -3, -- Below vignette (-2)
+		})
+		state.last_static_tex = static_tex
+	elseif state.last_static_tex ~= static_tex then
+		player:hud_change(state.hud_static_id, "text", static_tex)
+		state.last_static_tex = static_tex
+	end
+end
+
 ---Updates player horror effects per tick (called by Pale Watcher AI).
 ---@param player ObjectRef Target player
 ---@param distance number Distance to Pale Watcher
@@ -101,20 +190,7 @@ end
 function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, stalker_tier)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
-	local state = active_fx[name]
-
-	if not state then
-		state = {
-			time = 0,
-			intensity = 0,
-			hud_static_id = nil,
-			hud_vignette_id = nil,
-			sound_handle = nil,
-			is_gazing = false,
-			fog_active = false,
-		}
-		active_fx[name] = state
-	end
+	local state = get_or_create_state(name)
 
 	state.time = state.time + dtime
 	state._refreshed_this_tick = true
@@ -145,9 +221,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 
 	-- Direct Gaze Mechanics: FOV narrowing, movement slow, sanity drain
 	if is_looked_at and distance and distance < static_max_radius then
-		if not state.is_gazing then
-			state.is_gazing = true
-		end
+		state.is_gazing = true
 
 		-- Dread Drag: Exponential movement slowdown & tunnel vision within 8m proximity
 		local slow_factor
@@ -163,8 +237,7 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 			slow_factor = 0.45 + (gaze_t * 0.25)
 			fov_factor = 0.60 + (gaze_t * 0.25)
 		end
-		player:set_fov(fov_factor, true, 0.25)
-		pale_watcher.physics.apply_gaze_slow(player, slow_factor)
+		pale_watcher.physics.apply_gaze_slow(player, slow_factor, fov_factor)
 
 		-- Sanity & Health drain (accelerates under 8m dread drag)
 		if distance <= 20.0 then
@@ -175,87 +248,34 @@ function pale_watcher.fx.update_player(player, distance, is_looked_at, dtime, st
 				local cur_hp = player:get_hp()
 				if cur_hp > 1 then
 					player:set_hp(cur_hp - 1, "pale_watcher:gaze_drain")
-					core.sound_play("pale_watcher_static", {
+					x_mob_core.play_sound(player, "pale_watcher_static", {
 						to_player = name,
 						gain = (distance <= 8.0) and 0.6 or 0.4,
-						pitch = 1.2
+						pitch = 1.2,
+						ephemeral = true,
 					})
 				end
 			end
 		end
-	else
-		if state.is_gazing then
-			state.is_gazing = false
-			-- Smoothly restore normal FOV and physics
-			player:set_fov(0, false, 0.35)
-			pale_watcher.physics.clear_gaze_slow(player)
-		end
+	elseif state.is_gazing then
+		state.is_gazing = false
+		pale_watcher.physics.clear_gaze_slow(player)
 	end
 
 	-- HUD Overlays: Responsive Vignette and Animated Static
 	if state.intensity > 0.02 then
-		-- Responsive Vignette (rendered on top of static noise)
-		local max_vig = get_max_vignette_alpha(player)
-		local vignette_alpha = math.min(max_vig, math.floor(state.intensity * max_vig))
-		local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vignette_alpha)
-		if not state.hud_vignette_id then
-			state.hud_vignette_id = player:hud_add({
-				type = "image",
-				position = {x = 0.5, y = 0.5},
-				name = "pale_watcher_vignette",
-				scale = {x = -100, y = -100}, -- Responsively spans 100% of viewport
-				text = vig_tex,
-				alignment = {x = 0, y = 0},
-				z_index = -2, -- Above static noise (-3) so dark border frames the view
-			})
-			state.last_vig_tex = vig_tex
-		elseif state.last_vig_tex ~= vig_tex then
-			player:hud_change(state.hud_vignette_id, "text", vig_tex)
-			state.last_vig_tex = vig_tex
-		end
-
-		-- Static Noise Overlay
-		local static_tex = get_static_texture(state.intensity, state.time, player)
-		if not state.hud_static_id then
-			state.hud_static_id = player:hud_add({
-				type = "image",
-				position = {x = 0.5, y = 0.5},
-				name = "pale_watcher_static",
-				scale = {x = -100, y = -100},
-				text = static_tex,
-				alignment = {x = 0, y = 0},
-				z_index = -3, -- Below vignette (-2)
-			})
-			state.last_static_tex = static_tex
-		elseif state.last_static_tex ~= static_tex then
-			player:hud_change(state.hud_static_id, "text", static_tex)
-			state.last_static_tex = static_tex
-		end
+		update_overlay_huds(player, state, state.time)
 
 		-- Looping Static Audio
 		if not state.sound_handle then
-			state.sound_handle = core.sound_play("pale_watcher_static", {
+			state.sound_handle = x_mob_core.play_sound(player, "pale_watcher_static", {
 				to_player = name,
 				loop = true,
-				gain = math.max(0.1, state.intensity * 0.65)
+				gain = math.max(0.1, state.intensity * 0.65),
 			})
 		end
 	else
-		-- Remove HUD overlays when calm
-		if state.hud_vignette_id then
-			player:hud_remove(state.hud_vignette_id)
-			state.hud_vignette_id = nil
-		end
-		state.last_vig_tex = nil
-		if state.hud_static_id then
-			player:hud_remove(state.hud_static_id)
-			state.hud_static_id = nil
-		end
-		state.last_static_tex = nil
-		if state.sound_handle then
-			core.sound_stop(state.sound_handle)
-			state.sound_handle = nil
-		end
+		clear_overlays_and_sound(player, state)
 	end
 end
 
@@ -303,29 +323,13 @@ function pale_watcher.fx.trigger_flash(player, duration)
 	end)
 end
 
-local DOMAIN_FOG_DISTANCE = 18 -- Upper bound viewing distance in blocks during domain fog
-local DOMAIN_FOG_START = 0.25  -- Mist begins ramping at ~4.5 blocks, thick by 18 blocks
-
 ---Sets claustrophobic domain fog for a player inside the haunted zone.
 ---@param player ObjectRef
 ---@param force? boolean If true, forces set_sky update even if fog_active is already recorded
 function pale_watcher.fx.apply_claustrophobic_fog(player, force)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
-	local state = active_fx[name]
-
-	if not state then
-		state = {
-			time = 0,
-			intensity = 0,
-			hud_static_id = nil,
-			hud_vignette_id = nil,
-			sound_handle = nil,
-			is_gazing = false,
-			fog_active = false,
-		}
-		active_fx[name] = state
-	end
+	local state = get_or_create_state(name)
 
 	-- Check if fog is already properly applied on the engine side
 	if not force and state.fog_active then
@@ -395,22 +399,8 @@ function pale_watcher.fx.clear_player(player, clear_fog)
 	-- Clean up horror mob FX
 	local state = active_fx[name]
 	if state then
-		if state.hud_vignette_id then
-			player:hud_remove(state.hud_vignette_id)
-			state.hud_vignette_id = nil
-		end
-		state.last_vig_tex = nil
-		if state.hud_static_id then
-			player:hud_remove(state.hud_static_id)
-			state.hud_static_id = nil
-		end
-		state.last_static_tex = nil
-		if state.sound_handle then
-			core.sound_stop(state.sound_handle)
-			state.sound_handle = nil
-		end
+		clear_overlays_and_sound(player, state)
 		if state.is_gazing then
-			player:set_fov(0, false, 0.3)
 			pale_watcher.physics.clear_gaze_slow(player)
 			state.is_gazing = false
 		end
@@ -433,7 +423,7 @@ function pale_watcher.fx.clear_all()
 	end
 	active_flashes = {}
 
-	for name, _ in pairs(active_fx) do
+	for name in pairs(active_fx) do
 		local player = core.get_player_by_name(name)
 		if player then
 			pale_watcher.fx.clear_player(player)
@@ -513,46 +503,18 @@ core.register_globalstep(function(dtime)
 			-- Natural static decay when player looks away or distance increases
 			if not state._refreshed_this_tick then
 				state.intensity = (state.intensity or 0) - dtime * 2.0
-				if state.is_gazing and player then
+				if state.is_gazing then
 					state.is_gazing = false
-					player:set_fov(0, false, 0.35)
-					pale_watcher.physics.clear_gaze_slow(player)
+					if player then
+						pale_watcher.physics.clear_gaze_slow(player)
+					end
 				end
 
 				if player and state.intensity > 0.02 then
-					local max_vig = get_max_vignette_alpha(player)
-					local vig_alpha = math.min(max_vig, math.floor(state.intensity * max_vig))
-					local vig_tex = string.format("pale_watcher_hud_vignette.png^[opacity:%d", vig_alpha)
-					if state.hud_vignette_id and state.last_vig_tex ~= vig_tex then
-						player:hud_change(state.hud_vignette_id, "text", vig_tex)
-						state.last_vig_tex = vig_tex
-					end
-					local static_tex = get_static_texture(state.intensity, state.time + dtime, player)
-					if state.hud_static_id and state.last_static_tex ~= static_tex then
-						player:hud_change(state.hud_static_id, "text", static_tex)
-						state.last_static_tex = static_tex
-					end
+					update_overlay_huds(player, state, state.time + dtime)
 				else
 					state.intensity = 0
-					if player then
-						if state.hud_vignette_id then
-							player:hud_remove(state.hud_vignette_id)
-							state.hud_vignette_id = nil
-						end
-						if state.hud_static_id then
-							player:hud_remove(state.hud_static_id)
-							state.hud_static_id = nil
-						end
-					else
-						state.hud_vignette_id = nil
-						state.hud_static_id = nil
-					end
-					state.last_vig_tex = nil
-					state.last_static_tex = nil
-					if state.sound_handle then
-						core.sound_stop(state.sound_handle)
-						state.sound_handle = nil
-					end
+					clear_overlays_and_sound(player, state)
 				end
 			end
 
@@ -582,8 +544,6 @@ core.register_on_dieplayer(function(player)
 end)
 
 core.register_on_joinplayer(function(player)
-	player:set_fov(0)
-
 	-- If the joining player is inside an active encounter session,
 	-- avoid wiping their sky/fog and instead immediately re-assert domain fog.
 	local name = player:get_player_name()
@@ -604,3 +564,4 @@ core.register_on_shutdown(function()
 end)
 
 return pale_watcher.fx
+

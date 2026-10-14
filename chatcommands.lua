@@ -24,7 +24,6 @@ core.register_chatcommand("pw_clear", {
 		end
 
 		pale_watcher.fx.clear_player(player)
-		player:set_fov(0)
 		pale_watcher.fx.clear_claustrophobic_fog(player, true)
 		pale_watcher.physics.clear_all(player)
 		pale_watcher.items.clear_player(player)
@@ -61,7 +60,6 @@ core.register_chatcommand("pw_locate", {
 					core.set_node(pos, {name = "pale_watcher:cursed_page"})
 					local meta = core.get_meta(pos)
 					if sid then meta:set_string("session_id", sid) end
-					meta:set_int("age", 0)
 					core.get_node_timer(pos):start(4.0)
 					pale_watcher.ritual.track_page(pos, sid)
 					restored = true

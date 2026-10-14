@@ -1,209 +1,124 @@
 --[[
-	pale_watcher - Physics Abstraction Layer
-	Multi-mod physics compatibility supporting player_monoids, playerphysics, pova, and native fallback.
+	pale_watcher - Physics & Gaze Debuff Facade
+	Delegates player movement and FOV modifiers to x_mob_core's status effect subsystem
+	with delta/interval throttling to prevent per-tick network and metadata churn.
 ]]
 
-pale_watcher.physics = pale_watcher.physics or {}
+local TERROR_EFFECT_ID = "pale_watcher:terror"
+local GAZE_EFFECT_ID = "pale_watcher:gaze"
 
--- Cache of baseline physics overrides per player
-local default_physics = {}
-local active_gaze_factors = {}
-local active_terror = {}
-local terror_timers = {}
+x_mob_core.register_status_effect_preset(TERROR_EFFECT_ID, {
+	id = TERROR_EFFECT_ID,
+	type = "slow",
+	category = "debuff",
+	duration = 2.5,
+	speed_factor = 0.85,
+})
 
-local function get_effective_speed(name)
-	local factor = 1.0
-	if active_terror[name] then
-		factor = factor * 0.85
-	end
-	if active_gaze_factors[name] then
-		factor = factor * active_gaze_factors[name]
-	end
-	return factor
+-- Per-player throttle cache: { terror_time = number, gaze_time = number, gaze_speed = number, gaze_fov = number }
+local player_state = {}
+
+local function get_now()
+	return core.get_us_time() / 1000000
 end
 
-local function apply_native_override(player)
-	local name = player:get_player_name()
-	if not default_physics[name] then
-		default_physics[name] = player:get_physics_override()
-	end
-	local base = default_physics[name] or {speed = 1.0, jump = 1.0, gravity = 1.0}
-	player:set_physics_override({
-		speed = (base.speed or 1.0) * get_effective_speed(name),
-		jump = base.jump or 1.0,
-	})
-end
-
----Applies terror debuff to a fleeing player.
+---Applies sprint terror debuff to a fleeing player (throttled to avoid per-tick re-application).
 ---@param player ObjectRef
 function pale_watcher.physics.apply_terror(player)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
-	active_terror[name] = true
-	terror_timers[name] = 2.5
-
-	if core.global_exists("player_monoids") then
-		player_monoids.speed:add_change(player, 0.85, "pale_watcher:terror")
-	elseif core.global_exists("playerphysics") then
-		playerphysics.add_physics_factor(player, "speed", "pale_watcher:terror", 0.85)
-	elseif core.global_exists("pova") then
-		pova.add_override(name, "pale_watcher_terror", {speed = -0.15})
-		pova.do_override(player)
-	else
-		apply_native_override(player)
+	local now = get_now()
+	local st = player_state[name]
+	if st and st.terror_time and (now - st.terror_time) < 0.4 and
+		x_mob_core.has_status_effect(player, TERROR_EFFECT_ID) then
+		return
 	end
+	if not st then
+		st = {}
+		player_state[name] = st
+	end
+	st.terror_time = now
+	x_mob_core.apply_status_effect(player, TERROR_EFFECT_ID)
 end
 
----Clears terror debuff from a player.
+---Clears sprint terror debuff from a player.
 ---@param player ObjectRef
 function pale_watcher.physics.clear_terror(player)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
-	active_terror[name] = nil
-	terror_timers[name] = nil
-
-	if core.global_exists("player_monoids") then
-		player_monoids.speed:del_change(player, "pale_watcher:terror")
-		player_monoids.jump:del_change(player, "pale_watcher:terror")
-	elseif core.global_exists("playerphysics") then
-		playerphysics.remove_physics_factor(player, "speed", "pale_watcher:terror")
-		playerphysics.remove_physics_factor(player, "jump", "pale_watcher:terror")
-	elseif core.global_exists("pova") then
-		pova.del_override(name, "pale_watcher_terror")
-		pova.do_override(player)
-	else
-		if not active_gaze_factors[name] and default_physics[name] then
-			player:set_physics_override(default_physics[name])
-			default_physics[name] = nil
-		elseif default_physics[name] then
-			apply_native_override(player)
-		end
+	local st = player_state[name]
+	if st then
+		st.terror_time = nil
+	end
+	if x_mob_core.has_status_effect(player, TERROR_EFFECT_ID) then
+		x_mob_core.remove_status_effect(player, TERROR_EFFECT_ID)
 	end
 end
 
----Applies direct gaze movement paralysis / slowdown to a player staring at the Pale Watcher.
+---Applies direct gaze movement slowdown and optional camera FOV narrowing to a player staring at the Pale Watcher.
 ---@param player ObjectRef
----@param factor number Speed multiplier (e.g. 0.4 to 0.7)
-function pale_watcher.physics.apply_gaze_slow(player, factor)
+---@param factor number Speed multiplier (clamped to [0.12, 1.0])
+---@param fov_factor? number Optional camera FOV multiplier
+function pale_watcher.physics.apply_gaze_slow(player, factor, fov_factor)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	local clamped = math.max(0.12, math.min(1.0, factor))
-	active_gaze_factors[name] = clamped
+	local now = get_now()
+	local st = player_state[name]
 
-	if core.global_exists("player_monoids") then
-		player_monoids.speed:add_change(player, clamped, "pale_watcher:gaze")
-	elseif core.global_exists("playerphysics") then
-		playerphysics.add_physics_factor(player, "speed", "pale_watcher:gaze", clamped)
-	elseif core.global_exists("pova") then
-		pova.add_override(name, "pale_watcher_gaze", {speed = clamped - 1.0})
-		pova.do_override(player)
-	else
-		apply_native_override(player)
+	if st and st.gaze_time and (now - st.gaze_time) < 0.25 and
+		math.abs((st.gaze_speed or 0) - clamped) < 0.02 and
+		math.abs((st.gaze_fov or 0) - (fov_factor or 0)) < 0.02 and
+		x_mob_core.has_status_effect(player, GAZE_EFFECT_ID) then
+		return
 	end
+
+	if not st then
+		st = {}
+		player_state[name] = st
+	end
+	st.gaze_time = now
+	st.gaze_speed = clamped
+	st.gaze_fov = fov_factor
+
+	x_mob_core.apply_status_effect(player, {
+		id = GAZE_EFFECT_ID,
+		type = "slow",
+		category = "debuff",
+		duration = 1.0,
+		speed_factor = clamped,
+		fov_factor = fov_factor,
+		fov_transition = 0.25,
+	})
 end
 
----Clears direct gaze paralysis from a player.
+---Clears direct gaze slowdown and FOV narrowing from a player.
 ---@param player ObjectRef
 function pale_watcher.physics.clear_gaze_slow(player)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
-	if not active_gaze_factors[name] then return end
-	active_gaze_factors[name] = nil
-
-	if core.global_exists("player_monoids") then
-		player_monoids.speed:del_change(player, "pale_watcher:gaze")
-	elseif core.global_exists("playerphysics") then
-		playerphysics.remove_physics_factor(player, "speed", "pale_watcher:gaze")
-	elseif core.global_exists("pova") then
-		pova.del_override(name, "pale_watcher_gaze")
-		pova.do_override(player)
-	else
-		if not active_terror[name] and default_physics[name] then
-			player:set_physics_override(default_physics[name])
-			default_physics[name] = nil
-		elseif default_physics[name] then
-			apply_native_override(player)
-		end
+	local st = player_state[name]
+	if st then
+		st.gaze_time = nil
+		st.gaze_speed = nil
+		st.gaze_fov = nil
+	end
+	if x_mob_core.has_status_effect(player, GAZE_EFFECT_ID) then
+		x_mob_core.remove_status_effect(player, GAZE_EFFECT_ID)
 	end
 end
 
----Cleans up all physics debuffs on disconnect or session reset.
+---Cleans up all Pale Watcher physics and FOV debuffs on a player.
 ---@param player ObjectRef
 function pale_watcher.physics.clear_all(player)
 	if not player or not player:is_player() then return end
 	pale_watcher.physics.clear_terror(player)
 	pale_watcher.physics.clear_gaze_slow(player)
-	local name = player:get_player_name()
-	terror_timers[name] = nil
-	if default_physics[name] then
-		player:set_physics_override(default_physics[name])
-		default_physics[name] = nil
-	end
+	player_state[player:get_player_name()] = nil
 end
 
--- Globalstep decay for sprint terror debuff
-local terror_decay_timer = 0
-core.register_globalstep(function(dtime)
-	if not next(active_terror) then return end
-	terror_decay_timer = terror_decay_timer + dtime
-	if terror_decay_timer < 0.2 then return end
-	local elapsed = terror_decay_timer
-	terror_decay_timer = 0
-
-	for name, timer in pairs(terror_timers) do
-		local rem = timer - elapsed
-		if rem <= 0 then
-			local player = core.get_player_by_name(name)
-			if player then
-				pale_watcher.physics.clear_terror(player)
-			else
-				active_terror[name] = nil
-				terror_timers[name] = nil
-			end
-		else
-			terror_timers[name] = rem
-		end
-	end
-end)
-
 core.register_on_leaveplayer(function(player)
-	pale_watcher.physics.clear_all(player)
-	local name = player:get_player_name()
-	active_terror[name] = nil
-	terror_timers[name] = nil
-	active_gaze_factors[name] = nil
-	default_physics[name] = nil
-end)
-
-core.register_on_dieplayer(function(player)
-	pale_watcher.physics.clear_all(player)
-end)
-
-core.register_on_joinplayer(function(player)
-	-- Purge any saved/persisted jump and speed debuffs from third-party physics mods
-	if core.global_exists("playerphysics") then
-		playerphysics.remove_physics_factor(player, "jump", "pale_watcher:terror")
-		playerphysics.remove_physics_factor(player, "speed", "pale_watcher:terror")
-		playerphysics.remove_physics_factor(player, "speed", "pale_watcher:gaze")
-	end
-	if core.global_exists("player_monoids") then
-		player_monoids.jump:del_change(player, "pale_watcher:terror")
-		player_monoids.speed:del_change(player, "pale_watcher:terror")
-		player_monoids.speed:del_change(player, "pale_watcher:gaze")
-	end
-	if core.global_exists("pova") then
-		local name = player:get_player_name()
-		pova.del_override(name, "pale_watcher_terror")
-		pova.del_override(name, "pale_watcher_gaze")
-		pova.do_override(player)
-	end
-	pale_watcher.physics.clear_all(player)
-end)
-
-core.register_on_shutdown(function()
-	for _, player in ipairs(core.get_connected_players()) do
-		pale_watcher.physics.clear_all(player)
-	end
+	player_state[player:get_player_name()] = nil
 end)
 
 return pale_watcher.physics
