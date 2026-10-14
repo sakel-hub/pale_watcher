@@ -4,7 +4,6 @@
 	Surplus Page Mercy Rule, Stalker Tiers, and Cleansing Flame Banishment.
 ]]
 
-pale_watcher.ritual = pale_watcher.ritual or {}
 local S = pale_watcher.S
 
 local active_sessions = {}
@@ -22,9 +21,9 @@ local active_sessions = {}
 --     orphan_timer = number,
 -- }
 
-pale_watcher.ritual.SESSION_RADIUS = math.max(60.0, (pale_watcher.TETHER_MAX or 100.0) - 15.0)
-pale_watcher.ritual.SESSION_EXIT_RADIUS = (pale_watcher.TETHER_MAX or 100.0) + 20.0
-pale_watcher.ritual.SESSION_COMPLETE_EXIT_RADIUS = (pale_watcher.TETHER_MAX or 100.0) + 60.0
+pale_watcher.ritual.SESSION_RADIUS = math.max(60.0, pale_watcher.TETHER_MAX - 15.0)
+pale_watcher.ritual.SESSION_EXIT_RADIUS = pale_watcher.TETHER_MAX + 20.0
+pale_watcher.ritual.SESSION_COMPLETE_EXIT_RADIUS = pale_watcher.TETHER_MAX + 60.0
 
 local SESSION_RADIUS = pale_watcher.ritual.SESSION_RADIUS
 local SESSION_EXIT_RADIUS = pale_watcher.ritual.SESSION_EXIT_RADIUS
@@ -32,6 +31,7 @@ local SESSION_COMPLETE_EXIT_RADIUS = pale_watcher.ritual.SESSION_COMPLETE_EXIT_R
 local SPAWN_RADIUS_MIN = 15.0
 local SPAWN_RADIUS_MAX = 45.0
 local MIN_PAGE_DISTANCE = 8.0 -- Primary spacing between pages
+local PAGE_SPACING_PASSES = {MIN_PAGE_DISTANCE, 5.0}
 
 local storage = core.get_mod_storage()
 local PENDING_PAGES_KEY = "pending_pages"
@@ -40,7 +40,7 @@ local PENDING_PAGES_KEY = "pending_pages"
 ---@return table<string, {pos: Vector, session_id: string, time: integer}>
 local function load_stored_pages()
 	local raw = storage:get_string(PENDING_PAGES_KEY)
-	if raw and raw ~= "" then
+	if raw ~= "" then
 		local data = core.deserialize(raw)
 		if type(data) == "table" then
 			return data
@@ -108,7 +108,7 @@ function pale_watcher.ritual.purge_all_orphans(force_load)
 		local pos = data.pos
 		if pos then
 			local node = core.get_node(pos)
-			if node.name == "ignore" and (force_load or true) then
+			if node.name == "ignore" and force_load ~= false then
 				core.load_area(pos)
 				node = core.get_node(pos)
 			end
@@ -166,6 +166,13 @@ local function calculate_stalker_tier(session)
 	return tier
 end
 
+local CARDINAL_DIRS = {
+	{x = 1, y = 0, z = 0},
+	{x = -1, y = 0, z = 0},
+	{x = 0, y = 0, z = 1},
+	{x = 0, y = 0, z = -1},
+}
+
 ---Dynamic Surface Placement: Finds safe eye-level surfaces on tree trunks or stone walls.
 ---Ensures walkable solid ground underneath each placed page.
 ---@param center Vector Encounter center coordinate
@@ -188,151 +195,54 @@ local function spawn_pages_dynamically(center, count, session_id, existing_place
 
 	-- Search for tree trunks first, then stone outcrops
 	local surface_nodes = core.find_nodes_in_area(p1, p2, {"group:tree", "group:stone"})
-	if #surface_nodes > 0 then
-		-- Fisher-Yates shuffle
-		for i = #surface_nodes, 2, -1 do
-			local j = math.random(i)
-			surface_nodes[i], surface_nodes[j] = surface_nodes[j], surface_nodes[i]
-		end
+	for i = #surface_nodes, 2, -1 do
+		local j = math.random(i)
+		surface_nodes[i], surface_nodes[j] = surface_nodes[j], surface_nodes[i]
 	end
 
-	local cardinal_dirs = {
-		{x = 1, y = 0, z = 0},
-		{x = -1, y = 0, z = 0},
-		{x = 0, y = 0, z = 1},
-		{x = 0, y = 0, z = -1},
-	}
-
-	-- Primary pass: strict distance spacing (MIN_PAGE_DISTANCE = 8.0)
-	for _, node_pos in ipairs(surface_nodes) do
-		local dist = vector.distance(center, node_pos)
-		if dist >= SPAWN_RADIUS_MIN and dist <= SPAWN_RADIUS_MAX then
-			local too_close = false
-			for _, prev in ipairs(placed_list) do
-				if vector.distance(node_pos, prev) < MIN_PAGE_DISTANCE then
-					too_close = true
-					break
-				end
-			end
-
-			if not too_close then
-				for _, dir in ipairs(cardinal_dirs) do
-					local air_pos = vector.add(node_pos, dir)
-					local node_at_air = core.get_node(air_pos)
-
-					if node_at_air.name == "air" then
-						local foot_pos = {x = air_pos.x, y = air_pos.y - 1, z = air_pos.z}
-						local foot_node = core.get_node(foot_pos)
-						local foot_def = core.registered_nodes[foot_node.name]
-						local is_foot_clear = foot_node.name == "air"
-							or (foot_def and not foot_def.walkable and foot_def.liquidtype == "none")
-
-						if is_foot_clear then
-							local ground_pos = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
-							local ground_node = core.get_node(ground_pos)
-							local ground_def = core.registered_nodes[ground_node.name]
-
-							if ground_def and ground_def.walkable and ground_def.liquidtype == "none" then
-								local wall_node = core.get_node(node_pos)
-								local wall_def = core.registered_nodes[wall_node.name]
-								local wall_below_pos = {x = node_pos.x, y = node_pos.y - 1, z = node_pos.z}
-								local wall_below_node = core.get_node(wall_below_pos)
-								local wall_below_def = core.registered_nodes[wall_below_node.name]
-
-								if wall_def and wall_def.walkable and wall_below_def and wall_below_def.walkable then
-									local wall_dir = vector.multiply(dir, -1)
-									local param2 = core.dir_to_wallmounted(wall_dir)
-
-									core.set_node(air_pos, {
-										name = "pale_watcher:cursed_page",
-										param2 = param2,
-									})
-
-									local meta = core.get_meta(air_pos)
-									if session_id then
-										meta:set_string("session_id", session_id)
-									end
-									meta:set_int("age", 0)
-									core.get_node_timer(air_pos):start(4.0)
-									pale_watcher.ritual.track_page(air_pos, session_id)
-
-									local hash = core.pos_to_string(air_pos)
-									placed[hash] = air_pos
-									table.insert(placed_list, air_pos)
-									spawned = spawned + 1
-									break
-								end
-							end
-						end
-					end
-				end
-			end
+	-- Pass 1: primary distance spacing (8.0m); Pass 2: fallback spacing (5.0m) for dense groves
+	for _, min_spacing in ipairs(PAGE_SPACING_PASSES) do
+		if spawned >= count or #surface_nodes == 0 then
+			break
 		end
 
-		if spawned >= count then break end
-	end
-
-	-- Secondary fallback pass with reduced spacing (5.0m) if dense page quota in small groves
-	if spawned < count and #surface_nodes > 0 then
 		for _, node_pos in ipairs(surface_nodes) do
 			local dist = vector.distance(center, node_pos)
 			if dist >= SPAWN_RADIUS_MIN and dist <= SPAWN_RADIUS_MAX then
 				local too_close = false
 				for _, prev in ipairs(placed_list) do
-					if vector.distance(node_pos, prev) < 5.0 then
+					if vector.distance(node_pos, prev) < min_spacing then
 						too_close = true
 						break
 					end
 				end
 
-				if not too_close then
-					for _, dir in ipairs(cardinal_dirs) do
+				if not too_close and
+					x_mob_core.utils.is_walkable_node(node_pos) and
+					x_mob_core.utils.is_walkable_node(node_pos.x, node_pos.y - 1, node_pos.z) then
+					for _, dir in ipairs(CARDINAL_DIRS) do
 						local air_pos = vector.add(node_pos, dir)
-						local node_at_air = core.get_node(air_pos)
+						if core.get_node(air_pos).name == "air" and
+							x_mob_core.utils.is_passable_node(air_pos.x, air_pos.y - 1, air_pos.z, false) then
+							local ground_pos = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
+							if pale_watcher.is_walkable_ground(core.get_node(ground_pos).name) then
+								local wall_dir = vector.multiply(dir, -1)
+								core.set_node(air_pos, {
+									name = "pale_watcher:cursed_page",
+									param2 = core.dir_to_wallmounted(wall_dir),
+								})
 
-						if node_at_air.name == "air" then
-							local foot_pos = {x = air_pos.x, y = air_pos.y - 1, z = air_pos.z}
-							local foot_node = core.get_node(foot_pos)
-							local foot_def = core.registered_nodes[foot_node.name]
-							local is_foot_clear = foot_node.name == "air"
-								or (foot_def and not foot_def.walkable and foot_def.liquidtype == "none")
-
-							if is_foot_clear then
-								local ground_pos = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
-								local ground_node = core.get_node(ground_pos)
-								local ground_def = core.registered_nodes[ground_node.name]
-
-								if ground_def and ground_def.walkable and ground_def.liquidtype == "none" then
-									local wall_node = core.get_node(node_pos)
-									local wall_def = core.registered_nodes[wall_node.name]
-									local wall_below_pos = {x = node_pos.x, y = node_pos.y - 1, z = node_pos.z}
-									local wall_below_node = core.get_node(wall_below_pos)
-									local wall_below_def = core.registered_nodes[wall_below_node.name]
-
-									if wall_def and wall_def.walkable and wall_below_def and wall_below_def.walkable then
-										local wall_dir = vector.multiply(dir, -1)
-										local param2 = core.dir_to_wallmounted(wall_dir)
-
-										core.set_node(air_pos, {
-											name = "pale_watcher:cursed_page",
-											param2 = param2,
-										})
-
-										local meta = core.get_meta(air_pos)
-										if session_id then
-											meta:set_string("session_id", session_id)
-										end
-										meta:set_int("age", 0)
-										core.get_node_timer(air_pos):start(4.0)
-										pale_watcher.ritual.track_page(air_pos, session_id)
-
-										local hash = core.pos_to_string(air_pos)
-										placed[hash] = air_pos
-										table.insert(placed_list, air_pos)
-										spawned = spawned + 1
-										break
-									end
+								if session_id then
+									core.get_meta(air_pos):set_string("session_id", session_id)
 								end
+								core.get_node_timer(air_pos):start(4.0)
+								pale_watcher.ritual.track_page(air_pos, session_id)
+
+								local hash = core.pos_to_string(air_pos)
+								placed[hash] = air_pos
+								table.insert(placed_list, air_pos)
+								spawned = spawned + 1
+								break
 							end
 						end
 					end
@@ -345,6 +255,7 @@ local function spawn_pages_dynamically(center, count, session_id, existing_place
 
 	return placed
 end
+
 
 ---Updates shared group HUD for an enrolled player.
 ---@param player ObjectRef
@@ -553,7 +464,7 @@ function pale_watcher.ritual.update_session_players(session_id, center_pos)
 								for pname, _ in pairs(session.players) do
 									core.chat_send_player(pname, core.colorize(pale_watcher.colors.danger, expand_msg))
 								end
-								core.sound_play("pale_watcher_page_whisper", {pos = center, gain = 0.8, max_hear_distance = 60}, true)
+								x_mob_core.play_sound("pale_watcher_page_whisper", {pos = center, gain = 0.8, distance = 60, ephemeral = true})
 
 								-- Synchronously refresh all enrolled players' HUDs with the new total
 								for pname, _ in pairs(session.players) do
@@ -704,13 +615,13 @@ function pale_watcher.ritual.is_player_enrolled(session_id, player_name)
 end
 
 ---Finds the active encounter session for a player or near a world position.
----@param player_name string
+---@param player_name? string
 ---@param pos? Vector
 ---@return table|nil session
 ---@return string|nil session_id
 function pale_watcher.ritual.get_player_session(player_name, pos)
 	for id, session in pairs(active_sessions) do
-		if session.players and session.players[player_name] then
+		if player_name and session.players and session.players[player_name] then
 			return session, id
 		end
 		if pos and vector.distance(pos, session.center) <= (SESSION_RADIUS * 1.5) then
@@ -726,6 +637,7 @@ end
 function pale_watcher.ritual.end_session(session_id, victory)
 	local session = active_sessions[session_id]
 	if not session then return end
+	active_sessions[session_id] = nil
 
 	x_mob_core.emit("pale_watcher:session_ended", session_id, victory)
 
@@ -747,29 +659,59 @@ function pale_watcher.ritual.end_session(session_id, victory)
 		end
 	end
 
-	active_sessions[session_id] = nil
+	-- Remove orphaned Pale Watcher entity when session ends without victory
+	if not victory and session.mob_ref and session.mob_ref:is_valid() then
+		local ent = session.mob_ref:get_luaentity()
+		if not ent or ent.state ~= "banishing" then
+			if ent then
+				ent.session_id = nil
+			end
+			local mob_pos = session.mob_ref:get_pos()
+			if mob_pos then
+				pale_watcher.particles.teleport_rift(mob_pos)
+			end
+			session.mob_ref:remove()
+		end
+	end
 end
 
 ---Called when a participant collects a Cursed Page.
 ---@param pos Vector Page node position
 ---@param clicker ObjectRef Player who collected the page
 function pale_watcher.ritual.on_page_collected(pos, clicker)
-	local closest_session_id = nil
-	local min_dist = math.huge
+	local pos_hash = core.pos_to_string(pos)
+	local meta_sid = core.get_meta(pos):get_string("session_id")
+	local target_sid = (meta_sid ~= "" and active_sessions[meta_sid]) and meta_sid or nil
 
-	for id, session in pairs(active_sessions) do
-		local dist = vector.distance(pos, session.center)
-		if dist < min_dist then
-			min_dist = dist
-			closest_session_id = id
+	if not target_sid then
+		for id, s in pairs(active_sessions) do
+			if s.placed_pages and s.placed_pages[pos_hash] then
+				target_sid = id
+				break
+			end
 		end
 	end
 
-	if not closest_session_id then return end
-	local session = active_sessions[closest_session_id]
+	if not target_sid and clicker and clicker:is_player() then
+		local _, sid = pale_watcher.ritual.get_player_session(clicker:get_player_name(), pos)
+		target_sid = sid
+	end
+
+	if not target_sid then
+		local min_dist = math.huge
+		for id, s in pairs(active_sessions) do
+			local dist = vector.distance(pos, s.center)
+			if dist < min_dist then
+				min_dist = dist
+				target_sid = id
+			end
+		end
+	end
+
+	if not target_sid then return end
+	local session = active_sessions[target_sid]
 
 	-- Remove from placed_pages map
-	local pos_hash = core.pos_to_string(pos)
 	session.placed_pages[pos_hash] = nil
 	pale_watcher.ritual.untrack_page(pos)
 
@@ -837,7 +779,7 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 					core.colorize(pale_watcher.colors.warning,
 						S("★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★",
 							session.pages_total)))
-				core.sound_play("pale_watcher_bell", {to_player = name, gain = 1.0}, true)
+				x_mob_core.play_sound("pale_watcher_bell", {to_player = name, gain = 1.0, ephemeral = true})
 			end
 		end
 	end
@@ -975,7 +917,7 @@ core.register_globalstep(function(dtime)
 									session.pages_collected, session.pages_total)
 								core.chat_send_player(pname,
 									core.colorize(pale_watcher.colors.warning, contract_msg))
-								core.sound_play("pale_watcher_bell", {to_player = pname, gain = 1.0}, true)
+								x_mob_core.play_sound("pale_watcher_bell", {to_player = pname, gain = 1.0, ephemeral = true})
 							end
 						end
 					else

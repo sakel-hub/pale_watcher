@@ -3,8 +3,6 @@
 	Vintage Flash Camera, Shroud of Stalking, Dimensional Cloth, Static Core.
 ]]
 
-pale_watcher.items = pale_watcher.items or {}
-
 local colors = pale_watcher.colors
 local S = pale_watcher.S
 
@@ -48,7 +46,9 @@ end
 -- Vintage Flash Camera Tool (3 Uses via add_wear_by_uses)
 local CAMERA_COOLDOWN = 10.0
 local CAMERA_MAX_USES = 3
+local CAMERA_SAMPLE_Y = {2.6, 1.6, 0.8}
 local camera_cooldowns = {}
+local scratch_target_pt = {x = 0, y = 0, z = 0}
 
 local function trigger_flash_camera(itemstack, user, _pointed_thing)
 	if not user or not user:is_player() then return itemstack end
@@ -65,13 +65,18 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 
 	local p_pos = user:get_pos()
 	local look_dir = user:get_look_dir()
-	local eye_pos = vector.add(p_pos, {x = 0, y = 1.625, z = 0})
+	local eye_pos = {x = p_pos.x, y = p_pos.y + 1.625, z = p_pos.z}
 
 	-- Full-screen white flash overlay for the user
 	pale_watcher.fx.trigger_flash(user)
 
 	-- Shutter click and bulb pop sound
-	core.sound_play("pale_watcher_camera_flash", {pos = p_pos, gain = 1.0, max_hear_distance = 35}, true)
+	x_mob_core.play_sound(nil, "pale_watcher_camera_flash", {
+		pos = p_pos,
+		gain = 1.0,
+		max_hear_distance = 35,
+		ephemeral = true,
+	})
 
 	-- Transient flash light burst at eye position to illuminate surrounding nodes
 	local flash_node_pos = vector.round(vector.add(eye_pos, vector.multiply(look_dir, 1.2)))
@@ -90,22 +95,19 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 			local mob_pos = obj:get_pos()
 			if mob_pos then
 				local dist_to_mob = vector.distance(p_pos, mob_pos)
-				local sample_points = {
-					vector.add(mob_pos, {x = 0, y = 2.6, z = 0}),
-					vector.add(mob_pos, {x = 0, y = 1.6, z = 0}),
-					vector.add(mob_pos, {x = 0, y = 0.8, z = 0}),
-				}
+				scratch_target_pt.x = mob_pos.x
+				scratch_target_pt.z = mob_pos.z
 
 				local hit = false
-				for _, target_pt in ipairs(sample_points) do
-					local to_mob = vector.direction(eye_pos, target_pt)
+				for i = 1, #CAMERA_SAMPLE_Y do
+					scratch_target_pt.y = mob_pos.y + CAMERA_SAMPLE_Y[i]
+					local to_mob = vector.direction(eye_pos, scratch_target_pt)
 					local dot = vector.dot(look_dir, to_mob)
 
-					if dot >= 0.40 or dist_to_mob <= 5.0 then
-						if pale_watcher.has_visual_los(eye_pos, target_pt) then
-							hit = true
-							break
-						end
+					if (dot >= 0.40 or dist_to_mob <= 5.0) and
+						pale_watcher.has_visual_los(eye_pos, scratch_target_pt) then
+						hit = true
+						break
 					end
 				end
 
@@ -120,11 +122,15 @@ local function trigger_flash_camera(itemstack, user, _pointed_thing)
 	end
 
 	-- Consume 1 charge of durability (3 uses total via add_wear_by_uses)
-	local is_creative = core.is_creative_enabled(name)
-	if not is_creative then
+	if not core.is_creative_enabled(name) then
 		itemstack:add_wear_by_uses(CAMERA_MAX_USES)
 		if itemstack:is_empty() then
-			core.sound_play("pale_watcher_paper_burn", {pos = p_pos, gain = 0.8, pitch = 1.2}, true)
+			x_mob_core.play_sound(nil, "pale_watcher_paper_burn", {
+				pos = p_pos,
+				gain = 0.8,
+				pitch = 1.2,
+				ephemeral = true,
+			})
 			core.chat_send_player(name, core.colorize(colors.warning,
 				S("★ The Vintage Flash Camera capacitor burned out and the bulb shattered!")))
 		else
@@ -198,7 +204,7 @@ local function trigger_blink(itemstack, user, _pointed_thing)
 	blink_cooldowns[name] = now
 
 	local p_pos = user:get_pos()
-	local eye_pos = vector.add(p_pos, {x = 0, y = 1.625, z = 0})
+	local eye_pos = {x = p_pos.x, y = p_pos.y + 1.625, z = p_pos.z}
 	local look_dir = user:get_look_dir()
 	local target_pos = vector.add(p_pos, vector.multiply(look_dir, 14.0))
 
@@ -208,7 +214,7 @@ local function trigger_blink(itemstack, user, _pointed_thing)
 		if pt.type == "node" then
 			local def = core.registered_nodes[core.get_node(pt.under).name]
 			if def and def.walkable then
-				target_pos = vector.add(pt.above, {x = 0, y = 0, z = 0})
+				target_pos = vector.new(pt.above)
 				break
 			end
 		end
@@ -222,14 +228,24 @@ local function trigger_blink(itemstack, user, _pointed_thing)
 
 	-- Departure particles (preset)
 	pale_watcher.particles.void_mist(p_pos, 1.0, 30)
-	core.sound_play("pale_watcher_static", {pos = p_pos, gain = 0.5, max_hear_distance = 15}, true)
+	x_mob_core.play_sound(nil, "pale_watcher_static", {
+		pos = p_pos,
+		gain = 0.5,
+		max_hear_distance = 15,
+		ephemeral = true,
+	})
 
 	-- Execute Blink teleport
 	user:set_pos(target_pos)
 
 	-- Arrival particles (preset)
 	pale_watcher.particles.void_mist(target_pos, 1.0, 30)
-	core.sound_play("pale_watcher_static", {pos = target_pos, gain = 0.5, max_hear_distance = 15}, true)
+	x_mob_core.play_sound(nil, "pale_watcher_static", {
+		pos = target_pos,
+		gain = 0.5,
+		max_hear_distance = 15,
+		ephemeral = true,
+	})
 
 	return itemstack
 end
@@ -266,7 +282,7 @@ local function stop_player_static_sounds(name)
 	local handles = static_core_sounds[name]
 	if handles then
 		for i = 1, #handles do
-			core.sound_stop(handles[i])
+			x_mob_core.stop_sound(handles[i])
 		end
 		static_core_sounds[name] = nil
 	end
@@ -340,14 +356,14 @@ local function trigger_static_core(itemstack, user, _pointed_thing)
 	local is_aiming = pale_watcher.ritual.is_aiming_at_page(user)
 	local handles = {}
 	if is_aiming then
-		local s1 = core.sound_play("pale_watcher_static", {to_player = name, gain = 0.8, pitch = 1.4}, false)
-		local s2 = core.sound_play("pale_watcher_page_whisper", {to_player = name, gain = 0.6}, false)
+		local s1 = x_mob_core.play_sound(user, "pale_watcher_static", {to_player = name, gain = 0.8, pitch = 1.4})
+		local s2 = x_mob_core.play_sound(user, "pale_watcher_page_whisper", {to_player = name, gain = 0.6})
 		if s1 then handles[#handles + 1] = s1 end
 		if s2 then handles[#handles + 1] = s2 end
 		core.chat_send_player(name, core.colorize(colors.warning,
 			S("★ The Static Core crackles violently! A Cursed Page is directly in your line of sight!")))
 	else
-		local s1 = core.sound_play("pale_watcher_static", {to_player = name, gain = 0.2, pitch = 0.8}, false)
+		local s1 = x_mob_core.play_sound(user, "pale_watcher_static", {to_player = name, gain = 0.2, pitch = 0.8})
 		if s1 then handles[#handles + 1] = s1 end
 		core.chat_send_player(name, core.colorize(colors.dimmed,
 			S("The Static Core hums softly... No cursed anomalies detected in this direction.")))
@@ -387,3 +403,4 @@ core.register_craftitem("pale_watcher:static_core", {
 })
 
 return pale_watcher.items
+

@@ -3,8 +3,6 @@
 	Cursed Page, Ritual Pyre, Burning Cleansing Flame, and Flash Light.
 ]]
 
-pale_watcher.nodes = pale_watcher.nodes or {}
-
 local colors = pale_watcher.colors
 local S = pale_watcher.S
 
@@ -17,8 +15,7 @@ core.register_lbm({
 	nodenames = {"pale_watcher:cursed_page"},
 	run_at_every_load = true,
 	action = function(pos, _node)
-		local meta = core.get_meta(pos)
-		local sid = meta:get_string("session_id")
+		local sid = core.get_meta(pos):get_string("session_id")
 
 		-- If no session or session is not active, purge immediately
 		if sid == "" or not pale_watcher.ritual.is_session_active(sid) then
@@ -64,7 +61,7 @@ local function collect_page(pos, player)
 	pale_watcher.particles.page_pickup(pos)
 
 	-- Sound of burning paper
-	core.sound_play("pale_watcher_paper_burn", {pos = pos, max_hear_distance = 25}, true)
+	x_mob_core.play_sound(nil, "pale_watcher_paper_burn", {pos = pos, max_hear_distance = 25, ephemeral = true})
 
 	-- Notify session manager (tracks progress in session & HUD only - zero inventory clutter)
 	pale_watcher.ritual.on_page_collected(pos, player)
@@ -91,8 +88,6 @@ core.register_node("pale_watcher:cursed_page", {
 	groups = {dig_immediate = 3, attached_node = 1, not_in_creative_inventory = 1},
 
 	on_construct = function(pos)
-		local meta = core.get_meta(pos)
-		meta:set_int("age", 0)
 		-- Start ambient particle wisp & subtle ink whisper loop
 		core.get_node_timer(pos):start(4.0)
 	end,
@@ -101,22 +96,11 @@ core.register_node("pale_watcher:cursed_page", {
 		pale_watcher.ritual.untrack_page(pos)
 	end,
 
-	on_timer = function(pos, elapsed)
-		local meta = core.get_meta(pos)
-		local sid = meta:get_string("session_id")
+	on_timer = function(pos)
+		local sid = core.get_meta(pos):get_string("session_id")
 
 		-- Orphan check: if session ended or server rebooted without active session, purge immediately
 		if sid == "" or not pale_watcher.ritual.is_session_active(sid) then
-			core.remove_node(pos)
-			pale_watcher.ritual.untrack_page(pos)
-			return false
-		end
-
-		local age = meta:get_int("age") + math.floor(elapsed)
-		meta:set_int("age", age)
-
-		-- Clean up inactive pages after 600s TTL strictly if not attached to an active session
-		if age > 600 then
 			core.remove_node(pos)
 			pale_watcher.ritual.untrack_page(pos)
 			return false
@@ -139,11 +123,12 @@ core.register_node("pale_watcher:cursed_page", {
 		end
 
 		if has_nearby then
-			core.sound_play("pale_watcher_page_whisper", {
+			x_mob_core.play_sound(nil, "pale_watcher_page_whisper", {
 				pos = pos,
 				gain = 0.55,
 				max_hear_distance = 24,
-			}, true)
+				ephemeral = true,
+			})
 
 			-- Subtle black ink wisp particle spawner (preset)
 			pale_watcher.particles.page_ambient(pos)
@@ -183,7 +168,7 @@ core.register_craftitem("pale_watcher:cursed_page_item", {
 		if session then
 			pale_watcher.ritual.on_page_collected(user:get_pos(), user)
 			itemstack:take_item(1)
-			core.sound_play("pale_watcher_paper_burn", {to_player = name}, true)
+			x_mob_core.play_sound(user, "pale_watcher_paper_burn", {to_player = name, ephemeral = true})
 			core.chat_send_player(name,
 				core.colorize(colors.pyre, S("★ You burn the cursed page in your hands, adding its soul to the ritual!")))
 		else
@@ -219,8 +204,7 @@ core.register_node("pale_watcher:ritual_pyre", {
 	groups = {cracky = 2, oddly_breakable_by_hand = 1},
 
 	on_construct = function(pos)
-		local meta = core.get_meta(pos)
-		meta:set_string("infotext", S("Ritual Pyre (Requires all Cursed Pages found in active encounter)"))
+		core.get_meta(pos):set_string("infotext", S("Ritual Pyre (Requires all Cursed Pages found in active encounter)"))
 	end,
 
 	on_destruct = function(pos)
@@ -250,13 +234,18 @@ core.register_node("pale_watcher:ritual_pyre", {
 
 			-- Emit cold dark ash rejection particles (preset)
 			pale_watcher.particles.pyre_cold_rejection(pos)
-			core.sound_play("pale_watcher_bell", {pos = pos, gain = 0.4, max_hear_distance = 15}, true)
+			x_mob_core.play_sound(nil, "pale_watcher_bell", {
+				pos = pos,
+				gain = 0.4,
+				max_hear_distance = 15,
+				ephemeral = true,
+			})
 			return
 		end
 
 		-- All required pages collected: Ignite the Cleansing Flame directly from session progress!
 		core.swap_node(pos, {name = "pale_watcher:ritual_pyre_burning", param2 = node.param2})
-		core.sound_play("pale_watcher_paper_burn", {pos = pos, gain = 1.0, max_hear_distance = 40})
+		x_mob_core.play_sound(nil, "pale_watcher_paper_burn", {pos = pos, gain = 1.0, max_hear_distance = 40})
 		local ignite_msg = S(
 			"★ The @1 bound curses ignite the Cleansing Flame! The Pale Watcher is forcibly drawn into the pyre!",
 			session.pages_total)
@@ -306,7 +295,12 @@ core.register_node("pale_watcher:ritual_pyre_burning", {
 	on_timer = function(pos)
 		pale_watcher.particles.remove_pyre_flames(pos)
 		pale_watcher.particles.pyre_cold_rejection(pos)
-		core.sound_play("pale_watcher_paper_burn", {pos = pos, gain = 0.5, max_hear_distance = 15}, true)
+		x_mob_core.play_sound(nil, "pale_watcher_paper_burn", {
+			pos = pos,
+			gain = 0.5,
+			max_hear_distance = 15,
+			ephemeral = true,
+		})
 		core.remove_node(pos)
 		return false
 	end,
@@ -332,9 +326,15 @@ core.register_node("pale_watcher:ritual_pyre_burning", {
 	on_flood = function(pos, _oldnode, _newnode)
 		pale_watcher.particles.remove_pyre_flames(pos)
 		pale_watcher.particles.pyre_cold_rejection(pos)
-		core.sound_play("pale_watcher_paper_burn", {pos = pos, gain = 0.5, max_hear_distance = 15}, true)
+		x_mob_core.play_sound(nil, "pale_watcher_paper_burn", {
+			pos = pos,
+			gain = 0.5,
+			max_hear_distance = 15,
+			ephemeral = true,
+		})
 		return false
 	end,
 })
 
 return pale_watcher.nodes
+
