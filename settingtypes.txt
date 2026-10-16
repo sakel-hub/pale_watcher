@@ -1,2 +1,39 @@
+# ==============================================================================
+# The Pale Watcher - Spawning & Multiplayer Survival Configuration
+# ==============================================================================
+
+# Enable or disable natural spawning in the wilderness.
+# If disabled, the Pale Watcher can only be spawned via admin command or custom events.
+pale_watcher_enable_natural_spawning (Enable natural spawning) bool true
+
+# Spawn rarity in dark forests. Higher values make the encounter rarer.
+# 15000: Common/aggressive, 30000: Recommended for survival, 60000: Rare event
+pale_watcher_spawn_chance (Spawn rarity chance) int 30000 1000 100000
+
+# Only allow the Pale Watcher to naturally spawn during the night.
+pale_watcher_night_only (Spawn at night only) bool true
+
+# Maximum ambient light level for natural spawning.
+# Setting to 6 or below ensures player torches and lanterns keep bases completely safe.
+pale_watcher_max_light (Maximum spawn light level) int 6 0 15
+
+# Minimum world elevation (Y coordinate) for natural spawning.
+# Default 0 includes sea-level shorelines while preventing spawns in underground caves.
+pale_watcher_min_elevation (Minimum spawn elevation) int 0 -31000 31000
+
+# Maximum world elevation (Y coordinate) for natural spawning.
+pale_watcher_max_elevation (Maximum spawn elevation) int 350 -31000 31000
+
+# Cooldown duration in seconds before the Pale Watcher can target the same player again.
+# Triggers after escaping, banishing the creature, or dying.
+pale_watcher_player_cooldown (Player encounter cooldown) float 1200.0 0.0 7200.0
+
+# Maximum number of simultaneous Pale Watcher encounters allowed across the entire server.
+# Keeps the encounter dramatic, prevents audio spam, and protects server performance.
+pale_watcher_max_active_encounters (Max server-wide encounters) int 1 1 10
+
+# Prevent spawning and page placement inside protected player claims (areas, protector, etc.).
+pale_watcher_respect_protection (Respect land claims) bool true
+
 # Domain gauntlet tether radius in nodes (escape distance from ritual altar origin)
 pale_watcher_tether_radius (Domain gauntlet tether radius) float 100.0 50.0 300.0

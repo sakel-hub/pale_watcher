@@ -29,12 +29,11 @@ msgstr "Skondenzovaná guľa kvantového rádiového šumu."
 msgid "A torn parchment inscribed with eldritch scrawls."
 msgstr "Roztrhaný pergamen popísaný tajomnými čmáranicami."
 
-msgid ""
-"A torn scrap of void fabric with crimson thread.\n"
-"Used to craft the Shroud of Stalking."
-msgstr ""
-"Roztrhaný kus látky prázdnoty s karmínovou niťou.\n"
-"Používa sa na výrobu Plášťa zakrádania."
+msgid "A torn scrap of void fabric with crimson thread."
+msgstr "Roztrhaný kus látky prázdnoty s karmínovou niťou."
+
+msgid "Used to craft the Shroud of Stalking."
+msgstr "Používa sa na výrobu Plášťa zakrádania."
 
 msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
 msgstr "Všetkých @1 strán zozbieraných! Vyrob Rituálnu hranicu a zažeň ho!"

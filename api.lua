@@ -23,6 +23,10 @@
 ---@field items table Wieldable tools and artifact materials
 ---@field ritual PaleWatcherRitual Dynamically scaling cursed page ritual session manager
 ---@field colors table Semantic chat & HUD color palette
+---@field palettes table Curated horror color palette definitions
+---@field palette_keys string[] Ordered list of palette identifiers
+---@field palette_names string[] Alias for palette_keys
+---@field palette_indices table<string, integer> Mapping of palette identifiers to texture variation indices
 ---@field TETHER_MAX number Domain gauntlet tether radius in nodes
 ---@field AMBUSH_DIST number Forward intercept ambush trigger distance in nodes
 pale_watcher = rawget(_G, "pale_watcher") or {}
@@ -37,6 +41,18 @@ pale_watcher.ritual = pale_watcher.ritual or {}
 -- Domain tether radius and intercept threshold configured from settingtypes
 pale_watcher.TETHER_MAX = tonumber(core.settings:get("pale_watcher_tether_radius")) or 100.0
 pale_watcher.AMBUSH_DIST = math.max(20.0, pale_watcher.TETHER_MAX - 15.0)
+
+-- Spawning and multiplayer survival settings
+pale_watcher.ENABLE_SPAWNING = core.settings:get_bool("pale_watcher_enable_natural_spawning", true)
+pale_watcher.SPAWN_CHANCE = tonumber(core.settings:get("pale_watcher_spawn_chance")) or 30000
+pale_watcher.NIGHT_ONLY = core.settings:get_bool("pale_watcher_night_only", true)
+pale_watcher.MAX_LIGHT = tonumber(core.settings:get("pale_watcher_max_light")) or 6
+pale_watcher.MIN_ELEVATION = tonumber(core.settings:get("pale_watcher_min_elevation")) or 0
+pale_watcher.MAX_ELEVATION = tonumber(core.settings:get("pale_watcher_max_elevation")) or 350
+pale_watcher.PLAYER_COOLDOWN = tonumber(core.settings:get("pale_watcher_player_cooldown")) or 1200.0
+pale_watcher.MAX_ACTIVE_ENCOUNTERS = tonumber(core.settings:get("pale_watcher_max_active_encounters")) or 1
+pale_watcher.RESPECT_PROTECTION = core.settings:get_bool("pale_watcher_respect_protection", true)
+
 
 ---Semantic UI & chat feedback color palette for high legibility
 pale_watcher.colors = {
@@ -87,6 +103,7 @@ pale_watcher.palette_keys = {
 	"quantum_slate",
 	"monochrome_noir",
 }
+pale_watcher.palette_names = pale_watcher.palette_keys
 
 ---Map of palette identifier to 1-based texture variation index for x_mob_core.
 pale_watcher.palette_indices = {

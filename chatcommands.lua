@@ -152,3 +152,43 @@ core.register_chatcommand("pw_purge_pages", {
 		return true, S("Purged @1 orphan cursed pages from world records.", count)
 	end,
 })
+
+core.register_chatcommand("pw_status", {
+	params = "",
+	description = S("Displays active Pale Watcher encounters, server cap, and player immunity cooldowns"),
+	privs = {server = true},
+	func = function(_name, _param)
+		local active_count = pale_watcher.ritual.get_active_session_count()
+		local max_count = pale_watcher.MAX_ACTIVE_ENCOUNTERS
+		local cooldowns = pale_watcher.ritual.get_all_player_cooldowns()
+
+		local lines = {
+			S("=== Pale Watcher Multiplayer Status ==="),
+			S("Active Encounters: @1 / @2 (Server Cap)", active_count, max_count),
+			S("Natural Spawning: @1 (Chance: 1 in @2, Night Only: @3, Max Light: @4, Y: @5 to @6)",
+				pale_watcher.ENABLE_SPAWNING and S("Enabled") or S("Disabled"),
+				pale_watcher.SPAWN_CHANCE,
+				pale_watcher.NIGHT_ONLY and S("Yes") or S("No"),
+				pale_watcher.MAX_LIGHT,
+				pale_watcher.MIN_ELEVATION,
+				pale_watcher.MAX_ELEVATION),
+			S("Respect Protection: @1", pale_watcher.RESPECT_PROTECTION and S("Yes") or S("No")),
+		}
+
+		local cd_list = {}
+		for pname, remaining in pairs(cooldowns) do
+			table.insert(cd_list, string.format("  • %s: %ds remaining", pname, remaining))
+		end
+
+		if #cd_list > 0 then
+			table.insert(lines, S("Player Immunity Cooldowns (@1 active):", #cd_list))
+			for _, cd_line in ipairs(cd_list) do
+				table.insert(lines, cd_line)
+			end
+		else
+			table.insert(lines, S("No players currently on encounter cooldown."))
+		end
+
+		return true, table.concat(lines, "\n")
+	end,
+})

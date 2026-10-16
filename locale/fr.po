@@ -29,12 +29,11 @@ msgstr "Une sphère condensée de bruit radio quantique."
 msgid "A torn parchment inscribed with eldritch scrawls."
 msgstr "Un parchemin déchiré couvert de gribouillis mystiques."
 
-msgid ""
-"A torn scrap of void fabric with crimson thread.\n"
-"Used to craft the Shroud of Stalking."
-msgstr ""
-"Un lambeau déchiré d'étoffe du néant au fil pourpre.\n"
-"Utilisé pour fabriquer le Linceul de Traque."
+msgid "A torn scrap of void fabric with crimson thread."
+msgstr "Un lambeau déchiré d'étoffe du néant au fil pourpre."
+
+msgid "Used to craft the Shroud of Stalking."
+msgstr "Utilisé pour fabriquer le Linceul de Traque."
 
 msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
 msgstr "Toutes les @1 pages sont rassemblées ! Fabriquez un Bûcher Rituel pour le bannir !"

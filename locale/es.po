@@ -29,12 +29,11 @@ msgstr "Una esfera condensada de ruido de radio cuántico."
 msgid "A torn parchment inscribed with eldritch scrawls."
 msgstr "Un pergamino rasgado con misteriosos garabatos."
 
-msgid ""
-"A torn scrap of void fabric with crimson thread.\n"
-"Used to craft the Shroud of Stalking."
-msgstr ""
-"Un retal desgarrado de tela del vacío con hilo carmesí.\n"
-"Usado para fabricar el Manto del Acecho."
+msgid "A torn scrap of void fabric with crimson thread."
+msgstr "Un retal desgarrado de tela del vacío con hilo carmesí."
+
+msgid "Used to craft the Shroud of Stalking."
+msgstr "Usado para fabricar el Manto del Acecho."
 
 msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
 msgstr "¡Todas las @1 páginas reunidas! ¡Fabrica una Pira Ritual para desterrarlo!"

@@ -535,6 +535,9 @@ local function step_tether_gauntlet(self, pos, t_pos, dtime)
 
 		local active_count = self.session_id and pale_watcher.ritual.get_active_player_count(self.session_id) or 0
 		if active_count > 1 then
+			if p_name then
+				pale_watcher.ritual.set_player_cooldown(p_name)
+			end
 			x_mob_core.set_target(self, nil)
 			self.ambush_charging = false
 			return false
@@ -737,7 +740,12 @@ local function step_extinguish_lights(self, pos, t_pos, dist, dtime)
 				})
 				target:set_wielded_item(ItemStack(""))
 				local t_name = target:get_player_name()
-				x_mob_core.play_sound("pale_watcher_static", {to_player = t_name, gain = 0.8, ephemeral = true})
+				x_mob_core.play_sound(target, "pale_watcher_static", {
+					pos = t_pos,
+					to_player = t_name,
+					gain = 0.8,
+					ephemeral = true,
+				})
 				core.chat_send_player(t_name,
 					core.colorize(colors.danger, S("Your trembling hands drop your light source into the darkness!")))
 			end
@@ -767,7 +775,7 @@ local function step_anti_bunker(self, t_pos, dist, dtime)
 		self.object:set_pos(choke_pos)
 		pale_watcher.particles.psychic_choke(t_pos)
 		local t_name = target:get_player_name()
-		x_mob_core.play_sound("pale_watcher_scare", {to_player = t_name, ephemeral = true})
+		x_mob_core.play_sound(self.object, "pale_watcher_scare", {pos = choke_pos, to_player = t_name, ephemeral = true})
 		local punch_fleshy = calculate_armor_scaled_punch(target, 6, 0.33, 2)
 		target:punch(self.object, 1.0, {
 			full_punch_interval = 1.0,
@@ -1156,11 +1164,12 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 	},
 
 	animations = {
-		idle = {track = "idle", x = 1, y = 40, speed = 15, loop = true},
-		walk = {track = "walk", x = 1, y = 40, speed = 20, loop = true},
-		attack = {track = "attack", x = 1, y = 30, speed = 25, loop = false},
-		stun = {track = "stun", x = 1, y = 55, speed = 20, loop = false},
-		death = {track = "death", x = 1, y = 40, speed = 15, loop = false},
+		idle = {track = "idle", speed = 1.0, loop = true},
+		walk = {track = "walk", speed = 1.0, loop = true},
+		attack = {track = "attack", speed = 1.2, loop = false},
+		stun = {track = "stun", speed = 1.0, loop = false},
+		death = {track = "death", speed = 1.0, loop = false},
+		death_implode = {track = "death_implode", speed = 1.0, loop = false},
 	},
 
 	drops = {
@@ -1180,10 +1189,20 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		end
 
 		local data = type(data_or_str) == "table" and data_or_str or {}
+		if type(data_or_str) == "string" and data_or_str ~= "" then
+			local deserialized = core.deserialize(data_or_str)
+			if type(deserialized) == "table" then
+				data = deserialized
+			end
+		end
+
+		self.saved_data = self.saved_data or {}
 		local saved_palette = data.palette_name or self.palette_name
-		local tex_idx = saved_palette and pale_watcher.palette_indices[saved_palette] or self.texture_no or 1
-		local chosen_palette = pale_watcher.palette_names[tex_idx] or "classic"
-		if self.texture_no ~= tex_idx then
+		local tex_idx = saved_palette and pale_watcher.palette_indices and pale_watcher.palette_indices[saved_palette]
+			or self.texture_no or 1
+		local palette_list = pale_watcher.palette_keys or pale_watcher.palette_names
+		local chosen_palette = (palette_list and palette_list[tex_idx]) or "abyssal_void"
+		if self.texture_no ~= tex_idx and self.set_texture then
 			self:set_texture(tex_idx)
 		end
 		self.palette_name = chosen_palette
@@ -1218,6 +1237,20 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 					self.session_id = existing_sid
 					self.origin_pos = pale_watcher.ritual.rebind_mob(existing_sid, self.object) or pos
 				else
+					-- Multiplayer survival guards: protection, server encounter cap, and player cooldown
+					if pale_watcher.RESPECT_PROTECTION and core.is_protected(pos, "") then
+						self.object:remove()
+						return
+					end
+					if pale_watcher.ritual.get_active_session_count() >= pale_watcher.MAX_ACTIVE_ENCOUNTERS then
+						self.object:remove()
+						return
+					end
+					if pale_watcher.ritual.is_any_nearby_player_on_cooldown(pos, WATCHER_AMBUSH_DIST) then
+						self.object:remove()
+						return
+					end
+
 					self.session_id = pale_watcher.ritual.start_session(self.object, pos)
 					self.origin_pos = pos
 					x_mob_core.play_sound("pale_watcher_bell", {
@@ -1404,11 +1437,18 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 
 		local p_pos = collector:get_pos()
 		if not p_pos then return end
+		local p_name = collector:get_player_name()
+		local tier = (self.session_id and pale_watcher.ritual.get_stalker_tier(self.session_id)) or 0
+
+		-- Distance scales closer as pages are collected (staying safely inside the 18-block fog)
+		local min_dist = math.max(4.0, 9.0 - (tier * 1.5))
+		local max_dist = math.max(6.0, 12.0 - (tier * 1.8))
+		local fallback_dist = math.max(5.0, 10.0 - (tier * 1.5))
+
 		local p_look = collector:get_look_dir()
-		-- Teleport behind the collector into a valid spot with 3 blocks of headroom
 		local look_flat = vector.normalize({x = p_look.x, y = 0, z = p_look.z})
-		local behind_pos = vector.add(p_pos, vector.multiply(look_flat, -14.0))
-		local candidate = find_blind_spot_node(collector, p_pos, 11, 17)
+		local behind_pos = vector.add(p_pos, vector.multiply(look_flat, -fallback_dist))
+		local candidate = find_blind_spot_node(collector, p_pos, math.floor(min_dist), math.ceil(max_dist))
 		if candidate then
 			behind_pos = candidate
 		else
@@ -1424,7 +1464,25 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 		self.object:set_acceleration({x = 0, y = -9.81, z = 0})
 		self.object:set_pos(behind_pos)
 		self.object:set_yaw(core.dir_to_yaw(vector.direction(behind_pos, p_pos)))
-		x_mob_core.play_sound("pale_watcher_scare", {to_player = collector:get_player_name(), ephemeral = true})
+
+		-- Visceral Audio & Visual Presence at arrival location
+		pale_watcher.particles.teleport_rift(behind_pos)
+		pale_watcher.particles.void_mist(behind_pos, 2.0, 18)
+		x_mob_core.play_sound(self.object, "pale_watcher_scare", {
+			pos = behind_pos,
+			to_player = p_name,
+			gain = 1.0,
+			distance = 40,
+			ephemeral = true,
+		})
+
+		-- Psychic shock & static jolt on collector HUD
+		pale_watcher.fx.update_player(collector, 10, true, 0.6, tier)
+
+		-- Prime immediate aggressive stalking tension
+		self.stalk_timer = 0
+		self.state = "stalking"
+		self.quantum_locked = false
 	end,
 
 	---The Cleansing Flame Banishment Sequence.
@@ -1494,59 +1552,62 @@ x_mob_core.register_mob("pale_watcher:pale_watcher", {
 })
 
 -- Natural Spawning: Spawns rarely in deep dark forests or beneath thick canopies
-x_mob_core.register_spawn("pale_watcher:pale_watcher", {
-	nodes = {
-		-- Default / Luanti Game
-		"group:soil",
-		"default:dirt_with_grass",
-		"default:dirt_with_coniferous_litter",
-		"default:dirt_with_rainforest_litter",
-		"default:dirt",
-		"default:dry_dirt_with_dry_grass",
-		"default:dirt_with_snow",
-		"default:permafrost_with_moss",
+if pale_watcher.ENABLE_SPAWNING then
+	x_mob_core.register_spawn("pale_watcher:pale_watcher", {
+		nodes = {
+			-- Default / Luanti Game
+			"group:soil",
+			"default:dirt_with_grass",
+			"default:dirt_with_coniferous_litter",
+			"default:dirt_with_rainforest_litter",
+			"default:dirt",
+			"default:dry_dirt_with_dry_grass",
+			"default:dirt_with_snow",
+			"default:permafrost_with_moss",
 
-		-- Mineclonia / Voxelibre
-		"group:dirt",
-		"group:grass_block",
-		"group:grass_block_snow",
-		"mcl_core:dirt_with_grass",
-		"mcl_core:dirt_with_grass_snow",
-		"mcl_core:dirt",
-		"mcl_core:coarse_dirt",
-		"mcl_core:podzol",
-		"mcl_core:podzol_snow",
-		"mcl_core:mycelium",
-		"mcl_mud:mud",
+			-- Mineclonia / Voxelibre
+			"group:dirt",
+			"group:grass_block",
+			"group:grass_block_snow",
+			"mcl_core:dirt_with_grass",
+			"mcl_core:dirt_with_grass_snow",
+			"mcl_core:dirt",
+			"mcl_core:coarse_dirt",
+			"mcl_core:podzol",
+			"mcl_core:podzol_snow",
+			"mcl_core:mycelium",
+			"mcl_mud:mud",
 
-		-- Everness
-		"everness:dirt_with_cursed_grass",
-		"everness:cursed_dirt",
-		"everness:dirt_with_coral_grass",
-		"everness:dirt_with_crystal_grass",
-		"everness:forsaken_tundra_dirt_with_grass",
-		"everness:dirt_with_grass_1",
-		"everness:crystal_cave_dirt_with_moss",
-		"everness:dry_dirt_with_dry_grass",
+			-- Everness
+			"everness:dirt_with_cursed_grass",
+			"everness:cursed_dirt",
+			"everness:dirt_with_coral_grass",
+			"everness:dirt_with_crystal_grass",
+			"everness:forsaken_tundra_dirt_with_grass",
+			"everness:dirt_with_grass_1",
+			"everness:crystal_cave_dirt_with_moss",
+			"everness:dry_dirt_with_dry_grass",
 
-		-- Ethereal
-		"ethereal:green_dirt",
-		"ethereal:grove_dirt",
-		"ethereal:bamboo_dirt",
-		"ethereal:jungle_dirt",
-		"ethereal:prairie_dirt",
-		"ethereal:cold_dirt",
-		"ethereal:crystal_dirt",
-		"ethereal:mushroom_dirt",
-		"ethereal:gray_dirt",
-		"ethereal:dry_dirt",
-	},
-	chance = 15000,
-	min_light = 0,
-	max_light = 15,
-	min_elevation = -31000,
-	max_elevation = 31000,
-	active_object_count = 1,
-})
+			-- Ethereal
+			"ethereal:green_dirt",
+			"ethereal:grove_dirt",
+			"ethereal:bamboo_dirt",
+			"ethereal:jungle_dirt",
+			"ethereal:prairie_dirt",
+			"ethereal:cold_dirt",
+			"ethereal:crystal_dirt",
+			"ethereal:mushroom_dirt",
+			"ethereal:gray_dirt",
+			"ethereal:dry_dirt",
+		},
+		chance = pale_watcher.SPAWN_CHANCE,
+		night_only = pale_watcher.NIGHT_ONLY,
+		min_light = 0,
+		max_light = pale_watcher.MAX_LIGHT,
+		min_elevation = pale_watcher.MIN_ELEVATION,
+		max_elevation = pale_watcher.MAX_ELEVATION,
+		active_object_count = 1,
+	})
+end
 
 return true

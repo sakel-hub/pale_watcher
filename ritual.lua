@@ -7,6 +7,7 @@
 local S = pale_watcher.S
 
 local active_sessions = {}
+local player_cooldowns = {}
 -- active_sessions[session_id] = {
 --     session_id = string,
 --     pages_collected = 0,
@@ -24,6 +25,77 @@ local active_sessions = {}
 pale_watcher.ritual.SESSION_RADIUS = math.max(60.0, pale_watcher.TETHER_MAX - 15.0)
 pale_watcher.ritual.SESSION_EXIT_RADIUS = pale_watcher.TETHER_MAX + 20.0
 pale_watcher.ritual.SESSION_COMPLETE_EXIT_RADIUS = pale_watcher.TETHER_MAX + 60.0
+
+---Applies encounter immunity cooldown to a player.
+---@param player_name string
+---@param duration? number
+function pale_watcher.ritual.set_player_cooldown(player_name, duration)
+	local cd = duration or pale_watcher.PLAYER_COOLDOWN
+	if cd > 0 and player_name and player_name ~= "" then
+		player_cooldowns[player_name] = core.get_gametime() + cd
+	end
+end
+
+---Checks if a player is under encounter immunity cooldown.
+---@param player_name string
+---@return boolean on_cooldown
+---@return number remaining_seconds
+function pale_watcher.ritual.is_player_on_cooldown(player_name)
+	local expiry = player_cooldowns[player_name]
+	if not expiry then return false, 0 end
+	local now = core.get_gametime()
+	if now >= expiry then
+		player_cooldowns[player_name] = nil
+		return false, 0
+	end
+	return true, math.max(0, math.floor(expiry - now + 0.5))
+end
+
+---Checks if any alive player within radius of pos is under encounter cooldown.
+---@param pos Vector
+---@param radius? number
+---@return boolean on_cooldown
+function pale_watcher.ritual.is_any_nearby_player_on_cooldown(pos, radius)
+	local r = radius or 50
+	local players = core.get_connected_players()
+	for i = 1, #players do
+		local player = players[i]
+		if x_mob_core.is_player_alive(player) then
+			local p_pos = player:get_pos()
+			if p_pos and vector.distance(p_pos, pos) <= r then
+				if pale_watcher.ritual.is_player_on_cooldown(player:get_player_name()) then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+---Returns the number of currently active Pale Watcher sessions.
+---@return integer count
+function pale_watcher.ritual.get_active_session_count()
+	local count = 0
+	for _ in pairs(active_sessions) do
+		count = count + 1
+	end
+	return count
+end
+
+---Returns a table of all active player cooldowns {player_name = remaining_seconds}.
+---@return table<string, number>
+function pale_watcher.ritual.get_all_player_cooldowns()
+	local res = {}
+	local now = core.get_gametime()
+	for name, expiry in pairs(player_cooldowns) do
+		if now < expiry then
+			res[name] = math.floor(expiry - now + 0.5)
+		else
+			player_cooldowns[name] = nil
+		end
+	end
+	return res
+end
 
 local SESSION_RADIUS = pale_watcher.ritual.SESSION_RADIUS
 local SESSION_EXIT_RADIUS = pale_watcher.ritual.SESSION_EXIT_RADIUS
@@ -224,8 +296,11 @@ local function spawn_pages_dynamically(center, count, session_id, existing_place
 						local air_pos = vector.add(node_pos, dir)
 						if core.get_node(air_pos).name == "air" and
 							x_mob_core.utils.is_passable_node(air_pos.x, air_pos.y - 1, air_pos.z, false) then
-							local ground_pos = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
-							if pale_watcher.is_walkable_ground(core.get_node(ground_pos).name) then
+							local is_claimed = pale_watcher.RESPECT_PROTECTION and
+								(core.is_protected(air_pos, "") or core.is_protected(node_pos, ""))
+							if not is_claimed then
+								local ground_pos = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
+								if pale_watcher.is_walkable_ground(core.get_node(ground_pos).name) then
 								local wall_dir = vector.multiply(dir, -1)
 								core.set_node(air_pos, {
 									name = "pale_watcher:cursed_page",
@@ -245,6 +320,7 @@ local function spawn_pages_dynamically(center, count, session_id, existing_place
 								break
 							end
 						end
+					end
 					end
 				end
 			end
@@ -512,6 +588,10 @@ function pale_watcher.ritual.rebind_mob(session_id, mob_ref)
 	local session = active_sessions[session_id]
 	if session then
 		session.mob_ref = mob_ref
+		local ent = mob_ref and mob_ref:is_valid() and mob_ref:get_luaentity()
+		if ent and ent.palette_name then
+			session.palette_name = ent.palette_name
+		end
 		return session.center
 	end
 	return nil
@@ -575,11 +655,13 @@ function pale_watcher.ritual.start_session(mob_ref, center_pos)
 	end
 	page_count = math.max(1, page_count)
 
+	local mob_ent = mob_ref and mob_ref:is_valid() and mob_ref:get_luaentity()
 	local session = {
 		session_id = session_id,
 		pages_collected = 0,
 		pages_total = page_count,
 		mob_ref = mob_ref,
+		palette_name = mob_ent and mob_ent.palette_name,
 		center = center_pos,
 		elapsed_time = 0.0,
 		stalker_tier = 0,
@@ -645,6 +727,7 @@ function pale_watcher.ritual.end_session(session_id, victory)
 	purge_session_pages(session)
 
 	for name, _ in pairs(session.players) do
+		pale_watcher.ritual.set_player_cooldown(name)
 		local player = core.get_player_by_name(name)
 		if player then
 			remove_player_hud(player, session)
@@ -764,6 +847,27 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 		if ent and ent.on_page_collected then
 			ent:on_page_collected(clicker)
 		end
+	else
+		-- Mob entity was unloaded into an inactive mapblock or lost: re-summon and rebind near collector
+		if clicker and clicker:is_player() then
+			local cp = clicker:get_pos()
+			if cp then
+				local spawn_ground = pale_watcher.find_ground_node(cp.x - 10, cp.y, cp.z - 10, 4, 10, 3)
+				local spawn_pos = spawn_ground and {x = spawn_ground.x, y = spawn_ground.y + 0.5, z = spawn_ground.z} or cp
+				local new_mob = pale_watcher.spawn(spawn_pos, session.palette_name)
+				if new_mob and new_mob:is_valid() then
+					session.mob_ref = new_mob
+					local ent = new_mob:get_luaentity()
+					if ent then
+						ent.session_id = session.session_id
+						if ent.saved_data then ent.saved_data.session_id = session.session_id end
+						if ent.on_page_collected then
+							ent:on_page_collected(clicker)
+						end
+					end
+				end
+			end
+		end
 	end
 
 	x_mob_core.emit("pale_watcher:page_collected", clicker,
@@ -779,7 +883,7 @@ function pale_watcher.ritual.on_page_collected(pos, clicker)
 					core.colorize(pale_watcher.colors.warning,
 						S("★ ALL @1 CURSED PAGES COLLECTED! Craft a Ritual Pyre and burn them to banish the nightmare! ★",
 							session.pages_total)))
-				x_mob_core.play_sound("pale_watcher_bell", {to_player = name, gain = 1.0, ephemeral = true})
+				x_mob_core.play_sound(p, "pale_watcher_bell", {to_player = name, gain = 1.0, ephemeral = true})
 			end
 		end
 	end
@@ -886,6 +990,7 @@ core.register_globalstep(function(dtime)
 				if next_time <= 0 then
 					session.departed_players[pname] = nil
 					session.players[pname] = nil
+					pale_watcher.ritual.set_player_cooldown(pname)
 					expired_any = true
 				else
 					session.departed_players[pname] = next_time
@@ -917,7 +1022,7 @@ core.register_globalstep(function(dtime)
 									session.pages_collected, session.pages_total)
 								core.chat_send_player(pname,
 									core.colorize(pale_watcher.colors.warning, contract_msg))
-								x_mob_core.play_sound("pale_watcher_bell", {to_player = pname, gain = 1.0, ephemeral = true})
+								x_mob_core.play_sound(p, "pale_watcher_bell", {to_player = pname, gain = 1.0, ephemeral = true})
 							end
 						end
 					else

@@ -29,12 +29,11 @@ msgstr "Сжатая сфера квантового радиошума."
 msgid "A torn parchment inscribed with eldritch scrawls."
 msgstr "Разорванный пергамент, покрытый потусторонними письменами."
 
-msgid ""
-"A torn scrap of void fabric with crimson thread.\n"
-"Used to craft the Shroud of Stalking."
-msgstr ""
-"Отрезок ткани пустоты с алой нитью.\n"
-"Используется для создания Савана выслеживания."
+msgid "A torn scrap of void fabric with crimson thread."
+msgstr "Отрезок ткани пустоты с алой нитью."
+
+msgid "Used to craft the Shroud of Stalking."
+msgstr "Используется для создания Савана выслеживания."
 
 msgid "All @1 pages collected! Craft a Ritual Pyre to banish him!"
 msgstr "Все @1 страниц собраны! Создайте ритуальный костёр, чтобы изгнать его!"
