@@ -12,11 +12,13 @@
     "tags": [
         "mobs",
         "pve",
-        "horror",
         "survival"
+    ],
+    "content_warnings": [
+        "horror"
     ],
     "repo": "https://github.com/sakel-hub/pale_watcher",
     "issue_tracker": "https://github.com/sakel-hub/pale_watcher/issues",
-    "ai_disclosure": "ASSISTED",
+    "ai_disclosure": "GENERATED",
     "website": "https://github.com/sakel-hub/pale_watcher#readme"
 }
