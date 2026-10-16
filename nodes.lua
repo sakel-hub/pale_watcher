@@ -73,19 +73,31 @@ end
 core.register_node("pale_watcher:cursed_page", {
 	description = S("Cursed Page"),
 	short_description = S("Cursed Page"),
-	drawtype = "signlike",
+	drawtype = "nodebox",
 	tiles = {"pale_watcher_cursed_page.png"},
+	use_texture_alpha = "clip",
 	inventory_image = "pale_watcher_cursed_page_item.png",
 	wield_image = "pale_watcher_cursed_page_item.png",
 	drop = "",
 	paramtype = "light",
 	paramtype2 = "wallmounted",
 	sunlight_propagates = true,
+	is_ground_content = false,
 	walkable = false,
+	light_source = 1,
+	node_box = {
+		type = "wallmounted",
+		wall_top    = {-0.35, 0.46875, -0.3, 0.35, 0.5, 0.3},
+		wall_bottom = {-0.35, -0.5, -0.3, 0.35, -0.46875, 0.3},
+		wall_side   = {-0.5, -0.35, -0.3, -0.46875, 0.35, 0.3},
+	},
 	selection_box = {
 		type = "wallmounted",
+		wall_top    = {-0.4, 0.35, -0.35, 0.4, 0.5, 0.35},
+		wall_bottom = {-0.4, -0.5, -0.35, 0.4, -0.35, 0.35},
+		wall_side   = {-0.5, -0.4, -0.35, -0.35, 0.4, 0.35},
 	},
-	groups = {dig_immediate = 3, attached_node = 1, not_in_creative_inventory = 1},
+	groups = {dig_immediate = 3, not_in_creative_inventory = 1},
 
 	on_construct = function(pos)
 		-- Start ambient particle wisp & subtle ink whisper loop
@@ -100,7 +112,7 @@ core.register_node("pale_watcher:cursed_page", {
 		local sid = core.get_meta(pos):get_string("session_id")
 
 		-- Orphan check: if session ended or server rebooted without active session, purge immediately
-		if sid == "" or not pale_watcher.ritual.is_session_active(sid) then
+		if sid ~= "" and not pale_watcher.ritual.is_session_active(sid) then
 			core.remove_node(pos)
 			pale_watcher.ritual.untrack_page(pos)
 			return false
@@ -183,7 +195,7 @@ core.register_craftitem("pale_watcher:cursed_page_item", {
 -- Attuned directly to the active Pale Watcher encounter session: no page items in inventory required
 core.register_node("pale_watcher:ritual_pyre", {
 	description = S("Ritual Pyre") .. "\n" ..
-		core.colorize(colors.pyre, S("Attuned to the Cursed Pages in the active encounter.") .. "\n") ..
+		core.colorize(colors.pyre, S("Attuned to the Cursed Pages in the active encounter.")) .. "\n" ..
 		core.colorize(colors.warning, S("Right-Click when all cursed pages are found to ignite the Cleansing Flame.")),
 	short_description = S("Ritual Pyre"),
 	drawtype = "nodebox",

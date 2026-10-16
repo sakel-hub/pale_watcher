@@ -52,7 +52,7 @@ pale_watcher.MAX_ELEVATION = tonumber(core.settings:get("pale_watcher_max_elevat
 pale_watcher.PLAYER_COOLDOWN = tonumber(core.settings:get("pale_watcher_player_cooldown")) or 1200.0
 pale_watcher.MAX_ACTIVE_ENCOUNTERS = tonumber(core.settings:get("pale_watcher_max_active_encounters")) or 1
 pale_watcher.RESPECT_PROTECTION = core.settings:get_bool("pale_watcher_respect_protection", true)
-
+pale_watcher.FOG_DISTANCE = tonumber(core.settings:get("pale_watcher_fog_distance")) or 48
 
 ---Semantic UI & chat feedback color palette for high legibility
 pale_watcher.colors = {

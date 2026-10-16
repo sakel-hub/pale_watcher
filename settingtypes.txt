@@ -37,3 +37,8 @@ pale_watcher_respect_protection (Respect land claims) bool true
 
 # Domain gauntlet tether radius in nodes (escape distance from ritual altar origin)
 pale_watcher_tether_radius (Domain gauntlet tether radius) float 100.0 50.0 300.0
+
+# Maximum viewing distance in blocks during the claustrophobic domain fog.
+# Default 48 ensures nearby terrain, trees, and mapblocks mesh and load properly while keeping a dense horror fog.
+pale_watcher_fog_distance (Haunted fog viewing distance) int 48 24 120
+

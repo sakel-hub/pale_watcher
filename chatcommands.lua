@@ -57,7 +57,21 @@ core.register_chatcommand("pw_locate", {
 				end
 				local restored = false
 				if node.name ~= "pale_watcher:cursed_page" then
-					core.set_node(pos, {name = "pale_watcher:cursed_page"})
+					local found_wall_dir = nil
+					local cardinal_dirs = {
+						{x = 1, y = 0, z = 0}, {x = -1, y = 0, z = 0},
+						{x = 0, y = 0, z = 1}, {x = 0, y = 0, z = -1}
+					}
+					for _, d in ipairs(cardinal_dirs) do
+						local check_wall = vector.add(pos, d)
+						local wn = core.get_node(check_wall).name
+						if wn ~= "air" and wn ~= "ignore" then
+							found_wall_dir = d
+							break
+						end
+					end
+					local p2 = found_wall_dir and core.dir_to_wallmounted(found_wall_dir) or 0
+					core.set_node(pos, {name = "pale_watcher:cursed_page", param2 = p2})
 					local meta = core.get_meta(pos)
 					if sid then meta:set_string("session_id", sid) end
 					core.get_node_timer(pos):start(4.0)

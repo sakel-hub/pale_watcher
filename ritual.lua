@@ -294,33 +294,42 @@ local function spawn_pages_dynamically(center, count, session_id, existing_place
 					x_mob_core.utils.is_walkable_node(node_pos.x, node_pos.y - 1, node_pos.z) then
 					for _, dir in ipairs(CARDINAL_DIRS) do
 						local air_pos = vector.add(node_pos, dir)
-						if core.get_node(air_pos).name == "air" and
-							x_mob_core.utils.is_passable_node(air_pos.x, air_pos.y - 1, air_pos.z, false) then
+						if core.get_node(air_pos).name == "air" then
 							local is_claimed = pale_watcher.RESPECT_PROTECTION and
 								(core.is_protected(air_pos, "") or core.is_protected(node_pos, ""))
 							if not is_claimed then
-								local ground_pos = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
-								if pale_watcher.is_walkable_ground(core.get_node(ground_pos).name) then
-								local wall_dir = vector.multiply(dir, -1)
-								core.set_node(air_pos, {
-									name = "pale_watcher:cursed_page",
-									param2 = core.dir_to_wallmounted(wall_dir),
-								})
+								local ground_1 = {x = air_pos.x, y = air_pos.y - 1, z = air_pos.z}
+								local ground_2 = {x = air_pos.x, y = air_pos.y - 2, z = air_pos.z}
+								local is_valid_surface = false
 
-								if session_id then
-									core.get_meta(air_pos):set_string("session_id", session_id)
+								if pale_watcher.is_walkable_ground(core.get_node(ground_1).name) then
+									is_valid_surface = true
+								elseif x_mob_core.utils.is_passable_node(ground_1.x, ground_1.y, ground_1.z, false)
+									and pale_watcher.is_walkable_ground(core.get_node(ground_2).name) then
+									is_valid_surface = true
 								end
-								core.get_node_timer(air_pos):start(4.0)
-								pale_watcher.ritual.track_page(air_pos, session_id)
 
-								local hash = core.pos_to_string(air_pos)
-								placed[hash] = air_pos
-								table.insert(placed_list, air_pos)
-								spawned = spawned + 1
-								break
+								if is_valid_surface then
+									local wall_dir = vector.multiply(dir, -1)
+									core.set_node(air_pos, {
+										name = "pale_watcher:cursed_page",
+										param2 = core.dir_to_wallmounted(wall_dir),
+									})
+
+									if session_id then
+										core.get_meta(air_pos):set_string("session_id", session_id)
+									end
+									core.get_node_timer(air_pos):start(4.0)
+									pale_watcher.ritual.track_page(air_pos, session_id)
+
+									local hash = core.pos_to_string(air_pos)
+									placed[hash] = air_pos
+									table.insert(placed_list, air_pos)
+									spawned = spawned + 1
+									break
+								end
 							end
 						end
-					end
 					end
 				end
 			end

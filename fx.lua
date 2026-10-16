@@ -37,8 +37,13 @@ local DAY_MAX_STATIC_ALPHA = 130    -- ~51.0% max opacity: high-contrast snow cu
 local NIGHT_MAX_VIGNETTE_ALPHA = 100 -- ~39% max opacity: soft dark framing at night
 local DAY_MAX_VIGNETTE_ALPHA = 150  -- ~58.8% max opacity: deep cinematic gloom contrasting with bright day
 
-local DOMAIN_FOG_DISTANCE = 18 -- Upper bound viewing distance in blocks during domain fog
-local DOMAIN_FOG_START = 0.25  -- Mist begins ramping at ~4.5 blocks, thick by 18 blocks
+local DOMAIN_FOG_START = 0.25 -- Mist begins ramping at ~12 blocks, dense by domain fog distance
+
+---Returns the active domain fog viewing distance in blocks.
+---@return number
+local function get_domain_fog_distance()
+	return pale_watcher.FOG_DISTANCE or 48
+end
 
 ---@param name string
 ---@return PaleWatcherPlayerFXState
@@ -330,11 +335,12 @@ function pale_watcher.fx.apply_claustrophobic_fog(player, force)
 	if not player or not player:is_player() then return end
 	local name = player:get_player_name()
 	local state = get_or_create_state(name)
+	local target_fog_dist = get_domain_fog_distance()
 
 	-- Check if fog is already properly applied on the engine side
 	if not force and state.fog_active then
 		local cur_sky = player:get_sky(true)
-		if cur_sky and cur_sky.fog and cur_sky.fog.fog_distance == DOMAIN_FOG_DISTANCE then
+		if cur_sky and cur_sky.fog and cur_sky.fog.fog_distance == target_fog_dist then
 			return
 		end
 	end
@@ -342,7 +348,7 @@ function pale_watcher.fx.apply_claustrophobic_fog(player, force)
 	state.fog_active = true
 	player:set_sky({
 		fog = {
-			fog_distance = DOMAIN_FOG_DISTANCE,
+			fog_distance = target_fog_dist,
 			fog_start = DOMAIN_FOG_START,
 		}
 	})
@@ -353,13 +359,14 @@ end
 ---@return boolean is_active
 ---@return number view_distance Maximum visibility distance in blocks
 function pale_watcher.fx.get_fog_status(player)
-	if not player or not player:is_player() then return false, 100 end
+	local fog_dist = get_domain_fog_distance()
+	if not player or not player:is_player() then return false, fog_dist end
 	local name = player:get_player_name()
 	local state = active_fx[name]
 	if state and state.fog_active then
-		return true, DOMAIN_FOG_DISTANCE
+		return true, fog_dist
 	end
-	return false, 100
+	return false, fog_dist
 end
 
 ---Restores standard fog and view distance when escaping domain or defeating Pale Watcher.
@@ -447,16 +454,17 @@ core.register_globalstep(function(dtime)
 		fog_watchdog_timer = fog_watchdog_timer + dtime
 		if fog_watchdog_timer >= 0.5 then
 			fog_watchdog_timer = 0
+			local target_dist = get_domain_fog_distance()
 			for name, state in pairs(active_fx) do
 				if state.fog_active then
 					local player = core.get_player_by_name(name)
 					if player then
 						local cur_sky = player:get_sky(true)
 						local cur_dist = cur_sky and cur_sky.fog and cur_sky.fog.fog_distance
-						if cur_dist ~= DOMAIN_FOG_DISTANCE then
+						if cur_dist ~= target_dist then
 							player:set_sky({
 								fog = {
-									fog_distance = DOMAIN_FOG_DISTANCE,
+									fog_distance = target_dist,
 									fog_start = DOMAIN_FOG_START,
 								}
 							})
