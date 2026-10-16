@@ -1,7 +1,7 @@
 {
     "name": "pale_watcher",
     "version": "1.0.0",
-    "description": "Psychological horror mob featuring quantum stalking, scaling cursed pages ritual, flash camera, and cleansing pyre banishment.",
+    "description": "A chilling forest stalker that freezes when watched and creeps closer in the dark. Hunt cursed pages, fend it off with a flash camera, and banish it with sacred fire.",
     "main": "init.lua",
     "type": "module",
     "engines": {

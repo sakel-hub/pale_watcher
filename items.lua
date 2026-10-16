@@ -154,10 +154,10 @@ end
 
 core.register_tool("pale_watcher:flash_camera", {
 	description = S("Vintage Flash Camera") .. "\n" ..
-		core.colorize(colors.system, S("Left-Click or Right-Click: Release high-intensity xenon flash.") .. "\n") ..
-		core.colorize(colors.warning, S("• Blinds the Pale Watcher, forcing an evasive retreat.") .. "\n") ..
-		core.colorize("#e0e0e0", S("• Illuminates deep darkness.") .. "\n") ..
-		core.colorize(colors.dimmed, S("Durability: 3 flash charges.") .. "\n") ..
+		core.colorize(colors.system, S("Left-Click or Right-Click: Release high-intensity xenon flash.")) .. "\n" ..
+		core.colorize(colors.warning, S("• Blinds the Pale Watcher, forcing an evasive retreat.")) .. "\n" ..
+		core.colorize("#e0e0e0", S("• Illuminates deep darkness.")) .. "\n" ..
+		core.colorize(colors.dimmed, S("Durability: 3 flash charges.")) .. "\n" ..
 		core.colorize(colors.system, S("Cooldown: 10 seconds.")),
 	short_description = S("Flash Camera"),
 	inventory_image = "pale_watcher_flash_camera.png",
@@ -172,8 +172,8 @@ core.register_tool("pale_watcher:flash_camera", {
 -- Dimensional Cloth Drop Item
 core.register_craftitem("pale_watcher:dimensional_cloth", {
 	description = S("Dimensional Cloth") .. "\n" ..
-		core.colorize("#bbaaff",
-			S("A torn scrap of void fabric with crimson thread.\nUsed to craft the Shroud of Stalking.")),
+		core.colorize("#bbaaff", S("A torn scrap of void fabric with crimson thread.")) .. "\n" ..
+		core.colorize("#bbaaff", S("Used to craft the Shroud of Stalking.")),
 	short_description = S("Dimensional Cloth"),
 	inventory_image = "pale_watcher_dimensional_cloth.png",
 	wield_image = "pale_watcher_dimensional_cloth.png",
@@ -260,7 +260,7 @@ end
 
 core.register_tool("pale_watcher:shroud_of_stalking", {
 	description = S("Shroud of Stalking") .. "\n" ..
-		core.colorize("#c0b0ff", S("Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m).") .. "\n") ..
+		core.colorize("#c0b0ff", S("Sneak + Click (LMB or RMB) to Blink forward into the shadows (14m).")) .. "\n" ..
 		core.colorize(colors.dimmed, S("Cooldown: 4 seconds.")),
 	short_description = S("Shroud of Stalking"),
 	inventory_image = "pale_watcher_shroud_of_stalking.png",
@@ -390,7 +390,7 @@ end
 
 core.register_craftitem("pale_watcher:static_core", {
 	description = S("Static Core") .. "\n" ..
-		core.colorize(colors.system, S("A condensed sphere of quantum radio noise.") .. "\n") ..
+		core.colorize(colors.system, S("A condensed sphere of quantum radio noise.")) .. "\n" ..
 		core.colorize(colors.whisper, S("Click to detect lingering cursed anomalies in your line of sight.")),
 	short_description = S("Static Core"),
 	inventory_image = "pale_watcher_hud_static_1.png",

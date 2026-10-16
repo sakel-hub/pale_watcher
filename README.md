@@ -8,11 +8,28 @@
 [![Luacheck](https://img.shields.io/github/actions/workflow/status/sakel-hub/pale_watcher/luacheck.yml?label=Luacheck&logo=lua)](https://github.com/sakel-hub/pale_watcher/actions)
 ![AI-Assisted](https://img.shields.io/badge/AI--assisted-gray)
 
-A psychological horror mob mod for Luanti powered by the `x_mob_core` framework.
+A psychological horror encounter mod for Luanti. Step into the fog-shrouded woods, gather cursed pages, and face a relentless entity that moves only when unseen.
 
 ![The Pale Watcher](screenshot.png)
 
-The Pale Watcher is an eerie nightmare creature that stalks players through dark forests. Rather than chasing you like a standard monster, he uses **True Quantum Stalking**: freezing completely still whenever you look straight at him, and silently lunging forward through blind spots the instant you look away.
+The Pale Watcher is an eerie nightmare entity that stalks players through dark forests. Rather than chasing you like an ordinary monster, he observes the **Rules of the Dark**: he freezes completely motionless whenever you look straight at him, but inches silently through blind spots and tree trunks the instant you look away or blink.
+
+---
+
+## Installation & Requirements
+
+### Installing via ContentDB (Recommended)
+1. Open Luanti and click **Content** &rarr; **Browse online content**.
+2. Search for **The Pale Watcher** (`pale_watcher`).
+3. Click **Install**. Luanti will automatically install the required [`x_mob_core`](https://content.luanti.org/packages/SaKeL/x_mob_core/) dependency.
+4. Enable both mods in your world settings.
+
+### Manual Installation
+1. Download or clone this repository into your `mods/` directory as `pale_watcher`.
+2. Make sure you also have [`x_mob_core`](https://content.luanti.org/packages/SaKeL/x_mob_core/) installed in your `mods/` directory.
+3. Enable `pale_watcher` and `x_mob_core` in your world configuration.
+
+*Optional supported mods for enhanced compatibility*: `player_monoids`, `playerphysics`, `pova`, `default` (Minetest Game), `mcl_core` (MineClone), `everness`, `ethereal`.
 
 ---
 
@@ -20,7 +37,7 @@ The Pale Watcher is an eerie nightmare creature that stalks players through dark
 
 Venturing through deep, unlit forests at night can awaken the Pale Watcher. When he chooses you as his prey, the surrounding woods are sealed in a heavy black fog, and **Cursed Pages** appear scattered across nearby tree trunks and stone faces.
 
-The number of cursed pages dynamically scales with the size of your hunting party:
+The number of cursed pages dynamically scales with the size of your party:
 - **Solo Explorer (1 Player)**: **5 Pages**
 - **Duo (2 Players)**: **8 Pages**
 - **Trio (3 Players)**: **11 Pages**
@@ -73,15 +90,15 @@ Your goal is simple yet terrifying:
 ### Phase 2: Finding the Cursed Pages
 - **Whispers and Ink**: When you get within 24 blocks of a page, faint whispers echo around you and dark ink wisps drift off the tree bark.
 - **Instant Absorption**: Punch or right-click a page to pick it up. The curse is instantly absorbed into your ritual progress—pages never clutter your bag with unnecessary items.
-- **The Static Core Scanner**: If you find or craft a **Static Core**, holding it and clicking (left or right) acts like a paranormal detector. If you point directly toward a hidden page within 20 blocks, the core crackles loudly with static and eerie whispers.
+- **The Static Core (Paranormal Detector)**: If you find or craft a **Static Core**, holding it and clicking (left or right) acts like a supernatural detector. If you point directly toward a hidden page within 20 blocks, the core crackles loudly with static and eerie whispers.
 - **Ritual Ready**: Once your team finds the required number of pages, the counter at the top of your screen shifts from soft ivory to bright glowing gold: `★ PAGES: [Total] / [Total] — IGNITE RITUAL PYRE! ★`.
 
 ### Phase 3: Surviving the Stalker
 While you search for pages, the Pale Watcher will be hunting you:
 - **The Glancing Rule**: Looking straight at him freezes him in place. However, staring continuously drains your sanity, gives you tunnel vision, slows your movement, and slowly hurts you. Glance at him for a second or two to stop his advance, then look away to keep running.
 - **Vintage Flash Camera**: If he corners you, bring up your **Vintage Flash Camera** and click (left or right). The blinding xenon flash stuns him for 3 to 5 seconds, making him cover his face and retreat into the misty tree line. The camera holds 3 flash charges and takes 10 seconds to recharge between shots.
-- **Do Not Hide in Tiny Holes**: Digging down and sealing yourself inside a tight 1x1 or 1x2 bunker will not save you. Cramped hideouts trigger his **Anti-Bunker Curse**—he will phase straight through the wall and choke you with dark energy.
-- **Weave Through Trees**: If you sprint in a straight line, he will anticipate your path and teleport ahead of you behind the trees. Weave around tree trunks to break his line of approach.
+- **No Coward's Refuge**: Digging down and sealing yourself inside a tight 1x1 or 1x2 bunker will not save you. Cramped hideouts anger the entity—he will phase straight through the wall and choke you with dark void energy.
+- **Weave Through Trees**: If you sprint in a straight line, he will anticipate your path and slip ahead of you behind the trees. Weave around tree trunks to break his line of approach.
 
 ### Phase 4: The Pyre Banishment (Completing the Encounter)
 Once all required pages are gathered:
@@ -113,18 +130,18 @@ If you cannot find all pages, you can still survive through two escape methods (
 
 ---
 
-## Game Mechanics & Creature Behavior
+## The Stalker's Behavior & World Atmosphere
 
-### Quantum Stalking Rules
-- **Direct Gaze Freeze**: When you look directly in his direction, the Pale Watcher freezes motionless with an imposing stare. He will not vanish when you turn around or approach—giving you the full, chilling jumpscare!
-- **Close-Range Retaliation**: If you dare to approach him within melee striking reach (around 2.5 blocks), the Pale Watcher delivers a vicious punch that deals heavy damage and knocks you flying backward!
+### Stalking Rules
+- **Direct Gaze Freeze**: When you look directly in his direction, the Pale Watcher freezes motionless with an imposing stare. He will not vanish when you turn around or approach—giving you the full, chilling suspense.
+- **Close-Range Retaliation**: If you dare to approach him within melee striking reach (around 2.5 blocks), the Pale Watcher delivers a vicious strike that deals heavy damage and knocks you flying backward!
 - **Unseen Movement**: The moment your back is turned or trees block your sight, he slips forward in complete silence, leaping closer through the shadows.
-- **Immunity to Standard Weapons**: Hitting him with ordinary swords, bows, or tools will not kill him. Striking him triggers an eldritch shockwave that blasts you back, and causes him to slip into the trees behind you.
+- **Immunity to Standard Weapons**: Hitting him with ordinary swords, bows, or tools will not kill him. Striking him triggers an eldritch shockwave that blasts you back, causing him to slip into the trees behind you.
 
-### Atmosphere & Screen Effects
-- **Creeping Screen Shadows**: Dark vignettes close in around the borders of your display as danger approaches, heightening the tension.
+### Psychological Horror & Atmosphere
+- **Creeping Screen Shadows**: Dark vignettes close in around the borders of your display as danger approaches, heightening tension.
 - **Dense Black Fog**: Heavy fog limits your view, hiding tree trunks until you are close.
-- **Heartbeat & Dynamic Static**: As he gets closer, a pounding heartbeat sounds in your ears, accompanied by eerie radio static. The static interference dynamically adapts to ambient light: gentle, legible film noise during dark nights so tree notes remain easy to find, and fierce, high-contrast glitch snow during the day cutting through bright sunlight.
+- **Heartbeat & Radio Static**: As he draws near, a pounding heartbeat echoes in your ears accompanied by eerie radio static. The static dynamically adapts to ambient light: gentle, legible film noise during dark nights so tree notes remain easy to find, and fierce, high-contrast glitch snow during the day cutting through bright sunlight.
 
 ### Light Source Interference
 - **Flickering Torches**: Hand-placed torches and lanterns within arm's reach (about 5 blocks) flicker and drop to the floor when he can see them. He cannot put out lights through solid walls, and powerful sanctuary lights are immune.
@@ -173,6 +190,7 @@ A sphere of quantum radio noise. Click while holding it to scan for hidden Curse
 | :--- | :--- | :--- |
 | `/pw_locate` | All players | Tells you how far away remaining uncollected pages are and which compass direction (North, South, East, West) to look for them. |
 | `/pw_clear [<player>]` | All players (self) / Admins (others) | Emergency command that instantly removes any lingering horror screen overlays, static noise, slow movement, and black fog. |
+| `/pw_status` | Admins (`server` priv) | Displays active encounters, server caps, and player immunity cooldowns. |
 
 ---
 
@@ -181,9 +199,36 @@ A sphere of quantum radio noise. Click while holding it to scan for hidden Curse
 Server owners can adjust these settings in `luanti.conf` or through the Settings menu:
 
 ```ini
-# How far you must run from the starting point to escape the encounter (in blocks)
-# Default: 100.0 (Range: 50.0 to 300.0)
+# Enable or disable natural spawning in the wilderness (default: true)
+pale_watcher_enable_natural_spawning = true
+
+# Spawn rarity in dark forests (higher = rarer; default: 30000, range: 1000 - 100000)
+pale_watcher_spawn_chance = 30000
+
+# Only allow the Pale Watcher to naturally spawn during the night (default: true)
+pale_watcher_night_only = true
+
+# Maximum ambient light level for natural spawning (default: 6; torches/lanterns keep bases safe)
+pale_watcher_max_light = 6
+
+# Elevation bounds for natural surface spawning (default: Y=0 to 350; prevents underground cave spawns)
+pale_watcher_min_elevation = 0
+pale_watcher_max_elevation = 350
+
+# Cooldown duration in seconds before the creature can target the same player again (default: 1200.0 / 20 min)
+pale_watcher_player_cooldown = 1200.0
+
+# Maximum number of simultaneous Pale Watcher encounters allowed across the entire server (default: 1)
+pale_watcher_max_active_encounters = 1
+
+# Prevent spawning and page placement inside protected player claims (default: true)
+pale_watcher_respect_protection = true
+
+# How far you must run from the starting point to escape the encounter (in blocks; default: 100.0)
 pale_watcher_tether_radius = 100.0
+
+# Maximum viewing distance in blocks during the claustrophobic domain fog (default: 48, range: 24 - 120)
+pale_watcher_fog_distance = 48
 ```
 
 ---

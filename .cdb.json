@@ -1,13 +1,22 @@
 {
-  "title": "The Pale Watcher",
-  "name": "pale_watcher",
-  "author": "SaKeL",
-  "license": "MIT",
-  "media_license": "CC-BY-SA-4.0",
-  "type": "mod",
-  "repo": "https://github.com/sakel-hub/pale_watcher",
-  "issue_tracker": "https://github.com/sakel-hub/pale_watcher/issues",
-  "ai_disclosure": "ASSISTED",
-  "short_description": "Psychological horror mob with quantum stalking, scaling cursed pages ritual, flash camera, and cleansing pyre banishment.",
-  "long_description": "A psychological horror mob for Luanti (5.17.0+) powered by the x_mob_core framework, featuring quantum stalking mechanics (freezes in direct gaze, steps forward into blind spots when unobserved), responsive vignette and static HUD overlays, FOV narrowing, flashlight/camera flash stun mechanics, dynamically scaling cursed pages ritual, and the Cleansing Flame banishment ritual."
+    "$schema": "https://content.luanti.org/api/cdb_schema/",
+    "type": "MOD",
+    "title": "The Pale Watcher",
+    "name": "pale_watcher",
+    "author": "SaKeL",
+    "license": "MIT",
+    "media_license": "CC-BY-SA-4.0",
+    "short_description": "A chilling forest stalker that freezes when watched and creeps closer in the dark. Hunt cursed pages, fend it off with a flash camera, and banish it with sacred fire.",
+    "long_description": "Dare to enter the dark woods at night? **The Pale Watcher** is an eerie psychological horror creature that preys on your senses.\n\nUnlike ordinary monsters that mindlessly sprint toward you, he observes the rules of the dark: the moment you look straight at him, he freezes dead still in an unsettling stare. But the instant you glance away, blink, or slip behind a tree, he slips silently through the shadows toward you.\n\n### How to Play & Survive\n\n- 🌲 **The Cursed Woods**: Venture into deep unlit forests at night. When the Pale Watcher chooses you as his prey, a heavy black fog rolls in, trapping you in the woods.\n- 📜 **Hunt the Cursed Pages**: Search nearby tree trunks and stone faces for scattered cursed pages. Punch or click them to absorb their curse. Listen closely for eerie whispers and black ink wisps that guide you to hidden notes.\n- 📻 **The Static Core**: Hold the crackling Static Core and point it through the fog—it crackles with loud radio noise when you face a hidden page within 20 blocks.\n- 📸 **The Vintage Flash Camera**: When cornered, trigger a blinding xenon flash to stun the creature, forcing him to shield his eyes and retreat into the misty tree line.\n- 🔥 **Ignite the Ritual Pyre**: Once all required pages are found, build and ignite the Ritual Pyre to summon the Cleansing Flame, drag the stalker into the sacred fire, and banish him back to the void!\n- ✨ **Dimensional Relics**: Defeating the Pale Watcher yields Dimensional Cloth and Static Cores, allowing you to craft the legendary **Shroud of Stalking** to blink through shadows.\n\n### Multiplayer & Solo Balance\nWhether exploring alone or with a group of friends, the challenge automatically scales: solo adventurers search for 5 pages, while multiplayer parties face higher page counts (up to 14) with real-time scaling and disconnection protection.",
+    "dev_state": "ACTIVELY_DEVELOPED",
+    "tags": [
+        "mobs",
+        "pve",
+        "horror",
+        "survival"
+    ],
+    "repo": "https://github.com/sakel-hub/pale_watcher",
+    "issue_tracker": "https://github.com/sakel-hub/pale_watcher/issues",
+    "ai_disclosure": "ASSISTED",
+    "website": "https://github.com/sakel-hub/pale_watcher#readme"
 }
